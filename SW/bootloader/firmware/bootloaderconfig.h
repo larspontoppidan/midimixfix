@@ -42,7 +42,7 @@ these macros are defined, the boot loader usees them.
 /* This is the port where the USB bus is connected. When you configure it to
  * "B", the registers PORTB, PINB and DDRB will be used.
  */
-#define USB_CFG_DMINUS_BIT      4
+#define USB_CFG_DMINUS_BIT      0
 /* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
  * This may be any bit in the port.
  */
@@ -90,7 +90,7 @@ these macros are defined, the boot loader usees them.
  * signature) does not support page mode for EEPROM. It is required for
  * accessing the EEPROM on the ATMega8. Costs ~54 bytes.
  */
-#define BOOTLOADER_CAN_EXIT         1
+#define BOOTLOADER_CAN_EXIT         0
 /* If this macro is defined to 1, the boot loader will exit shortly after the
  * programmer closes the connection to the device. Costs ~36 bytes.
  */
@@ -132,7 +132,7 @@ these macros are defined, the boot loader usees them.
 
 #ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
 
-#define JUMPER_BIT  7   /* jumper is connected to this bit in port D, active low */
+#define JUMPER_BIT  1   /* jumper is connected to this bit in port D, active low */
 
 #ifndef MCUCSR          /* compatibility between ATMega8 and ATMega88 */
 #   define MCUCSR   MCUSR
@@ -151,7 +151,8 @@ static inline void  bootLoaderExit(void)
     PORTD = 0;                      /* undo bootLoaderInit() changes */
 }
 
-#define bootLoaderCondition()   ((PIND & (1 << JUMPER_BIT)) == 0)
+#define bootLoaderCondition()   (1)
+//#define bootLoaderCondition()   ((PIND & (1 << JUMPER_BIT)) == 0)
 
 #endif /* __ASSEMBLER__ */
 

@@ -14,20 +14,23 @@
 #     make flash   # to load the boot loader into flash
 #     make lock    # to protect the boot loader from overwriting
 
-F_CPU = 16000000
-DEVICE = atmega168
+F_CPU = 12000000
+DEVICE = atmega32
 # BOOTLOADER_ADDRESS is 1800 for 8k devices, 3800 for 16k and 7800 for 32k.
-BOOTLOADER_ADDRESS = 3800
-FUSEOPT = $(FUSEOPT_168)
-LOCKOPT = -U lock:w:0x2f:m
+BOOTLOADER_ADDRESS = 7800
+FUSEOPT = $(FUSEOPT_32)
+LOCKOPT =
+# LOCKOPT = -U lock:w:0x2f:m
 
-PROGRAMMER = -c stk500v2 -P avrdoper
+PROGRAMMER = -cavrisp2 -Pusb
+# PROGRAMMER = -c stk500v2 -P avrdoper
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 FUSEOPT_8 = -U hfuse:w:0xc0:m -U lfuse:w:0x9f:m
 FUSEOPT_88 = -U hfuse:w:0xd6:m -U lfuse:w:0xdf:m -U efuse:w:0x00:m
 FUSEOPT_168 = -U hfuse:w:0xd6:m -U lfuse:w:0xdf:m -U efuse:w:0x00:m
 FUSEOPT_328 = -U lfuse:w:0xf7:m -U hfuse:w:0xda:m -U efuse:w:0x03:m
+FUSEOPT_32 =  -U hfuse:w:0xda:m -U lfuse:w:0x1f:m
 # You may have to change the order of these -U commands.
 
 #---------------------------------------------------------------------
@@ -95,7 +98,25 @@ FUSEOPT_328 = -U lfuse:w:0xf7:m -U hfuse:w:0xda:m -U efuse:w:0x03:m
 #        | |  +--------------- SUT 1..0 (11 = startup time 16K CK/14K + 65ms)
 #        | +------------------ CKOUT (1 = clock output disabled)
 #        +-------------------- CKDIV8 (1 = do not divide clock by 8)
-
+#---------------------------------------------------------------------
+# ATMega32   (added by Larsp)  (original TP USB KEY: D9 1F)
+#---------------------------------------------------------------------
+# Fuse high byte:
+# 0xda = 1 1 0 1   1 0 1 0 <-- BOOTRST  (boot reset vector at 0x7800)
+#        ^ ^ ^ ^   ^ ^ ^------ BOOTSZ0
+#        | | | |   | +-------- BOOTSZ1  00 => 4K bootloader size
+#        | | | |   + --------- EESAVE   (preserve EEPROM over chip erase)
+#        | | | +-------------- CKOPT    (full output swing)
+#        | | +---------------- SPIEN    0 => SPI enabled
+#        | +------------------ JTAGEN   1 => JTAG disabled
+#        +-------------------- OCD      1 => OCD disabled
+# Fuse low byte:
+# 0x1f = 0 0 0 1   1 1 1 1
+#        ^ ^ \ /   \--+--/
+#        | |  |       +------- CKSEL 3..0 (external >8M crystal)
+#        | |  +--------------- SUT 1..0 (crystal osc, BOD enabled)
+#        | +------------------ BODEN    (BrownOut Detector enabled)
+#        +-------------------- BODLEVEL (4.0V)
 
 ###############################################################################
 
