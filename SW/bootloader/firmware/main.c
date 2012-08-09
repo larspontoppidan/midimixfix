@@ -287,19 +287,19 @@ uchar   i = 0;
 
     usbInit();
     /* enforce USB re-enumerate: */
-    usbDeviceDisconnect();  /* do this while interrupts are disabled */
+    //usbDeviceDisconnect();  /* do this while interrupts are disabled */
     while(--i){         /* fake USB disconnect for > 250 ms */
         wdt_reset();
         _delay_ms(1);
     }
-    usbDeviceConnect();
+    //usbDeviceConnect();
     sei();
 }
 
 int __attribute__((noreturn)) main(void)
 {
     /* initialize  */
-    wdt_disable();      /* main app may have enabled watchdog */
+    //wdt_disable();      /* main app may have enabled watchdog */
     bootLoaderInit();
     odDebugInit();
     DBG1(0x00, 0, 0);
@@ -310,6 +310,9 @@ int __attribute__((noreturn)) main(void)
     if(bootLoaderCondition()){
         uchar i = 0, j = 0;
         initForUsbConnectivity();
+        DDRD |= (1<<5u);
+        PORTD &= ~(1<<5u);
+
         do{
             usbPoll();
 #if BOOTLOADER_CAN_EXIT
@@ -319,7 +322,10 @@ int __attribute__((noreturn)) main(void)
                         break;
                 }
             }
+            
 #endif
+            
+            wdt_reset(); /* Reset the watchdog */
         }while(bootLoaderCondition());  /* main event loop */
     }
     leaveBootloader();

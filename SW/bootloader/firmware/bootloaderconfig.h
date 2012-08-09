@@ -77,7 +77,7 @@ these macros are defined, the boot loader usees them.
 /* ---------------------- feature / code size options ---------------------- */
 /* ------------------------------------------------------------------------- */
 
-#define HAVE_EEPROM_PAGED_ACCESS    1
+#define HAVE_EEPROM_PAGED_ACCESS    0
 /* If HAVE_EEPROM_PAGED_ACCESS is defined to 1, page mode access to EEPROM is
  * compiled in. Whether page mode or byte mode access is used by AVRDUDE
  * depends on the target device. Page mode is only used if the device supports
@@ -141,8 +141,10 @@ these macros are defined, the boot loader usees them.
 static inline void  bootLoaderInit(void)
 {
     PORTD |= (1 << JUMPER_BIT);     /* activate pull-up */
-    if(!(MCUCSR & (1 << EXTRF)))    /* If this was not an external reset, ignore */
-        leaveBootloader();
+
+//    if(!(MCUCSR & (1 << EXTRF)))    /* If this was not an external reset, ignore */
+//        leaveBootloader();
+
     MCUCSR = 0;                     /* clear all reset flags for next time */
 }
 
@@ -151,8 +153,7 @@ static inline void  bootLoaderExit(void)
     PORTD = 0;                      /* undo bootLoaderInit() changes */
 }
 
-#define bootLoaderCondition()   (1)
-//#define bootLoaderCondition()   ((PIND & (1 << JUMPER_BIT)) == 0)
+#define bootLoaderCondition()   ((PIND & (1 << JUMPER_BIT)) == 0)
 
 #endif /* __ASSEMBLER__ */
 
