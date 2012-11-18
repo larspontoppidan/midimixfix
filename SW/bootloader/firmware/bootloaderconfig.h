@@ -38,7 +38,7 @@ these macros are defined, the boot loader usees them.
 
 /* ---------------------------- Hardware Config ---------------------------- */
 
-#define USB_CFG_IOPORTNAME      D
+#define USB_CFG_IOPORTNAME      B
 /* This is the port where the USB bus is connected. When you configure it to
  * "B", the registers PORTB, PINB and DDRB will be used.
  */
@@ -61,13 +61,13 @@ these macros are defined, the boot loader usees them.
 
 /* ----------------------- Optional Hardware Config ------------------------ */
 
-/* #define USB_CFG_PULLUP_IOPORTNAME   D */
+#define USB_CFG_PULLUP_IOPORTNAME   B
 /* If you connect the 1.5k pullup resistor from D- to a port pin instead of
  * V+, you can connect and disconnect the device from firmware by calling
  * the macros usbDeviceConnect() and usbDeviceDisconnect() (see usbdrv.h).
  * This constant defines the port on which the pullup resistor is connected.
  */
-/* #define USB_CFG_PULLUP_BIT          4 */
+#define USB_CFG_PULLUP_BIT          1
 /* This constant defines the bit number in USB_CFG_PULLUP_IOPORT (defined
  * above) where the 1.5k pullup resistor is connected. See description
  * above for details.
@@ -90,11 +90,11 @@ these macros are defined, the boot loader usees them.
  * signature) does not support page mode for EEPROM. It is required for
  * accessing the EEPROM on the ATMega8. Costs ~54 bytes.
  */
-#define BOOTLOADER_CAN_EXIT         0
+#define BOOTLOADER_CAN_EXIT         1
 /* If this macro is defined to 1, the boot loader will exit shortly after the
  * programmer closes the connection to the device. Costs ~36 bytes.
  */
-#define HAVE_CHIP_ERASE             0
+#define HAVE_CHIP_ERASE             1
 /* If this macro is defined to 1, the boot loader implements the Chip Erase
  * ISP command. Otherwise pages are erased on demand before they are written.
  */
@@ -132,7 +132,10 @@ these macros are defined, the boot loader usees them.
 
 #ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
 
-#define JUMPER_BIT  1   /* jumper is connected to this bit in port D, active low */
+/* jumper is connected to this, active low */
+#define JUMPER_BIT   4
+#define JUMPER_PORT  PORTA
+#define JUMPER_PIN   PINA
 
 #ifndef MCUCSR          /* compatibility between ATMega8 and ATMega88 */
 #   define MCUCSR   MCUSR
@@ -140,20 +143,20 @@ these macros are defined, the boot loader usees them.
 
 static inline void  bootLoaderInit(void)
 {
-    PORTD |= (1 << JUMPER_BIT);     /* activate pull-up */
+	JUMPER_PORT |= (1 << JUMPER_BIT);     /* activate pull-up */
 
 //    if(!(MCUCSR & (1 << EXTRF)))    /* If this was not an external reset, ignore */
 //        leaveBootloader();
 
-    MCUCSR = 0;                     /* clear all reset flags for next time */
+	MCUCSR = 0;                     /* clear all reset flags for next time */
 }
 
 static inline void  bootLoaderExit(void)
 {
-    PORTD = 0;                      /* undo bootLoaderInit() changes */
+	JUMPER_PORT &= ~(1 << JUMPER_BIT);                      /* undo bootLoaderInit() changes */
 }
 
-#define bootLoaderCondition()   ((PIND & (1 << JUMPER_BIT)) == 0)
+#define bootLoaderCondition()   ((JUMPER_PIN & (1 << JUMPER_BIT)) != 0)
 
 #endif /* __ASSEMBLER__ */
 

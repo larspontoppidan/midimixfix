@@ -110,6 +110,8 @@ static const uchar  signatureBytes[4] = {
     0x1e, 0x95, 0x0f, 0
 #elif defined (__AVR_ATmega32__)
     0x1e, 0x95, 0x02, 0
+#elif defined (__AVR_ATmega644P__) || defined (__AVR_ATmega644PA__)
+    0x1e, 0x96, 0x0A, 0
 #else
 #   error "Device signature is not known, please edit main.c!"
 #endif
@@ -287,12 +289,13 @@ uchar   i = 0;
 
     usbInit();
     /* enforce USB re-enumerate: */
-    //usbDeviceDisconnect();  /* do this while interrupts are disabled */
+    cli();
+    usbDeviceDisconnect();  /* do this while interrupts are disabled */
     while(--i){         /* fake USB disconnect for > 250 ms */
         wdt_reset();
         _delay_ms(1);
     }
-    //usbDeviceConnect();
+    usbDeviceConnect();
     sei();
 }
 
@@ -310,8 +313,9 @@ int __attribute__((noreturn)) main(void)
     if(bootLoaderCondition()){
         uchar i = 0, j = 0;
         initForUsbConnectivity();
-        DDRD |= (1<<5u);
-        PORTD &= ~(1<<5u);
+
+        DDRB |= (1 << 4u);
+        PORTB &= ~(1 << 4u);
 
         do{
             usbPoll();

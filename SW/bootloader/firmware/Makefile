@@ -14,11 +14,10 @@
 #     make flash   # to load the boot loader into flash
 #     make lock    # to protect the boot loader from overwriting
 
-F_CPU = 12000000
-DEVICE = atmega32
-# BOOTLOADER_ADDRESS is 1800 for 8k devices, 3800 for 16k and 7800 for 32k.
-BOOTLOADER_ADDRESS = 7800
-FUSEOPT = $(FUSEOPT_32)
+F_CPU = 20000000
+DEVICE = atmega644p
+BOOTLOADER_ADDRESS = F000
+FUSEOPT = $(FUSEOPT_644)
 LOCKOPT =
 # LOCKOPT = -U lock:w:0x2f:m
 
@@ -31,6 +30,8 @@ FUSEOPT_88 = -U hfuse:w:0xd6:m -U lfuse:w:0xdf:m -U efuse:w:0x00:m
 FUSEOPT_168 = -U hfuse:w:0xd6:m -U lfuse:w:0xdf:m -U efuse:w:0x00:m
 FUSEOPT_328 = -U lfuse:w:0xf7:m -U hfuse:w:0xda:m -U efuse:w:0x03:m
 FUSEOPT_32 =  -U hfuse:w:0xda:m -U lfuse:w:0x1f:m
+FUSEOPT_644 = -U lfuse:w:0xd7:m -U hfuse:w:0xd2:m -U efuse:w:0xfc:m
+
 # You may have to change the order of these -U commands.
 
 #---------------------------------------------------------------------
@@ -117,7 +118,29 @@ FUSEOPT_32 =  -U hfuse:w:0xda:m -U lfuse:w:0x1f:m
 #        | |  +--------------- SUT 1..0 (crystal osc, BOD enabled)
 #        | +------------------ BODEN    (BrownOut Detector enabled)
 #        +-------------------- BODLEVEL (4.0V)
-
+#---------------------------------------------------------------------
+# ATMega644p (added by Larsp)
+#---------------------------------------------------------------------
+# Fuse extended byte:
+# 0xfc = 1 1 1 1   1 1 0 0
+#                    \-+-/
+#                      +------ BODLEVEL 0..2 (100 = 4.3V)
+# Fuse high byte:
+# 0xd2 = 1 1 0 1   0 0 1 0 <-- BOOTRST (0 = jump to bootloader at start)
+#        ^ ^ ^ ^   ^ \+/
+#        | | | |   |  +------- BOOTSZ 0..1 (01 = 4KB starting at 0xF000)
+#        | | | |   + --------- EESAVE (don't preserve EEPROM over chip erase)
+#        | | | +-------------- WDTON (1 = watchdog disabled at start)
+#        | | +---------------- SPIEN (0 = allow serial programming)
+#        | +------------------ JTAGEN   1 => JTAG disabled
+#        +-------------------- OCD      1 => OCD disabled
+# Fuse low byte:
+# 0xd7 = 1 1 0 1   0 1 1 1
+#        ^ ^ \ /   \--+--/
+#        | |  |       +------- CKSEL 3..0 (full swing oscillator)
+#        | |  +--------------- SUT 1..0 (01 = BOD enabled)
+#        | +------------------ CKOUT (1 = clock output disabled)
+#        +-------------------- CKDIV8 (1 = do not divide clock by 8)
 ###############################################################################
 
 # Tools:
