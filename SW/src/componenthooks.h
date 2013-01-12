@@ -13,6 +13,7 @@
 
 #include "midilogger.h"
 #include "blockfilter.h"
+#include "curvefilter.h"
 
 
 // Components can hook up functions to be called at different points in the program flow.
@@ -22,19 +23,21 @@
     do {                        \
     mlog_Initialize();          \
     blockf_Initialize();        \
+    curvef_Initialize();        \
     } while (0)
 
 // For processing normal incoming messages
 #define COMP_MESSAGE_ISR_HOOKS(x) \
     do {                        \
-    mlog_InMessageIsrHook(x);     \
+    mlog_InMessageIsrHook(x);   \
     blockf_MessageIsrHook(x);   \
+    curvef_MessageIsrHook(x);   \
     } while (0)
 
 // For processing incoming realtime messages
 #define COMP_RT_MESSAGE_ISR_HOOKS(x) \
     do {                             \
-    mlog_InMessageIsrHook(x);          \
+    mlog_InMessageIsrHook(x);        \
     } while (0)
 
 // For logging outgoing messages (no processing should be done at this point)
@@ -55,6 +58,7 @@
     do {                        \
     mlog_MainLoopHook();        \
     blockf_MainLoopHook();      \
+    curvef_MainLoopHook();      \
     } while (0)
 
 

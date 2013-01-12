@@ -60,6 +60,48 @@ char *util_StrWriteInt16(char *dest, int16_t value)
 }
 
 
+char *util_StrWriteInt16LA(char *dest, int16_t value)
+{
+    uint8_t p;
+    uint8_t c;
+
+    bool_t numbernow = FALSE;
+
+    if (value < 0)
+    {
+        *(dest++) = '-';
+        value = -value;
+    }
+
+    for (p = 0; p < 5; p++)
+    {
+        if (value < sutil_TenthsTab[p])
+        {
+            if (numbernow || (p == 4))
+            {
+                *(dest++) = '0';
+            }
+        }
+        else
+        {
+            c = '0';
+
+            while (value >= sutil_TenthsTab[p])
+            {
+                c++;
+                value -= sutil_TenthsTab[p];
+            }
+
+            *(dest++) = c;
+
+            numbernow = 1;
+        }
+    }
+
+    return dest;
+}
+
+
 char * util_StrWriteUint8(char *dest, uint8_t value)
 {
     uint8_t c;

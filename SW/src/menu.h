@@ -34,7 +34,7 @@ void menu_UserBacks(void);
 
 // Return values from MenuEvent function:
 
-#define MENU_EDIT_MODE_UNAVAIL 0x00
+#define MENU_EDIT_MODE_UNAVAIL 0x1F
 #define MENU_SET_CURSOR_MASK   0x1F
 #define MENU_UPDATE_ALL        0x20
 #define MENU_RESERVE_DISPLAY   0x40

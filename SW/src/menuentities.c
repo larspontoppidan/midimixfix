@@ -11,8 +11,9 @@
 #include "errors.h"
 
 #include "mainmenu.h"
-#include "blockfilter.h"
 #include "midilogger.h"
+#include "blockfilter.h"
+#include "curvefilter.h"
 
 enum
 {
@@ -20,6 +21,7 @@ enum
     ENTITY_MAINSETUP,
     ENTITY_MIDILOG,
     ENTITY_BLOCKFILTER,
+    ENTITY_CURVEFILTER
 };
 
 uint8_t menue_GetSubMenuCount(uint8_t entity)
@@ -39,6 +41,9 @@ uint8_t menue_GetSubMenuCount(uint8_t entity)
         break;
     case ENTITY_BLOCKFILTER:
         ret = blockf_GetSubMenuCount();
+        break;
+    case ENTITY_CURVEFILTER:
+        ret = curvef_GetSubMenuCount();
         break;
     default:
         err_Register(ERR_INVALID_MENU_ENTITY);
@@ -64,6 +69,9 @@ void menue_GetMenuText(uint8_t entity, char *dest, uint8_t item)
     case ENTITY_BLOCKFILTER:
         blockf_GetMenuText(dest, item);
         break;
+    case ENTITY_CURVEFILTER:
+        curvef_GetMenuText(dest, item);
+        break;
     default:
         err_Register(ERR_INVALID_MENU_ENTITY);
         break;
@@ -88,6 +96,9 @@ uint8_t menue_MenuEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
         break;
     case ENTITY_BLOCKFILTER:
         ret = blockf_MenuEvent(item, edit_mode, user_event, knob_delta);
+        break;
+    case ENTITY_CURVEFILTER:
+        ret = curvef_MenuEvent(item, edit_mode, user_event, knob_delta);
         break;
     default:
         err_Register(ERR_INVALID_MENU_ENTITY);

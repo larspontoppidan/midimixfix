@@ -46,6 +46,9 @@ uint8_t mmsg_GetDataType(uint8_t x);
 char *mmsg_WriteControllerName(char *dest, uint8_t ctrl);
 uint8_t mmsg_GetDataCount(uint8_t midi_status);
 
+// Is a certain key white or black on the keyboard?
+bool_t mmsg_IsKeyBlack(uint8_t key);
+
 ////////////////////// Midi Message definitions ///////////////////////////
 
 

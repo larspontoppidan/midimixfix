@@ -12,10 +12,9 @@
 #include "hal.h"
 #include "componenthooks.h"
 
-// Ring buffer with received midi messages:
+// Ring buffer with midi messages:
 
-#define MIDIIO_BUFFER_SIZE 10u
-
+#define MIDIIO_BUFFER_SIZE 16u
 
 #define STATUS_EMPTY      0u
 #define STATUS_RECEIVING  1u
@@ -114,7 +113,7 @@ void midiio_Initialize(void)
 
 void midiio_SetMode(uint8_t mode, uint8_t source, bool_t rt)
 {
-    // Transforme the desired mode and source into ready to use
+    // Transform the desired mode and source into ready to use
     // bits in ConfigFlags:
 
     bool_t discard = (mode == MIDIIO_MODE_DISCARD) ? source : 0;

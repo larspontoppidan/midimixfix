@@ -39,15 +39,8 @@ typedef struct
 // Variables
 
 bool_t bfEnabled;
+
 char   bfTitle[]  PROGMEM = "Block filter ";
-
-char   bfManage[] PROGMEM = "Manage... ";
-char   bfAdd[]    PROGMEM = "Add";
-char   bfRemove[] PROGMEM = "Remove";
-char   bfIn[] PROGMEM = "In";
-char   bfChan[] PROGMEM = " Chan";
-
-char bfSources[3] = "12*";
 
 uint8_t bfManageMode;
 
@@ -135,9 +128,10 @@ uint8_t blockf_GetSubMenuCount(void)
 
 char *blockf_RenderBlock(char *dest, uint8_t i)
 {
-    dest = util_StrCpy_P(dest, bfIn);
-    (*dest++) = bfSources[(bfBlock[i].source)-1];
-    dest = util_StrCpy_P(dest, bfChan);
+    dest = pstr_WriteInX(dest, bfBlock[i].source);
+    (*dest++) = ' ';
+
+    dest = util_StrCpy_P(dest, pstr_Chan);
     dest = util_StrWriteInt8LA(dest, bfBlock[i].chan + 1);
 
     return dest;
@@ -147,7 +141,7 @@ void blockf_AddBlock(void)
 {
     if (bfBlocks < BF_BLOCK_MAX)
     {
-        bfBlock[bfBlocks].source = 3;
+        bfBlock[bfBlocks].source = 1;
         bfBlock[bfBlocks].chan = 0;
         bfBlocks++;
     }
@@ -178,15 +172,15 @@ void blockf_GetMenuText(char *dest, uint8_t item)
     }
     else if (item == (bfBlocks + 1))
     {
-        dest = util_StrCpy_P(dest, bfManage);
+        dest = util_StrCpy_P(dest, pstr_ManageEllipsis);
 
         if (bfManageMode == 1)
         {
-            util_StrCpy_P(dest, bfAdd);
+            util_StrCpy_P(dest, pstr_Add);
         }
         else if (bfManageMode == 2)
         {
-            util_StrCpy_P(dest, bfRemove);
+            util_StrCpy_P(dest, pstr_Remove);
         }
     }
     else
@@ -252,13 +246,13 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 {
                     blockf_AddBlock();
                     bfManageMode = 0;
-                    ret = 0 | MENU_UPDATE_ALL;
+                    ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
                 }
                 else if (bfManageMode == 2)
                 {
                     blockf_RemoveBlock();
                     bfManageMode = 0;
-                    ret = 0 | MENU_UPDATE_ALL;
+                    ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
                 }
             }
         }
@@ -271,7 +265,7 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
             if (edit_mode == 0)
             {
                 // User enters first edit mode
-                ret = 2;
+                ret = 0;
             }
             else if (edit_mode == 1)
             {
@@ -283,7 +277,7 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
         {
             if (edit_mode == 1)
             {
-                ret = 2;
+                ret = 0;
                 bfBlock[item-1].source =
                         util_BoundedAddInt8(bfBlock[item-1].source, 1, 3, knob_delta);
             }

@@ -52,7 +52,7 @@ uint8_t mainmenu_TitleMenuEvent(uint8_t item, uint8_t edit_mode,
                                 uint8_t user_event, int8_t knob_delta)
 {
     // TODO Show about screen?
-    return 0u;
+    return MENU_EDIT_MODE_UNAVAIL;
 }
 
 
@@ -143,7 +143,7 @@ uint8_t mainmenu_SetupMenuEvent(uint8_t item, uint8_t edit_mode,
             {
                 // This toggles showing sub items
                 mainSetupVisible = !mainSetupVisible;
-                ret = MENU_UPDATE_ALL;
+                ret = MENU_UPDATE_ALL | MENU_EDIT_MODE_UNAVAIL;
             }
             else
             {

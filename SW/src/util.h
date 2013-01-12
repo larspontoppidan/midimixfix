@@ -13,6 +13,7 @@
 char *util_StrWriteInt16(char *dest, int16_t value);
 char *util_StrWriteUint8(char *dest, uint8_t value);
 char *util_StrWriteInt8LA(char *dest, int8_t value);
+char *util_StrWriteInt16LA(char *dest, int16_t value);
 char *util_StrWriteHex(char *dest, uint8_t value);
 char *util_StrCpy_P(char *dest, PGM_P src);
 

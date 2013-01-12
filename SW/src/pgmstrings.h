@@ -21,4 +21,11 @@ extern char PROGMEM pstr_Discard[];
 extern char PROGMEM pstr_Through[];
 extern char PROGMEM pstr_Use[];
 
+extern char PROGMEM pstr_ManageEllipsis[];
+extern char PROGMEM pstr_Add[];
+extern char PROGMEM pstr_Remove[];
+extern char PROGMEM pstr_Chan[];
+
+char *pstr_WriteInX(char *dest, uint8_t i);
+
 #endif /* PGMSTRINGS_H_ */

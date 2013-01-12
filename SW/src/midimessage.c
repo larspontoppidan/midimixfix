@@ -454,3 +454,22 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
     return dest;
 }
 
+bool_t mmsg_IsKeyBlack(uint8_t key)
+{
+    bool_t ret = FALSE;
+
+    // Black keys are notes C# D# F# G# A#
+
+    switch (key % 12)
+    {
+    case 1:  // C#
+    case 3:  // D#
+    case 6:  // F#
+    case 8:  // G#
+    case 10: // A#
+        ret = TRUE;
+        break;
+    }
+
+    return ret;
+}
