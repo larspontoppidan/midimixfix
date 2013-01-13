@@ -14,7 +14,7 @@
 #include "midilogger.h"
 #include "blockfilter.h"
 #include "curvefilter.h"
-
+#include "presets.h"
 
 // Components can hook up functions to be called at different points in the program flow.
 // It is done by modifying the following defines:
@@ -24,6 +24,7 @@
     mlog_Initialize();          \
     blockf_Initialize();        \
     curvef_Initialize();        \
+    presets_Initialize();       \
     } while (0)
 
 // For processing normal incoming messages

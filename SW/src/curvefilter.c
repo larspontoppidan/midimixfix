@@ -15,6 +15,7 @@
 #include "menu.h"
 #include "pgmstrings.h"
 #include "curvemath.h"
+#include <string.h>
 
 //
 // Allows shaping 7-bit values according to curve settings
@@ -112,7 +113,7 @@ uint8_t cfManageMode;
 #define CF_CURVE_MAX 8
 
 uint8_t cfCurves;
-curvef_t cfCurve[8];
+curvef_t cfCurve[CF_CURVE_MAX];
 
 
 void curvef_Initialize(void)
@@ -414,11 +415,13 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                     ret = 4;
                     cfCurve[c].mode =
                         util_BoundedAddInt8(cfCurve[c].mode, 0, (CURVEF_MODES-1), knob_delta);
+                    cfCurve[c].midi_status = Curvef_ModeMidiStatus[cfCurve[c].mode];
                 }
                 else if (edit_mode == 3)
                 {
                     ret = 7;
                     cfCurve[c].mode = CURVEF_CTRL;
+                    cfCurve[c].midi_status = MIDI_STATUS_CTRL_CHANGE;
                     cfCurve[c].ctrl_no = (cfCurve[c].ctrl_no + knob_delta) & 127;
                 }
             }
@@ -464,4 +467,27 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
     }
 
     return ret;
+}
+
+// Configuration store and load implementation
+
+uint8_t curvef_ConfigGetSize(void)
+{
+    return 2 + CF_CURVE_MAX * sizeof(curvef_t);
+}
+
+void curvef_ConfigSave(uint8_t *dest)
+{
+    *(dest++) = cfEnabled;
+    *(dest++) = cfCurves;
+
+    memcpy(dest, &(cfCurve[0]), CF_CURVE_MAX * sizeof(curvef_t));
+}
+
+void curvef_ConfigLoad(uint8_t *dest)
+{
+    cfEnabled = *(dest++);
+    cfCurves = *(dest++);
+
+    memcpy(&(cfCurve[0]), dest, CF_CURVE_MAX * sizeof(curvef_t));
 }

@@ -14,6 +14,7 @@
 #include "util.h"
 #include "menu.h"
 #include "pgmstrings.h"
+#include <string.h>
 
 // The block filter can do blocks of:
 
@@ -291,4 +292,27 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
     }
 
     return ret;
+}
+
+// Configuration store and load implementation
+
+uint8_t blockf_ConfigGetSize(void)
+{
+    return 2 + BF_BLOCK_MAX * sizeof(bfBlock_t);
+}
+
+void blockf_ConfigSave(uint8_t *dest)
+{
+    *(dest++) = bfEnabled;
+    *(dest++) = bfBlocks;
+
+    memcpy(dest, &(bfBlock[0]), BF_BLOCK_MAX * sizeof(bfBlock_t));
+}
+
+void blockf_ConfigLoad(uint8_t *dest)
+{
+    bfEnabled = *(dest++);
+    bfBlocks = *(dest++);
+
+    memcpy(&(bfBlock[0]), dest, BF_BLOCK_MAX * sizeof(bfBlock_t));
 }

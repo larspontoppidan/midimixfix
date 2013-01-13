@@ -70,14 +70,14 @@ void mainmenu_SetupGetMenuText(char *dest, uint8_t item)
     switch (item)
     {
     case 0: // General setup
-        dest = util_StrCpy_P(dest, mainmenu_Setup);
+        util_StrCpy_P(dest, mainmenu_Setup);
         if (mainSetupVisible)
         {
-            dest = util_StrCpy_P(dest, pstr_HideParentheses);
+            dest = util_StrCpy_P(dest + 16, pstr_MinusParentheses);
         }
         else
         {
-            dest = util_StrCpy_P(dest, pstr_ShowParentheses);
+            dest = util_StrCpy_P(dest + 16, pstr_PlusParentheses);
         }
         break;
 
@@ -196,4 +196,30 @@ uint8_t mainmenu_SetupMenuEvent(uint8_t item, uint8_t edit_mode,
     }
 
     return ret;
+}
+
+
+// Configuration store and load implementation
+
+uint8_t mainmenu_ConfigGetSize(void)
+{
+    return 5;
+}
+
+void mainmenu_ConfigSave(uint8_t *dest)
+{
+    *(dest++) = midiio_GetMode(MMSG_SOURCE_INPUT1, FALSE);
+    *(dest++) = midiio_GetMode(MMSG_SOURCE_INPUT1, TRUE);
+    *(dest++) = midiio_GetMode(MMSG_SOURCE_INPUT2, FALSE);
+    *(dest++) = midiio_GetMode(MMSG_SOURCE_INPUT2, TRUE);
+    *(dest++) = midiio_GetSendRunStatus();
+}
+
+void mainmenu_ConfigLoad(uint8_t *dest)
+{
+    midiio_SetMode(*(dest++), MMSG_SOURCE_INPUT1, FALSE);
+    midiio_SetMode(*(dest++), MMSG_SOURCE_INPUT1, TRUE);
+    midiio_SetMode(*(dest++), MMSG_SOURCE_INPUT2, FALSE);
+    midiio_SetMode(*(dest++), MMSG_SOURCE_INPUT2, TRUE);
+    midiio_SetSendRunStatus(*(dest++));
 }

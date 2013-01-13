@@ -30,4 +30,9 @@ uint8_t mainmenu_SetupMenuEvent(uint8_t item, uint8_t edit_mode,
                                 uint8_t user_event, int8_t knob_delta);
 
 
+uint8_t mainmenu_ConfigGetSize(void);
+void    mainmenu_ConfigSave(uint8_t *dest);
+void    mainmenu_ConfigLoad(uint8_t *dest);
+
+
 #endif /* MAINMENU_H_ */
