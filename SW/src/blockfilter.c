@@ -160,15 +160,15 @@ void blockf_GetMenuText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        dest = util_StrCpy_P(dest, bfTitle);
+        util_StrCpy_P(dest, bfTitle);
 
         if (bfEnabled)
         {
-            util_StrCpy_P(dest, pstr_On);
+            util_StrCpy_P(dest + 14, pstr_OnParentheses);
         }
         else
         {
-            util_StrCpy_P(dest, pstr_Off);
+            util_StrCpy_P(dest + 14, pstr_OffParentheses);
         }
     }
     else if (item == (bfBlocks + 1))
@@ -203,7 +203,7 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 // We are at root level and user wants to edit title menu
 
                 // Ok, move cursor to ON / OFF
-                ret = 13;
+                ret = 16;
             }
         }
         else if (edit_mode == 1)
@@ -214,7 +214,7 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 bfEnabled = util_BoundedAddInt8(bfEnabled, 0, 1, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
-                ret = 13 | MENU_UPDATE_ALL;
+                ret = 16 | MENU_UPDATE_ALL;
             }
         }
     }
@@ -255,6 +255,11 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                     bfManageMode = 0;
                     ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
                 }
+            }
+            else if (user_event == MENU_EVENT_BACK)
+            {
+                // Backing out of manage mode
+                bfManageMode = 0;
             }
         }
     }

@@ -10,6 +10,7 @@
 #include "menu.h"
 #include "lcd.h"
 #include "menuentities.h"
+#include "presets.h"
 #include <string.h>
 
 //////////// DEFINES
@@ -337,6 +338,9 @@ void menu_UserTurns(int8_t delta, bool_t pushed)
             {
                 SetCursor(menuRow, (ret & MENU_SET_CURSOR_MASK) + 2);
             }
+
+            // Notify presets module that component may have changed its configuration
+            presets_ConfigMayChangeNotify(menuComponent);
         }
     }
 }

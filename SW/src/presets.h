@@ -21,7 +21,9 @@ void    presets_GetMenuText(char *dest, uint8_t item);
 uint8_t presets_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
 
 
-
+// In order to monitor changes and show modified in case of such, the
+// preset module must be notified after a menu entity has been accessed and potentially modified
+void presets_ConfigMayChangeNotify(uint8_t entity_index);
 
 
 

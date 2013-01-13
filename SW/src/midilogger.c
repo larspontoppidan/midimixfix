@@ -76,7 +76,7 @@ uint8_t windowBuffer[LCD_ROWS][BUFFER_MAX];
 
 // Strings
 
-char mlogTitle[] PROGMEM =  "Show midi log...";
+char mlogTitle[] PROGMEM =  "Show midi log (...)";
 
 // The user can toggle the different modes with the select button
 //   "*Log. In *"

@@ -17,17 +17,29 @@
 #include "menuentities.h"
 
 
+// HINT:
+// To read out eeprom for investigation, using AVRDUDE:
+//     avrdude -pm644p -cavrisp2 -Pusb -U eeprom:r:data.eep:r
+// To investigate the data use
+//     hexdump -C -v data.eep
+
+
 char presets_StrTitle[] PROGMEM = "Preset ";
 char presets_StrMod[]   PROGMEM = "mod. ";
 char presets_StrSave[]  PROGMEM = "Save ";
 char presets_StrLoad[]  PROGMEM = "Load ";
+
+char presets_StrBackAborts[]  PROGMEM = "back aborts";
 
 // Total number of preset slots in EEPROM
 #define PRESETS_SLOTS  12
 
 // Current state of loaded preset
 uint8_t presetsCurrent;
-bool_t  presetsModified;  // TODO implementhis
+
+bool_t  psConfigModified;
+bool_t  psConfigMustBeChecked;
+
 
 // State of menu
 bool_t  psMenuVisible = FALSE;
@@ -170,6 +182,8 @@ void presets_Save(uint8_t slot)
     eeprom_write_byte((uint8_t*)addr, chksum);
 
     presetsCurrent = slot;
+    psConfigMustBeChecked = FALSE;
+    psConfigModified = FALSE;
 }
 
 // 1 based. Slot 1 is first preset
@@ -222,6 +236,8 @@ void presets_Load(uint8_t slot)
 
         // Thats it!
         presetsCurrent = slot;
+        psConfigMustBeChecked = FALSE;
+        psConfigModified = FALSE;
     }
     else
     {
@@ -229,12 +245,60 @@ void presets_Load(uint8_t slot)
     }
 }
 
+
+// 1 based. Slot 1 is first preset
+// Compares preset slot with current setup and returns true if there are differences
+bool_t presets_CheckForChanges(uint8_t slot)
+{
+    uint16_t addr;
+    uint8_t chksum;
+    uint8_t i;
+    uint8_t j;
+    uint8_t size;
+    bool_t changes = FALSE;
+
+    // Calculate address of preset
+    addr = sizeof(eeprom_header_t) +
+            (uint16_t)(slot - 1) * (presetRecordSize + EEPROM_CHKSUM_SIZE);
+
+    chksum = EEPROM_CHKSUM_RESET;
+
+    for (i = 0; (i < MENUE_ENTITY_COUNT) && (changes == FALSE); i++)
+    {
+        // Let entity write its data into our buffer
+        menue_ConfigSave(i, presetsBuffer);
+        size = menue_ConfigGetSize(i);
+
+        for (j = 0; (j < size) && (changes == FALSE); j++)
+        {
+            // Compare with data in eeprom
+            if (eeprom_read_byte((uint8_t*)addr) != presetsBuffer[j])
+            {
+                changes = TRUE;
+            }
+
+            chksum += presetsBuffer[j];
+            addr++;
+        }
+    }
+
+    // Also compare checksum
+    if (eeprom_read_byte((uint8_t*)addr) != chksum)
+    {
+        changes = TRUE;
+    }
+
+    return changes;
+}
 // Important! The presets initialize function must be the last one to call in the
-// initialization procedure
+// initialization procedure. During initialization, a preset may be loaded into
+// the components. If a component is initialized later, it may overwrite with
+// default values.
 void presets_Initialize(void)
 {
-    presetsCurrent = 1;
-    presetsModified = FALSE;
+    presetsCurrent = 1; // TODO implement having no preset loaded / saved, and implement a load defaults!
+    psConfigModified = FALSE;
+    psConfigMustBeChecked = FALSE;
 
     psMenuVisible = FALSE;
 
@@ -267,6 +331,10 @@ void presets_Initialize(void)
 }
 
 
+void presets_ConfigMayChangeNotify(uint8_t entity_index)
+{
+    psConfigMustBeChecked = TRUE;
+}
 
 
 // MENU implementation
@@ -286,9 +354,16 @@ void presets_GetMenuText(char *dest, uint8_t item)
         util_StrCpy_P(dest, presets_StrTitle);
         util_StrWriteInt8LA(dest + 7, presetsCurrent);
 
-        if (presetsModified)
+        // Check if any of the menu entities config has changed
+        if (psConfigMustBeChecked)
         {
-            util_StrCpy_P(dest + 10, presets_StrMod);
+            psConfigMustBeChecked = FALSE;
+            psConfigModified = presets_CheckForChanges(presetsCurrent);
+        }
+
+        if (psConfigModified)
+        {
+            util_StrCpy_P(dest + ((presetsCurrent > 9) ? 10 : 9), presets_StrMod);
         }
 
         if (psMenuVisible)
@@ -306,7 +381,8 @@ void presets_GetMenuText(char *dest, uint8_t item)
 
         if (psMenuSelected != 0)
         {
-            dest = util_StrWriteInt8LA(dest, psMenuSelected);
+            util_StrWriteInt8LA(dest, psMenuSelected);
+            //util_StrCpy_P(dest + 2, presets_StrBackAborts);
         }
         break;
 
@@ -315,7 +391,8 @@ void presets_GetMenuText(char *dest, uint8_t item)
 
         if (psMenuSelected != 0)
         {
-            dest = util_StrWriteInt8LA(dest, psMenuSelected);
+            util_StrWriteInt8LA(dest, psMenuSelected);
+            //util_StrCpy_P(dest + 2, presets_StrBackAborts);
         }
         break;
     }

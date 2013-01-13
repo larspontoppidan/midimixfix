@@ -91,9 +91,6 @@ typedef struct
     // The parameter to work with
     int8_t mode;
 
-    // Optimized for the ISR: The midi_status to work corresponding to mode
-    uint8_t midi_status;
-
     // Controller number, if midi ctl such:
     uint8_t ctrl_no;
 
@@ -114,6 +111,10 @@ uint8_t cfManageMode;
 
 uint8_t cfCurves;
 curvef_t cfCurve[CF_CURVE_MAX];
+
+// The midi_status to work with corresponding to mode
+// Derived from cfCurve settings to optimize ISR implementation
+uint8_t cfCurveMidiStatus[CF_CURVE_MAX];
 
 
 void curvef_Initialize(void)
@@ -137,7 +138,7 @@ void curvef_MessageIsrHook(mmsg_t *msg)
                 if ((msg->flags & cfCurve[i].source) != 0)
                 {
                     // Does this curve apply to message?
-                    if ((msg->midi_status & MIDI_STATUS_MASK) == cfCurve[i].midi_status)
+                    if ((msg->midi_status & MIDI_STATUS_MASK) == cfCurveMidiStatus[i])
                     {
                         // Apparently! Look into the finer details and set
                         // what byte of message to process
@@ -251,7 +252,7 @@ void curvef_AddCurve(void)
         cfCurve[cfCurves].source = 1;
         cfCurve[cfCurves].ctrl_no = 0;
         cfCurve[cfCurves].mode = CURVEF_NOTE_ON;
-        cfCurve[cfCurves].midi_status = MIDI_STATUS_NOTE_ON;
+        cfCurveMidiStatus[cfCurves] = MIDI_STATUS_NOTE_ON;
         curvem_ResetCurve(&(cfCurve[cfCurves].curve));
         cfCurves++;
     }
@@ -269,15 +270,15 @@ void curvef_GetMenuText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        dest = util_StrCpy_P(dest, cfTitle);
+        util_StrCpy_P(dest, cfTitle);
 
         if (cfEnabled)
         {
-            util_StrCpy_P(dest, pstr_On);
+            util_StrCpy_P(dest + 14, pstr_OnParentheses);
         }
         else
         {
-            util_StrCpy_P(dest, pstr_Off);
+            util_StrCpy_P(dest + 14, pstr_OffParentheses);
         }
     }
     else if (item == ((cfCurves * 2) + 1))
@@ -319,7 +320,7 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 // We are at root level and user wants to edit title menu
 
                 // Ok, move cursor to ON / OFF
-                ret = 13;
+                ret = 16;
             }
         }
         else if (edit_mode == 1)
@@ -330,7 +331,7 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 cfEnabled = util_BoundedAddInt8(cfEnabled, 0, 1, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
-                ret = 13 | MENU_UPDATE_ALL;
+                ret = 16 | MENU_UPDATE_ALL;
             }
         }
     }
@@ -371,6 +372,11 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                     cfManageMode = 0;
                     ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
                 }
+            }
+            else if (user_event == MENU_EVENT_BACK)
+            {
+                // Backing out of manage mode
+                cfManageMode = 0;
             }
         }
     }
@@ -415,13 +421,13 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                     ret = 4;
                     cfCurve[c].mode =
                         util_BoundedAddInt8(cfCurve[c].mode, 0, (CURVEF_MODES-1), knob_delta);
-                    cfCurve[c].midi_status = Curvef_ModeMidiStatus[cfCurve[c].mode];
+                    cfCurveMidiStatus[c] = pgm_read_byte(&(Curvef_ModeMidiStatus[cfCurve[c].mode]));
                 }
                 else if (edit_mode == 3)
                 {
                     ret = 7;
                     cfCurve[c].mode = CURVEF_CTRL;
-                    cfCurve[c].midi_status = MIDI_STATUS_CTRL_CHANGE;
+                    cfCurveMidiStatus[c] = MIDI_STATUS_CTRL_CHANGE;
                     cfCurve[c].ctrl_no = (cfCurve[c].ctrl_no + knob_delta) & 127;
                 }
             }
@@ -486,8 +492,21 @@ void curvef_ConfigSave(uint8_t *dest)
 
 void curvef_ConfigLoad(uint8_t *dest)
 {
-    cfEnabled = *(dest++);
+    bool_t new_enabled;
+    uint8_t i;
+
+    cfEnabled = FALSE;
+
+    new_enabled = *(dest++);
     cfCurves = *(dest++);
 
     memcpy(&(cfCurve[0]), dest, CF_CURVE_MAX * sizeof(curvef_t));
+
+    // Set correct midi status according to modes
+    for (i = 0; i < CF_CURVE_MAX; i++)
+    {
+        cfCurveMidiStatus[i] = pgm_read_byte(&(Curvef_ModeMidiStatus[cfCurve[i].mode]));
+    }
+
+    cfEnabled = new_enabled;
 }
