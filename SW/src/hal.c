@@ -49,13 +49,13 @@ static void hal_MidiIoSetup(void);
 
 ISR(INT1_vect)
 {
-    qd_AChangeIsr(QUADB_PIN & QUADB_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
+    qd_handleAchange_isr(QUADB_PIN & QUADB_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
 }
 
 
 ISR(PCINT0_vect)
 {
-    qd_BChangeIsr(QUADA_PIN & QUADA_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
+    qd_handleBchange_isr(QUADA_PIN & QUADA_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
 }
 
 
@@ -93,7 +93,7 @@ void hal_Initialize(void)
     hal_MidiIoSetup();
 }
 
-void hal_SetStatusLed(bool_t on)
+void hal_StatusLedSet(bool_t on)
 {
     if (on)
     {
@@ -106,7 +106,7 @@ void hal_SetStatusLed(bool_t on)
 
 }
 
-void hal_LcdBacklight(bool_t on)
+void hal_LcdBacklightSet(bool_t on)
 {
     if (on)
     {
@@ -120,17 +120,17 @@ void hal_LcdBacklight(bool_t on)
 }
 
 
-uint8_t hal_GetQuadState(void)
+uint8_t hal_EncoderQuadGet(void)
 {
     uint8_t ret;
 
-    ret = (QUADA_PIN & QUADA_MASK) ? HAL_QUAD_A : 0;
-    ret |= (QUADB_PIN & QUADB_MASK) ? HAL_QUAD_B : 0;
+    ret = (QUADA_PIN & QUADA_MASK) ? HAL_ENCODER_QUAD_A : 0;
+    ret |= (QUADB_PIN & QUADB_MASK) ? HAL_ENCODER_QUAD_B : 0;
 
     return ret;
 }
 
-uint8_t hal_GetButtonStates(void)
+uint8_t hal_ButtonStatesGet(void)
 {
     uint8_t ret;
 
@@ -140,18 +140,18 @@ uint8_t hal_GetButtonStates(void)
     return ret;
 }
 
-void hal_DisableInterrupts(void)
+void hal_InterruptsDisable(void)
 {
     cli();
 }
 
-void hal_EnableInterrupts(void)
+void hal_InterruptsEnable(void)
 {
     sei();
 }
 
 
-uint16_t hal_GetTickCounterISR(void)
+uint16_t hal_TickCountGet_SAFE(void)
 {
     // TODO this
     return 0u;
@@ -200,45 +200,45 @@ ISR(USART0_RX_vect)
 {
     uint8_t x;
 
-    hal_SetStatusLed(TRUE);
+    hal_StatusLedSet(TRUE);
     x = UDR0;
-    mparse_Input1Rx(x);
-    hal_SetStatusLed(FALSE);
+    mparser_handleInput1Rx_Isr(x);
+    hal_StatusLedSet(FALSE);
 }
 
 ISR(USART1_RX_vect)
 {
     uint8_t x;
 
-    hal_SetStatusLed(TRUE);
+    hal_StatusLedSet(TRUE);
     x = UDR1;
-    mparse_Input2Rx(x);
-    hal_SetStatusLed(FALSE);
+    mparser_handleInput2Rx_Isr(x);
+    hal_StatusLedSet(FALSE);
 }
 
 
 // Midi out transmission on UART0, data register empty interrupt
 ISR(USART0_UDRE_vect)
 {
-    hal_SetStatusLed(TRUE);
-    midiio_OutputTxCompleteIsr();
-    hal_SetStatusLed(FALSE);
+    hal_StatusLedSet(TRUE);
+    midiio_OutputTxComplete_ISR();
+    hal_StatusLedSet(FALSE);
 }
 
 
 // Return true if Uart Data Register Empty bit is not set
-bool_t hal_MidiOutTxActive(void)
+bool_t hal_MidiTxActiveGet_ISR(void)
 {
     return ((UCSR0A & (1u << UDRE0)) == 0u);
 }
 
 
-void hal_MidiOutTx(uint8_t x)
+void hal_MidiTxSend_ISR(uint8_t x)
 {
     UDR0 = x;
 }
 
-void hal_MidiOutIsrEnable(bool_t en)
+void hal_MidiTxIsrEnable_ISR(bool_t en)
 {
 
     if (en)

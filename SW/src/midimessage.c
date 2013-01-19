@@ -19,6 +19,7 @@ char MidiCtrlNames1[32][10] PROGMEM =
         {"Bank.Sel"},  // 0
         {"Modulat."},  // 1
         {"Breath"},    // 2
+        {"Undef.3"},   // 3
         {"FootCtl"},   // 4
         {"Port.Time"}, // 5
         {"DataEntry"}, // 6
@@ -167,7 +168,7 @@ const char NoteNames[12][3] PROGMEM =
 };
 
 
-uint8_t mmsg_GetDataCount(uint8_t midi_status)
+uint8_t mmsg_dataCountGet(uint8_t midi_status)
 {
     uint8_t count = 0;
 
@@ -200,7 +201,7 @@ uint8_t mmsg_GetDataCount(uint8_t midi_status)
 }
 
 
-uint8_t mmsg_GetDataType(uint8_t x)
+uint8_t mmsg_getDataType(uint8_t x)
 {
     uint8_t type;
 
@@ -280,7 +281,7 @@ uint8_t mmsg_GetMsgByte(mmsg_t *msg, uint8_t index)
     else
     {
         ret = 0u;
-        err_Register(ERR_INTERNAL4);
+        err_Raise(ERR_MODULE_MMSG, __LINE__);;
     }
 
     return ret;
@@ -292,18 +293,18 @@ char *mmsg_WriteControllerName(char *dest, uint8_t ctrl)
     if (ctrl < 32)
     {
         // First range of controllers
-        dest = util_StrCpy_P(dest, MidiCtrlNames1[ctrl]);
+        dest = util_strCpy_P(dest, MidiCtrlNames1[ctrl]);
     }
     else if (ctrl < 64)
     {
         // LSB of first range
-        dest = util_StrCpy_P(dest, MidiCtrlNames1[ctrl - 32]);
-        dest = util_StrCpy_P(dest, PSTR("LSB"));
+        dest = util_strCpy_P(dest, MidiCtrlNames1[ctrl - 32]);
+        dest = util_strCpy_P(dest, PSTR("LSB"));
     }
     else
     {
         // Second range
-        dest = util_StrCpy_P(dest, MidiCtrlNames2[ctrl - 64]);
+        dest = util_strCpy_P(dest, MidiCtrlNames2[ctrl - 64]);
     }
 
     return dest;
@@ -332,7 +333,7 @@ char *mmsg_WriteMsgRaw(char *dest, mmsg_t *msg)
         if (msg->flags & MMSG_FLAG_MSG_OK)
         {
             // Write it
-            dest = util_StrWriteHex(dest, msg->midi_status);
+            dest = util_strWriteHex(dest, msg->midi_status);
 
             // Did we use running status?
             if (msg->flags & MMSG_FLAG_RUNNING_STATUS)
@@ -348,7 +349,7 @@ char *mmsg_WriteMsgRaw(char *dest, mmsg_t *msg)
         // Write all the data
         for (i = 0u; i < msg->midi_data_len; i++)
         {
-            dest = util_StrWriteHex(dest, msg->midi_data[i]);
+            dest = util_strWriteHex(dest, msg->midi_data[i]);
         }
     }
 
@@ -364,11 +365,11 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
     }
     else if (msg->flags & MMSG_FLAG_RAW)
     {
-        dest = util_StrCpy_P(dest, PSTR("Raw data"));
+        dest = util_strCpy_P(dest, PSTR("Raw data"));
     }
     else if ((msg->flags & MMSG_FLAG_MSG_OK) == 0u)
     {
-        dest = util_StrCpy_P(dest, PSTR("Bad length"));
+        dest = util_strCpy_P(dest, PSTR("Bad length"));
     }
     else
     {
@@ -378,19 +379,19 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
         if (status >= 0xF0)
         {
             // Its a system status
-            dest = util_StrCpy_P(dest, MidiSysStatusNames[status - 0xF0]);
+            dest = util_strCpy_P(dest, MidiSysStatusNames[status - 0xF0]);
 
             if ((status == 0xF1) || (status == 0xF2) || (status == 0xF3))
             {
                 // We have one parameter (or more)
                 *(dest++) = ' ';
-                dest = util_StrWriteInt8LA(dest, msg->midi_data[0]);
+                dest = util_strWriteInt8LA(dest, msg->midi_data[0]);
 
                 if (status == 0xF2)
                 {
                     // We have two parameters
                     *(dest++) = ' ';
-                    dest = util_StrWriteInt8LA(dest, msg->midi_data[1]);
+                    dest = util_strWriteInt8LA(dest, msg->midi_data[1]);
                 }
             }
         }
@@ -403,9 +404,9 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
             // Write channel number followed by midi status
             *(dest++) = 'C';
             *(dest++) = 'h';
-            dest = util_StrWriteInt8LA(dest, (status & 0x0F)+1);
+            dest = util_strWriteInt8LA(dest, (status & 0x0F)+1);
             *(dest++) = ' ';
-            dest = util_StrCpy_P(dest, MidiStatusNames[(status >> 4u) - 8]);
+            dest = util_strCpy_P(dest, MidiStatusNames[(status >> 4u) - 8]);
 
             switch (status & 0xF0)
             {
@@ -413,30 +414,30 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
             case MIDI_STATUS_NOTE_OFF:
             case MIDI_STATUS_KEY_ATOUCH:
                 // Decode note number
-                dest = util_StrCpy_P(dest, NoteNames[(msg->midi_data[0] % 12)]);
-                dest = util_StrWriteInt8LA(dest,
+                dest = util_strCpy_P(dest, NoteNames[(msg->midi_data[0] % 12)]);
+                dest = util_strWriteInt8LA(dest,
                         (int8_t)(msg->midi_data[0] / 12) - (int8_t)5);
                 *(dest++) = ' ';
 
                 // Add velocity / pressure
-                dest = util_StrWriteInt8LA(dest, msg->midi_data[1]);
+                dest = util_strWriteInt8LA(dest, msg->midi_data[1]);
                 break;
 
             case MIDI_STATUS_CTRL_CHANGE:
                 // Write controller name=value
                 dest = mmsg_WriteControllerName(dest, msg->midi_data[0]);
                 *(dest++) = '=';
-                dest = util_StrWriteInt8LA(dest, msg->midi_data[1]);
+                dest = util_strWriteInt8LA(dest, msg->midi_data[1]);
                 break;
 
             case MIDI_STATUS_PROG_CHANGE:
                 // Write new prog name
-                dest = util_StrWriteInt8LA(dest, msg->midi_data[0]);
+                dest = util_strWriteInt16LA(dest, msg->midi_data[0] + 1);
                 break;
 
             case MIDI_STATUS_CHAN_ATOUCH:
                 // Write value
-                dest = util_StrWriteInt8LA(dest, msg->midi_data[0]);
+                dest = util_strWriteInt8LA(dest, msg->midi_data[0]);
                 break;
 
             case MIDI_STATUS_PITCH_WHEEL:
@@ -445,7 +446,7 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
                 sw |= msg->midi_data[1] << 7u; // MS 7 bits
                 sw -= 8192;
 
-                dest = util_StrWriteInt16(dest, sw);
+                dest = util_strWriteInt16(dest, sw);
                 break;
             }
         }

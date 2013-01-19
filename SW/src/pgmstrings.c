@@ -32,7 +32,7 @@ char InSources[4] = "X12*";
 
 
 // Write "InX", "In1, In2, In*
-char *pstr_WriteInX(char *dest, uint8_t i)
+char *pstr_writeInX(char *dest, uint8_t i)
 {
     (*dest++) = 'I';
     (*dest++) = 'n';

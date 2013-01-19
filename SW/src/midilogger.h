@@ -13,14 +13,14 @@
 
 void mlog_Initialize(void);
 
-void mlog_InMessageIsrHook(mmsg_t *msg);
-void mlog_OutMessageIsrHook(mmsg_t *msg);
-void mlog_TickIsrHook(void);
-void mlog_MainLoopHook(void);
+void mlog_handleMidiMsgIn_ISR(mmsg_t *msg);
+void mlog_handleMidiMsgOut_ISR(mmsg_t *msg);
+void mlog_handleTick_ISR(void);
+void mlog_handleMainLoop(void);
 
-uint8_t mlog_GetSubMenuCount(void);
-void    mlog_GetMenuText(char *dest, uint8_t item);
-uint8_t mlog_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
+uint8_t mlog_menuGetSubCount(void);
+void    mlog_menuGetText(char *dest, uint8_t item);
+uint8_t mlog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
 
 
 #endif /* MIDILOGGER_H_ */

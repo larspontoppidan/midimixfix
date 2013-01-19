@@ -42,9 +42,9 @@ char *mmsg_WriteMsgRaw(char *dest, mmsg_t *msg);
 char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg);
 
 // Translating aspects of a message:
-uint8_t mmsg_GetDataType(uint8_t x);
+uint8_t mmsg_getDataType(uint8_t x);
 char *mmsg_WriteControllerName(char *dest, uint8_t ctrl);
-uint8_t mmsg_GetDataCount(uint8_t midi_status);
+uint8_t mmsg_dataCountGet(uint8_t midi_status);
 
 // Is a certain key white or black on the keyboard?
 bool_t mmsg_IsKeyBlack(uint8_t key);

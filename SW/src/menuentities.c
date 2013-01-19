@@ -12,6 +12,7 @@
 
 #include "mainmenu.h"
 #include "midilogger.h"
+#include "generatemsg.h"
 #include "blockfilter.h"
 #include "curvefilter.h"
 #include "presets.h"
@@ -21,72 +22,79 @@ enum
     ENTITY_MAINTITLE = 0,
     ENTITY_PRESETS,
     ENTITY_MAINSETUP,
-    ENTITY_MIDILOG,
+    ENTITY_GENERATEMSG,
     ENTITY_BLOCKFILTER,
-    ENTITY_CURVEFILTER
+    ENTITY_CURVEFILTER,
+    ENTITY_MIDILOG
 };
 
-uint8_t menue_GetSubMenuCount(uint8_t entity)
+uint8_t menue_GetSubCount(uint8_t entity)
 {
     uint8_t ret = 0u;
 
     switch(entity)
     {
     case ENTITY_MAINTITLE:
-        ret = mainmenu_TitleGetSubMenuCount();
+        ret = mmenu_TitleMenuGetSubCount();
         break;
     case ENTITY_PRESETS:
-        ret = presets_GetSubMenuCount();
+        ret = presets_menuGetSubCount();
         break;
     case ENTITY_MAINSETUP:
-        ret = mainmenu_SetupGetSubMenuCount();
+        ret = mmenu_SetupMenuGetSubCount();
+        break;
+    case ENTITY_GENERATEMSG:
+        ret = genmsg_menuGetSubCount();
         break;
     case ENTITY_MIDILOG:
-        ret = mlog_GetSubMenuCount();
+        ret = mlog_menuGetSubCount();
         break;
     case ENTITY_BLOCKFILTER:
-        ret = blockf_GetSubMenuCount();
+        ret = blockf_MenuGetSubCount();
         break;
     case ENTITY_CURVEFILTER:
-        ret = curvef_GetSubMenuCount();
+        ret = curvef_MenuGetSubCount();
         break;
     default:
-        err_Register(ERR_INVALID_MENU_ENTITY);
+        err_Raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 
     return ret;
 }
 
-void menue_GetMenuText(uint8_t entity, char *dest, uint8_t item)
+void menue_GetText(uint8_t entity, char *dest, uint8_t item)
 {
     switch(entity)
     {
     case ENTITY_MAINTITLE:
-        mainmenu_TitleGetMenuText(dest, item);
+        mmenu_TitleMenuGetText(dest, item);
         break;
     case ENTITY_PRESETS:
-        presets_GetMenuText(dest, item);
+        presets_menuGetText(dest, item);
         break;
     case ENTITY_MAINSETUP:
-        mainmenu_SetupGetMenuText(dest, item);
+        mmenu_SetupMenuGetText(dest, item);
+        break;
+    case ENTITY_GENERATEMSG:
+        genmsg_menuGetText(dest, item);
         break;
     case ENTITY_MIDILOG:
-        mlog_GetMenuText(dest, item);
+        mlog_menuGetText(dest, item);
         break;
     case ENTITY_BLOCKFILTER:
-        blockf_GetMenuText(dest, item);
+        blockf_MenuGetText(dest, item);
         break;
     case ENTITY_CURVEFILTER:
-        curvef_GetMenuText(dest, item);
+        curvef_MenuGetText(dest, item);
         break;
     default:
-        err_Register(ERR_INVALID_MENU_ENTITY);
+        err_Raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 }
 
-uint8_t menue_MenuEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
+uint8_t menue_HandleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
                        uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = 0u;
@@ -94,25 +102,28 @@ uint8_t menue_MenuEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
     switch(entity)
     {
     case ENTITY_MAINTITLE:
-        ret = mainmenu_TitleMenuEvent(item, edit_mode, user_event, knob_delta);
+        ret = mmenu_TitleMenuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_PRESETS:
-        ret = presets_MenuEvent(item, edit_mode, user_event, knob_delta);
+        ret = presets_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_MAINSETUP:
-        ret = mainmenu_SetupMenuEvent(item, edit_mode, user_event, knob_delta);
+        ret = mmenu_SetupMenuHandleEvent(item, edit_mode, user_event, knob_delta);
+        break;
+    case ENTITY_GENERATEMSG:
+        ret = genmsg_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_MIDILOG:
-        ret = mlog_MenuEvent(item, edit_mode, user_event, knob_delta);
+        ret = mlog_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_BLOCKFILTER:
-        ret = blockf_MenuEvent(item, edit_mode, user_event, knob_delta);
+        ret = blockf_MenuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_CURVEFILTER:
-        ret = curvef_MenuEvent(item, edit_mode, user_event, knob_delta);
+        ret = curvef_MenuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     default:
-        err_Register(ERR_INVALID_MENU_ENTITY);
+        err_Raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 
@@ -133,7 +144,10 @@ uint8_t menue_ConfigGetSize(uint8_t entity)
         ret = 0;
         break;
     case ENTITY_MAINSETUP:
-        ret = mainmenu_ConfigGetSize();
+        ret = mmenu_ConfigGetSize();
+        break;
+    case ENTITY_GENERATEMSG:
+        ret = genmsg_configGetSize();
         break;
     case ENTITY_MIDILOG:
         ret = 0;
@@ -145,7 +159,7 @@ uint8_t menue_ConfigGetSize(uint8_t entity)
         ret = curvef_ConfigGetSize();
         break;
     default:
-        err_Register(ERR_INVALID_MENU_ENTITY);
+        err_Raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 
@@ -161,7 +175,10 @@ void menue_ConfigSave(uint8_t entity, uint8_t *dest)
     case ENTITY_PRESETS:
         break;
     case ENTITY_MAINSETUP:
-        mainmenu_ConfigSave(dest);
+        mmenu_ConfigSave(dest);
+        break;
+    case ENTITY_GENERATEMSG:
+        genmsg_configSave(dest);
         break;
     case ENTITY_MIDILOG:
         break;
@@ -172,7 +189,7 @@ void menue_ConfigSave(uint8_t entity, uint8_t *dest)
         curvef_ConfigSave(dest);
         break;
     default:
-        err_Register(ERR_INVALID_MENU_ENTITY);
+        err_Raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 }
@@ -186,7 +203,10 @@ void menue_ConfigLoad(uint8_t entity, uint8_t *dest)
     case ENTITY_PRESETS:
         break;
     case ENTITY_MAINSETUP:
-        mainmenu_ConfigLoad(dest);
+        mmenu_ConfigLoad(dest);
+        break;
+    case ENTITY_GENERATEMSG:
+        genmsg_configLoad(dest);
         break;
     case ENTITY_MIDILOG:
         break;
@@ -197,7 +217,7 @@ void menue_ConfigLoad(uint8_t entity, uint8_t *dest)
         curvef_ConfigLoad(dest);
         break;
     default:
-        err_Register(ERR_INVALID_MENU_ENTITY);
+        err_Raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 }

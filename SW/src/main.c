@@ -19,7 +19,8 @@
 #include "midiparser.h"
 #include "menu.h"
 #include "componenthooks.h"
-
+#include "errors.h"
+#include "generatemsg.h"
 
 /// VARIABLES
 
@@ -38,21 +39,21 @@ static void HandleUi(void)
 {
     int8_t i;
 
-    i = qd_GetDelta();
+    i = qd_getDelta();
 
     if (i != 0u)
     {
         menu_UserTurns(i, FALSE);
     }
 
-    i = qd_GetPushedDelta();
+    i = qd_getPushedDelta();
 
     if (i != 0u)
     {
         menu_UserTurns(i, TRUE);
     }
 
-    if (hal_GetButtonStates() & HAL_BUTTON_SEL)
+    if (hal_ButtonStatesGet() & HAL_BUTTON_SEL)
     {
         if (!uiSelectPushed)
         {
@@ -65,7 +66,7 @@ static void HandleUi(void)
         uiSelectPushed = FALSE;
     }
 
-    if (hal_GetButtonStates() & HAL_BUTTON_BACK)
+    if (hal_ButtonStatesGet() & HAL_BUTTON_BACK)
     {
         if (!uiBackPushed)
         {
@@ -85,23 +86,24 @@ static void HandleUi(void)
 int main(void)
 {
     // Initialize basic modules
+    err_Initialize();
     hal_Initialize();
     lcd_Initialize();
-    qd_Initialize();
+    qd_initialize();
     midiio_Initialize();
-    mparse_Initialize();
+    mparser_initialize();
 
     // Initialize components
     COMP_INITIALIZE_HOOKS();
 
     // Interrupts can start firing now
-    hal_EnableInterrupts();
+    hal_InterruptsEnable();
 
     // Let menu start up
     menu_Initialize();
 
     // Turn on display
-    hal_LcdBacklight(TRUE);
+    hal_LcdBacklightSet(TRUE);
 
     while(TRUE)
     {

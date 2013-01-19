@@ -50,7 +50,7 @@
 
 /////////////////////////   Variables    /////////////////////////
 
-bool_t lcdReady = FALSE;
+static bool_t lcdReady = FALSE;
 
 
 /////////////////////////   Prototypes   /////////////////////////
@@ -75,18 +75,18 @@ static void SendLcdCommand(uint8_t data)
         ;
 
     // Load data to data port and set direction output
-    LCD_DATA_PORT = data;
-    LCD_DATA_DDR = 0xFFu;
+    HAL_LCD_DATA_PORT = data;
+    HAL_LCD_DATA_DDR = 0xFFu;
 
     // Clear RW bit, clear RS bit
-    LCD_CTRL_PORT &= ~LCD_RW_BIT;
-    LCD_CTRL_PORT &= ~LCD_RS_BIT;
+    HAL_LCD_CTRL_PORT &= ~HAL_LCD_RW_BIT;
+    HAL_LCD_CTRL_PORT &= ~HAL_LCD_RS_BIT;
 
     // Make clock transitions
     _delay_us(10);
-    LCD_CTRL_PORT |= LCD_CLK_BIT;
+    HAL_LCD_CTRL_PORT |= HAL_LCD_CLK_BIT;
     _delay_us(10);
-    LCD_CTRL_PORT &= ~LCD_CLK_BIT;
+    HAL_LCD_CTRL_PORT &= ~HAL_LCD_CLK_BIT;
 
     // Now display is in a non ready state
     lcdReady = FALSE;
@@ -100,18 +100,18 @@ static void SendLcdData(uint8_t data)
         ;
 
     // Load data to data port and set direction output
-    LCD_DATA_PORT = data;
-    LCD_DATA_DDR = 0xFFu;
+    HAL_LCD_DATA_PORT = data;
+    HAL_LCD_DATA_DDR = 0xFFu;
 
     // Clear RW bit, set RS bit
-    LCD_CTRL_PORT &= ~LCD_RW_BIT;
-    LCD_CTRL_PORT |= LCD_RS_BIT;
+    HAL_LCD_CTRL_PORT &= ~HAL_LCD_RW_BIT;
+    HAL_LCD_CTRL_PORT |= HAL_LCD_RS_BIT;
 
     // Make clock transitions
     _delay_us(10);
-    LCD_CTRL_PORT |= LCD_CLK_BIT;
+    HAL_LCD_CTRL_PORT |= HAL_LCD_CLK_BIT;
     _delay_us(10);
-    LCD_CTRL_PORT &= ~(LCD_CLK_BIT | LCD_RS_BIT);
+    HAL_LCD_CTRL_PORT &= ~(HAL_LCD_CLK_BIT | HAL_LCD_RS_BIT);
 
     // Now display is in a non ready state
     lcdReady = FALSE;
@@ -123,20 +123,20 @@ static uint8_t ReadLcdStatus(void)
     uint8_t data;
 
     // Make port input, no pullup
-    LCD_DATA_PORT = 0u;
-    LCD_DATA_DDR = 0u;
+    HAL_LCD_DATA_PORT = 0u;
+    HAL_LCD_DATA_DDR = 0u;
 
     // Set RW bit, clear RS bit
-    LCD_CTRL_PORT |= LCD_RW_BIT;
-    LCD_CTRL_PORT &= ~LCD_RS_BIT;
+    HAL_LCD_CTRL_PORT |= HAL_LCD_RW_BIT;
+    HAL_LCD_CTRL_PORT &= ~HAL_LCD_RS_BIT;
 
     _delay_us(10);
-    LCD_CTRL_PORT |= LCD_CLK_BIT;
+    HAL_LCD_CTRL_PORT |= HAL_LCD_CLK_BIT;
     _delay_us(10);
 
-    data = LCD_DATA_PIN;
+    data = HAL_LCD_DATA_PIN;
 
-    LCD_CTRL_PORT &= ~(LCD_CLK_BIT | LCD_RS_BIT | LCD_RW_BIT);
+    HAL_LCD_CTRL_PORT &= ~(HAL_LCD_CLK_BIT | HAL_LCD_RS_BIT | HAL_LCD_RW_BIT);
 
     return data;
 }
@@ -146,20 +146,20 @@ static uint8_t ReadLcdStatus(void)
 //    uint8_t data;
 //
 //    // Make port input, no pullup
-//    LCD_DATA_PORT = 0u;
-//    LCD_DATA_DDR = 0u;
+//    HAL_LCD_DATA_PORT = 0u;
+//    HAL_LCD_DATA_DDR = 0u;
 //
 //    // Set RW bit, set or clear RS bit
-//    LCD_CTRL_PORT |= LCD_RW_BIT;
-//    LCD_CTRL_PORT |= LCD_RS_BIT;
+//    HAL_LCD_CTRL_PORT |= HAL_LCD_RW_BIT;
+//    HAL_LCD_CTRL_PORT |= HAL_LCD_RS_BIT;
 //
 //    _delay_us(10);
-//    LCD_CTRL_PORT |= LCD_CLK_BIT;
+//    HAL_LCD_CTRL_PORT |= HAL_LCD_CLK_BIT;
 //    _delay_us(10);
 //
-//    data = LCD_DATA_PIN;
+//    data = HAL_LCD_DATA_PIN;
 //
-//    LCD_CTRL_PORT &= ~(LCD_CLK_BIT | LCD_RS_BIT | LCD_RW_BIT);
+//    HAL_LCD_CTRL_PORT &= ~(HAL_LCD_CLK_BIT | HAL_LCD_RS_BIT | HAL_LCD_RW_BIT);
 //
 //    return data;
 //}
@@ -187,10 +187,10 @@ void lcd_Initialize(void)
 {
     // Make data port inputs and control signals low outputs
 
-    LCD_DATA_PORT = 0u;
-    LCD_DATA_DDR = 0u;
-    LCD_CTRL_PORT &= ~(LCD_CLK_BIT | LCD_RS_BIT | LCD_RW_BIT);
-    LCD_CTRL_DDR |= (LCD_CLK_BIT | LCD_RS_BIT | LCD_RW_BIT);
+    HAL_LCD_DATA_PORT = 0u;
+    HAL_LCD_DATA_DDR = 0u;
+    HAL_LCD_CTRL_PORT &= ~(HAL_LCD_CLK_BIT | HAL_LCD_RS_BIT | HAL_LCD_RW_BIT);
+    HAL_LCD_CTRL_DDR |= (HAL_LCD_CLK_BIT | HAL_LCD_RS_BIT | HAL_LCD_RW_BIT);
 
     // Delay for more than 15 ms for power on reset.
     _delay_ms(16u);
@@ -245,13 +245,13 @@ void lcd_Clear(void)
     SendLcdCommand(CMD_CLEAR_DISP);
 }
 
-void lcd_SetCursor(uint8_t row, uint8_t column)
+void lcd_CursorSet(uint8_t row, uint8_t column)
 {
     uint8_t addr;
 
     if ((row >= 4u) || (column >= 20u))
     {
-        err_Register(ERR_INTERNAL1);
+        err_Raise(ERR_MODULE_LCD, __LINE__);
     }
     else
     {

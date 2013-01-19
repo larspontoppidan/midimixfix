@@ -24,42 +24,43 @@
     mlog_Initialize();          \
     blockf_Initialize();        \
     curvef_Initialize();        \
-    presets_Initialize();       \
+    genmsg_initialize();        \
+    presets_initialize();       \
     } while (0)
 
 // For processing normal incoming messages
 #define COMP_MESSAGE_ISR_HOOKS(x) \
     do {                        \
-    mlog_InMessageIsrHook(x);   \
-    blockf_MessageIsrHook(x);   \
-    curvef_MessageIsrHook(x);   \
+    mlog_handleMidiMsgIn_ISR(x);   \
+    blockf_HookMidiMsg_ISR(x);   \
+    curvef_HookMidiMsg_ISR(x);   \
     } while (0)
 
 // For processing incoming realtime messages
 #define COMP_RT_MESSAGE_ISR_HOOKS(x) \
     do {                             \
-    mlog_InMessageIsrHook(x);        \
+    mlog_handleMidiMsgIn_ISR(x);        \
     } while (0)
 
 // For logging outgoing messages (no processing should be done at this point)
 #define COMP_OUT_MESSAGE_ISR_HOOKS(x) \
     do {                              \
-    mlog_OutMessageIsrHook(x);        \
+    mlog_handleMidiMsgOut_ISR(x);        \
     } while (0)
 
 // For hooking up to the tick interrupt
 #define COMP_TICK_ISR_HOOKS()     \
     do {                        \
-    mlog_TickIsrHook();         \
-    blockf_TickIsrHook();       \
+    mlog_handleTick_ISR();         \
+    blockf_HookTick_ISR();       \
     } while (0)
 
 // For hooking up to the main loop idle loop
 #define COMP_MAIN_LOOP_HOOKS()    \
     do {                        \
-    mlog_MainLoopHook();        \
-    blockf_MainLoopHook();      \
-    curvef_MainLoopHook();      \
+    mlog_handleMainLoop();        \
+    blockf_HookMainLoop();      \
+    curvef_HookMainLoop();      \
     } while (0)
 
 

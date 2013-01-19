@@ -188,7 +188,7 @@ void mlog_WriteDisplay(void)
 
     for (row = 0; row < LCD_ROWS; row++)
     {
-        lcd_SetCursor(row, 0);
+        lcd_CursorSet(row, 0);
 
         // Blit data from window buffer to lcd
         for (col = 0; col < LCD_COLUMNS; col++)
@@ -206,12 +206,12 @@ void mlog_WriteDisplay(void)
         }
     }
 
-    lcd_SetCursor(0,LCD_COLUMNS - 2);
+    lcd_CursorSet(0,LCD_COLUMNS - 2);
 
     if (LogMode == LOG_MODE_ACTIVE)
     {
         // We are enabled, write arrow
-        lcd_Write(LCD_RIGHTARROW);
+        lcd_Write(LCD_CHAR_RIGHTARROW);
     }
     else
     {
@@ -231,11 +231,11 @@ void mlog_WriteDisplay(void)
     // Set cursor depending on mode
     if (LogMode == LOG_MODE_PAUSED2)
     {
-        lcd_SetCursor(0, LCD_COLUMNS-1);
+        lcd_CursorSet(0, LCD_COLUMNS-1);
     }
     else
     {
-        lcd_SetCursor(LCD_ROWS-1, LCD_COLUMNS-1);
+        lcd_CursorSet(LCD_ROWS-1, LCD_COLUMNS-1);
     }
 }
 
@@ -252,7 +252,7 @@ void mlog_UserEvent(uint8_t user_event, int8_t knob_delta)
         if ((LogMode == LOG_MODE_ACTIVE) || (LogMode == LOG_MODE_PAUSED1))
         {
             // Move row
-            rowOffset = util_BoundedAddInt8(rowOffset, 0, LOG_SIZE - LCD_ROWS, -knob_delta);
+            rowOffset = util_boundedAddInt8(rowOffset, 0, LOG_SIZE - LCD_ROWS, -knob_delta);
         }
         else if (LogMode == LOG_MODE_PAUSED2)
         {
@@ -274,7 +274,7 @@ void mlog_UserEvent(uint8_t user_event, int8_t knob_delta)
         if ((LogMode == LOG_MODE_ACTIVE) || (LogMode == LOG_MODE_PAUSED1))
         {
             // Move col
-            colOffset = util_BoundedAddInt8(colOffset, -10, 10, knob_delta);
+            colOffset = util_boundedAddInt8(colOffset, -10, 10, knob_delta);
         }
     }
     else if (user_event == MENU_EVENT_SELECT)
@@ -314,7 +314,7 @@ void mlog_Initialize(void)
 }
 
 
-void mlog_InMessageIsrHook(mmsg_t *msg)
+void mlog_handleMidiMsgIn_ISR(mmsg_t *msg)
 {
     // Grab incoming message if enabled
 
@@ -327,7 +327,7 @@ void mlog_InMessageIsrHook(mmsg_t *msg)
         }
         else
         {
-            err_Register(ERR_INTERNAL6);
+            err_Raise(ERR_MODULE_MLOG, __LINE__);
         }
 
         LogIndexIsr++;
@@ -340,7 +340,7 @@ void mlog_InMessageIsrHook(mmsg_t *msg)
 }
 
 
-void mlog_OutMessageIsrHook(mmsg_t *msg)
+void mlog_handleMidiMsgOut_ISR(mmsg_t *msg)
 {
     // Grab outgoing message if enabled
 
@@ -352,7 +352,7 @@ void mlog_OutMessageIsrHook(mmsg_t *msg)
         }
         else
         {
-            err_Register(ERR_INTERNAL6);
+            err_Raise(ERR_MODULE_MLOG, __LINE__);
         }
 
         LogIndexIsr++;
@@ -364,12 +364,12 @@ void mlog_OutMessageIsrHook(mmsg_t *msg)
     }
 }
 
-void mlog_TickIsrHook(void)
+void mlog_handleTick_ISR(void)
 {
 
 }
 
-void mlog_MainLoopHook(void)
+void mlog_handleMainLoop(void)
 {
     if (LogMode != LOG_MODE_OFF)
     {
@@ -398,20 +398,20 @@ void mlog_MainLoopHook(void)
 
 /// Menu implementation
 
-uint8_t mlog_GetSubMenuCount(void)
+uint8_t mlog_menuGetSubCount(void)
 {
     return 0u;
 }
 
-void mlog_GetMenuText(char *dest, uint8_t item)
+void mlog_menuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        util_StrCpy_P(dest, mlogTitle);
+        util_strCpy_P(dest, mlogTitle);
     }
 }
 
-uint8_t mlog_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t mlog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 

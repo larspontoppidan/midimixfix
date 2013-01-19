@@ -26,6 +26,6 @@ extern char PROGMEM pstr_Add[];
 extern char PROGMEM pstr_Remove[];
 extern char PROGMEM pstr_Chan[];
 
-char *pstr_WriteInX(char *dest, uint8_t i);
+char *pstr_writeInX(char *dest, uint8_t i);
 
 #endif /* PGMSTRINGS_H_ */

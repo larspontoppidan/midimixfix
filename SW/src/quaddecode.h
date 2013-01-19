@@ -11,14 +11,13 @@
 #include "common.h"
 
 
-void qd_Initialize(void);
+void qd_initialize(void);
 
-void qd_AChangeIsr(bool_t b_value, bool_t pushed);
+void qd_handleAchange_isr(bool_t b_value, bool_t pushed);
+void qd_handleBchange_isr(bool_t a_value, bool_t pushed);
 
-void qd_BChangeIsr(bool_t a_value, bool_t pushed);
-
-int8_t qd_GetDelta(void);
-int8_t qd_GetPushedDelta(void);
+int8_t qd_getDelta(void);
+int8_t qd_getPushedDelta(void);
 
 
 #endif /* QUADDECODE_H_ */

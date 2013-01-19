@@ -50,17 +50,17 @@
 
 
 
-#define CURVEF_NOTE_ON        0
-#define CURVEF_NOTE_ON_BLACK  1
-#define CURVEF_NOTE_ON_WHITE  2
-#define CURVEF_NOTE_OFF       3
-#define CURVEF_KEY_AT         4
-#define CURVEF_CHAN_AT        5
-#define CURVEF_CTRL           6
+#define FILTER_NOTE_ON        0
+#define FILTER_NOTE_ON_BLACK  1
+#define FILTER_NOTE_ON_WHITE  2
+#define FILTER_NOTE_OFF       3
+#define FILTER_KEY_AT         4
+#define FILTER_CHAN_AT        5
+#define FILTER_CTRL           6
 
-#define CURVEF_MODES          7
+#define FILTER_MODES          7
 
-char Curvef_ModeName[CURVEF_MODES][15] PROGMEM =
+static char filterModeNames[FILTER_MODES][15] PROGMEM =
 {
     {"N.On"},           // 0
     {"N.On BlackKeys"}, // 1
@@ -71,7 +71,7 @@ char Curvef_ModeName[CURVEF_MODES][15] PROGMEM =
     {"CC:"},            // 6
 };
 
-uint8_t Curvef_ModeMidiStatus[CURVEF_MODES] PROGMEM =
+static uint8_t filterModeStatusses[FILTER_MODES] PROGMEM =
 {
         MIDI_STATUS_NOTE_ON,
         MIDI_STATUS_NOTE_ON,
@@ -92,69 +92,69 @@ typedef struct
     int8_t mode;
 
     // Controller number, if midi ctl such:
-    uint8_t ctrl_no;
+    uint8_t ctrlNo;
 
     // The curve math
-    curvemath_t curve;
+    cmath_curve_t curve;
 
-} curvef_t;
+} curveFilter_t;
 
 
 // Variables
 
-bool_t cfEnabled;
-char   cfTitle[]  PROGMEM = "Curve filter ";
+static bool_t filterEnabled;
+static char   titleString[]  PROGMEM = "Curve filter ";
 
-uint8_t cfManageMode;
+uint8_t menuManageMode;
 
-#define CF_CURVE_MAX 8
+#define FILTER_COUNT_MAX 8
 
-uint8_t cfCurves;
-curvef_t cfCurve[CF_CURVE_MAX];
+static uint8_t filterCount;
+static curveFilter_t filters[FILTER_COUNT_MAX];
 
 // The midi_status to work with corresponding to mode
 // Derived from cfCurve settings to optimize ISR implementation
-uint8_t cfCurveMidiStatus[CF_CURVE_MAX];
+static uint8_t filterMidiStatus[FILTER_COUNT_MAX];
 
 
 void curvef_Initialize(void)
 {
-    cfCurves = 0;
-    cfEnabled = FALSE;
+    filterCount = 0;
+    filterEnabled = FALSE;
 }
 
-void curvef_MessageIsrHook(mmsg_t *msg)
+void curvef_HookMidiMsg_ISR(mmsg_t *msg)
 {
-    if (cfEnabled != FALSE)
+    if (filterEnabled != FALSE)
     {
         // Check that OK flag is on, DISCARD flag is off, RAW flag is off
         if ((msg->flags & (MMSG_FLAG_MSG_OK | MMSG_FLAG_DISCARD | MMSG_FLAG_RAW)) == MMSG_FLAG_MSG_OK)
         {
             uint8_t i;
 
-            for (i = 0; i < cfCurves; i++)
+            for (i = 0; i < filterCount; i++)
             {
                 // Check source is what we want
-                if ((msg->flags & cfCurve[i].source) != 0)
+                if ((msg->flags & filters[i].source) != 0)
                 {
                     // Does this curve apply to message?
-                    if ((msg->midi_status & MIDI_STATUS_MASK) == cfCurveMidiStatus[i])
+                    if ((msg->midi_status & MIDI_STATUS_MASK) == filterMidiStatus[i])
                     {
                         // Apparently! Look into the finer details and set
                         // what byte of message to process
 
                         uint8_t apply_curve = 0;
 
-                        switch (cfCurve[i].mode)
+                        switch (filters[i].mode)
                         {
-                        case CURVEF_NOTE_ON:
-                        case CURVEF_NOTE_OFF:
-                        case CURVEF_KEY_AT:
+                        case FILTER_NOTE_ON:
+                        case FILTER_NOTE_OFF:
+                        case FILTER_KEY_AT:
                             // Work on data byte 2
                             apply_curve = 2;
                             break;
 
-                        case CURVEF_NOTE_ON_BLACK:
+                        case FILTER_NOTE_ON_BLACK:
                             // This curve is only for black keys
                             if (mmsg_IsKeyBlack(msg->midi_data[0]))
                             {
@@ -162,7 +162,7 @@ void curvef_MessageIsrHook(mmsg_t *msg)
                             }
                             break;
 
-                        case CURVEF_NOTE_ON_WHITE:
+                        case FILTER_NOTE_ON_WHITE:
                             // This curve is only for white keys
                             if (mmsg_IsKeyBlack(msg->midi_data[0]) == FALSE)
                             {
@@ -170,14 +170,14 @@ void curvef_MessageIsrHook(mmsg_t *msg)
                             }
                             break;
 
-                        case CURVEF_CHAN_AT:
+                        case FILTER_CHAN_AT:
                             // Work on byte 1
                             apply_curve = 1;
                             break;
 
-                        case CURVEF_CTRL:
+                        case FILTER_CTRL:
                             // This curve is for a certain controller
-                            if (msg->midi_data[0] == cfCurve[i].ctrl_no)
+                            if (msg->midi_data[0] == filters[i].ctrlNo)
                             {
                                 // And it is correct
                                 apply_curve = 2;
@@ -188,9 +188,9 @@ void curvef_MessageIsrHook(mmsg_t *msg)
                         if (apply_curve != 0)
                         {
                             // We are still happy about this, then do it
-                            msg->midi_data[apply_curve - 1] = curvem_ApplyCurve(
+                            msg->midi_data[apply_curve - 1] = cmath_CurveApply(
                                     msg->midi_data[apply_curve - 1],
-                                    &(cfCurve[i].curve));
+                                    &(filters[i].curve));
                         }
                     }
                 }
@@ -200,14 +200,14 @@ void curvef_MessageIsrHook(mmsg_t *msg)
 
 }
 
-void curvef_MainLoopHook(void)
+void curvef_HookMainLoop(void)
 {
 
 }
 
-uint8_t curvef_GetSubMenuCount(void)
+uint8_t curvef_MenuGetSubCount(void)
 {
-    return cfEnabled ? ((cfCurves * 2) + 1) : 0;
+    return filterEnabled ? ((filterCount * 2) + 1) : 0;
 }
 
 char *curvef_RenderSubMenu(char *dest, uint8_t i)
@@ -217,15 +217,15 @@ char *curvef_RenderSubMenu(char *dest, uint8_t i)
     if ((i & 1) == 0)
     {
         // First line of a curve setup "InX ..."
-        dest = pstr_WriteInX(dest, cfCurve[c].source);
+        dest = pstr_writeInX(dest, filters[c].source);
         (*dest++) = ' ';
 
-        dest = util_StrCpy_P(dest, Curvef_ModeName[cfCurve[c].mode]);
+        dest = util_strCpy_P(dest, filterModeNames[filters[c].mode]);
 
         // If this is a controller, also write name of controller
-        if (cfCurve[c].mode == CURVEF_CTRL)
+        if (filters[c].mode == FILTER_CTRL)
         {
-            dest = mmsg_WriteControllerName(dest, cfCurve[c].ctrl_no);
+            dest = mmsg_WriteControllerName(dest, filters[c].ctrlNo);
         }
     }
     else
@@ -233,11 +233,11 @@ char *curvef_RenderSubMenu(char *dest, uint8_t i)
         // Second line of a curve setup. Write the curve math specs
         // " -127 2.0 -127"
         (*dest++) = ' ';
-        dest = curvem_WriteLow(dest, &(cfCurve[c].curve));
+        dest = cmath_WriteLow(dest, &(filters[c].curve));
         (*dest++) = ' ';
-        dest = curvem_WriteType(dest, &(cfCurve[c].curve));
+        dest = cmath_WriteType(dest, &(filters[c].curve));
         (*dest++) = ' ';
-        dest = curvem_WriteHigh(dest, &(cfCurve[c].curve));
+        dest = cmath_WriteHigh(dest, &(filters[c].curve));
     }
 
     return dest;
@@ -246,52 +246,52 @@ char *curvef_RenderSubMenu(char *dest, uint8_t i)
 void curvef_AddCurve(void)
 {
     // Add new curve.
-    if (cfCurves < CF_CURVE_MAX)
+    if (filterCount < FILTER_COUNT_MAX)
     {
         // Set default values
-        cfCurve[cfCurves].source = 1;
-        cfCurve[cfCurves].ctrl_no = 0;
-        cfCurve[cfCurves].mode = CURVEF_NOTE_ON;
-        cfCurveMidiStatus[cfCurves] = MIDI_STATUS_NOTE_ON;
-        curvem_ResetCurve(&(cfCurve[cfCurves].curve));
-        cfCurves++;
+        filters[filterCount].source = 1;
+        filters[filterCount].ctrlNo = 0;
+        filters[filterCount].mode = FILTER_NOTE_ON;
+        filterMidiStatus[filterCount] = MIDI_STATUS_NOTE_ON;
+        cmath_CurveReset(&(filters[filterCount].curve));
+        filterCount++;
     }
 }
 
 void curvef_RemoveCurve(void)
 {
-    if (cfCurves > 0)
+    if (filterCount > 0)
     {
-        cfCurves--;
+        filterCount--;
     }
 }
 
-void curvef_GetMenuText(char *dest, uint8_t item)
+void curvef_MenuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        util_StrCpy_P(dest, cfTitle);
+        util_strCpy_P(dest, titleString);
 
-        if (cfEnabled)
+        if (filterEnabled)
         {
-            util_StrCpy_P(dest + 14, pstr_OnParentheses);
+            util_strCpy_P(dest + 14, pstr_OnParentheses);
         }
         else
         {
-            util_StrCpy_P(dest + 14, pstr_OffParentheses);
+            util_strCpy_P(dest + 14, pstr_OffParentheses);
         }
     }
-    else if (item == ((cfCurves * 2) + 1))
+    else if (item == ((filterCount * 2) + 1))
     {
-        dest = util_StrCpy_P(dest, pstr_ManageEllipsis);
+        dest = util_strCpy_P(dest, pstr_ManageEllipsis);
 
-        if (cfManageMode == 1)
+        if (menuManageMode == 1)
         {
-            util_StrCpy_P(dest, pstr_Add);
+            util_strCpy_P(dest, pstr_Add);
         }
-        else if (cfManageMode == 2)
+        else if (menuManageMode == 2)
         {
-            util_StrCpy_P(dest, pstr_Remove);
+            util_strCpy_P(dest, pstr_Remove);
         }
     }
     else
@@ -300,7 +300,7 @@ void curvef_GetMenuText(char *dest, uint8_t item)
     }
 }
 
-uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t curvef_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 
@@ -328,14 +328,14 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
             if (user_event == MENU_EVENT_TURN)
             {
                 // Toggle on / off status
-                cfEnabled = util_BoundedAddInt8(cfEnabled, 0, 1, knob_delta);
+                filterEnabled = util_boundedAddInt8(filterEnabled, 0, 1, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
                 ret = 16 | MENU_UPDATE_ALL;
             }
         }
     }
-    else if (item == ((cfCurves * 2) + 1))
+    else if (item == ((filterCount * 2) + 1))
     {
         if (edit_mode == 0)
         {
@@ -345,7 +345,7 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 ret = 10;
 
                 // Our mode is initially Add
-                cfManageMode = 1;
+                menuManageMode = 1;
             }
         }
         else if (edit_mode == 1)
@@ -355,28 +355,28 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
             if (user_event == MENU_EVENT_TURN)
             {
                 // User is turning knob in manage mode
-                cfManageMode = util_BoundedAddInt8(cfManageMode, 1, 2, knob_delta);
+                menuManageMode = util_boundedAddInt8(menuManageMode, 1, 2, knob_delta);
             }
             else if (user_event == MENU_EVENT_SELECT)
             {
                 // User is selecting current manage mode
-                if (cfManageMode == 1)
+                if (menuManageMode == 1)
                 {
                     curvef_AddCurve();
-                    cfManageMode = 0;
+                    menuManageMode = 0;
                     ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
                 }
-                else if (cfManageMode == 2)
+                else if (menuManageMode == 2)
                 {
                     curvef_RemoveCurve();
-                    cfManageMode = 0;
+                    menuManageMode = 0;
                     ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
                 }
             }
             else if (user_event == MENU_EVENT_BACK)
             {
                 // Backing out of manage mode
-                cfManageMode = 0;
+                menuManageMode = 0;
             }
         }
     }
@@ -402,7 +402,7 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 else if (edit_mode == 2)
                 {
                     // Allow this if it is a controller curve
-                    if (cfCurve[c].mode == CURVEF_CTRL)
+                    if (filters[c].mode == FILTER_CTRL)
                     {
                         ret = 7;
                     }
@@ -413,22 +413,22 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 if (edit_mode == 1)
                 {
                     ret = 0;
-                    cfCurve[c].source =
-                            util_BoundedAddInt8(cfCurve[c].source, 1, 3, knob_delta);
+                    filters[c].source =
+                            util_boundedAddInt8(filters[c].source, 1, 3, knob_delta);
                 }
                 else if (edit_mode == 2)
                 {
                     ret = 4;
-                    cfCurve[c].mode =
-                        util_BoundedAddInt8(cfCurve[c].mode, 0, (CURVEF_MODES-1), knob_delta);
-                    cfCurveMidiStatus[c] = pgm_read_byte(&(Curvef_ModeMidiStatus[cfCurve[c].mode]));
+                    filters[c].mode =
+                        util_boundedAddInt8(filters[c].mode, 0, (FILTER_MODES-1), knob_delta);
+                    filterMidiStatus[c] = pgm_read_byte(&(filterModeStatusses[filters[c].mode]));
                 }
                 else if (edit_mode == 3)
                 {
                     ret = 7;
-                    cfCurve[c].mode = CURVEF_CTRL;
-                    cfCurveMidiStatus[c] = MIDI_STATUS_CTRL_CHANGE;
-                    cfCurve[c].ctrl_no = (cfCurve[c].ctrl_no + knob_delta) & 127;
+                    filters[c].mode = FILTER_CTRL;
+                    filterMidiStatus[c] = MIDI_STATUS_CTRL_CHANGE;
+                    filters[c].ctrlNo = (filters[c].ctrlNo + knob_delta) & 127;
                 }
             }
         }
@@ -455,18 +455,18 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 if (edit_mode == 1)
                 {
                     ret = 1;
-                    cfCurve[c].curve.offset += knob_delta;
+                    filters[c].curve.offset += knob_delta;
                 }
                 else if (edit_mode == 2)
                 {
                     ret = 5;
-                    cfCurve[c].curve.curve_type =
-                        util_BoundedAddInt8(cfCurve[c].curve.curve_type, 0, CURVEM_TYPES-1, knob_delta);
+                    filters[c].curve.type =
+                        util_boundedAddInt8(filters[c].curve.type, 0, CURVEM_TYPES-1, knob_delta);
                 }
                 else if (edit_mode == 3)
                 {
                     ret = 9;
-                    cfCurve[c].curve.gain += (int16_t)knob_delta;
+                    filters[c].curve.gain += (int16_t)knob_delta;
                 }
             }
         }
@@ -479,15 +479,15 @@ uint8_t curvef_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
 
 uint8_t curvef_ConfigGetSize(void)
 {
-    return 2 + CF_CURVE_MAX * sizeof(curvef_t);
+    return 2 + FILTER_COUNT_MAX * sizeof(curveFilter_t);
 }
 
 void curvef_ConfigSave(uint8_t *dest)
 {
-    *(dest++) = cfEnabled;
-    *(dest++) = cfCurves;
+    *(dest++) = filterEnabled;
+    *(dest++) = filterCount;
 
-    memcpy(dest, &(cfCurve[0]), CF_CURVE_MAX * sizeof(curvef_t));
+    memcpy(dest, &(filters[0]), FILTER_COUNT_MAX * sizeof(curveFilter_t));
 }
 
 void curvef_ConfigLoad(uint8_t *dest)
@@ -495,18 +495,18 @@ void curvef_ConfigLoad(uint8_t *dest)
     bool_t new_enabled;
     uint8_t i;
 
-    cfEnabled = FALSE;
+    filterEnabled = FALSE;
 
     new_enabled = *(dest++);
-    cfCurves = *(dest++);
+    filterCount = *(dest++);
 
-    memcpy(&(cfCurve[0]), dest, CF_CURVE_MAX * sizeof(curvef_t));
+    memcpy(&(filters[0]), dest, FILTER_COUNT_MAX * sizeof(curveFilter_t));
 
     // Set correct midi status according to modes
-    for (i = 0; i < CF_CURVE_MAX; i++)
+    for (i = 0; i < FILTER_COUNT_MAX; i++)
     {
-        cfCurveMidiStatus[i] = pgm_read_byte(&(Curvef_ModeMidiStatus[cfCurve[i].mode]));
+        filterMidiStatus[i] = pgm_read_byte(&(filterModeStatusses[filters[i].mode]));
     }
 
-    cfEnabled = new_enabled;
+    filterEnabled = new_enabled;
 }

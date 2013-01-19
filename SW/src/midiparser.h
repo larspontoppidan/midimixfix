@@ -16,10 +16,10 @@
 // The parsing results in calls to midiio message creation api
 
 
-void mparse_Initialize(void);
+void mparser_initialize(void);
 
-void mparse_Input1Rx(uint8_t x);
-void mparse_Input2Rx(uint8_t x);
+void mparser_handleInput1Rx_Isr(uint8_t x);
+void mparser_handleInput2Rx_Isr(uint8_t x);
 
 
 

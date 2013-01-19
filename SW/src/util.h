@@ -10,13 +10,16 @@
 
 #include <avr/pgmspace.h>
 
-char *util_StrWriteInt16(char *dest, int16_t value);
-char *util_StrWriteUint8(char *dest, uint8_t value);
-char *util_StrWriteInt8LA(char *dest, int8_t value);
-char *util_StrWriteInt16LA(char *dest, int16_t value);
-char *util_StrWriteHex(char *dest, uint8_t value);
-char *util_StrCpy_P(char *dest, PGM_P src);
+char *util_strWriteInt16(char *dest, int16_t value);
+char *util_strWriteUint8(char *dest, uint8_t value);
+char *util_strWriteInt8LA(char *dest, int8_t value);
+char *util_strWriteInt16LA(char *dest, int16_t value);
+char *util_strWriteHex(char *dest, uint8_t value);
+char *util_strCpy_P(char *dest, PGM_P src);
 
-int8_t util_BoundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add);
+int8_t util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add);
+
+void util_strWriteNumberParentheses(char *dest, uint8_t value);
+
 
 #endif /* UTIL_H_ */

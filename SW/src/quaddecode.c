@@ -75,7 +75,7 @@ int8_t UpdateState(uint8_t new_state)
     return delta;
 }
 
-void qd_Initialize(void)
+void qd_initialize(void)
 {
     current_state = 0;
     knobDelta = 0;
@@ -83,7 +83,7 @@ void qd_Initialize(void)
 }
 
 
-void qd_AChangeIsr(bool_t b_value, bool_t pushed)
+void qd_handleAchange_isr(bool_t b_value, bool_t pushed)
 {
     uint8_t new_state;
 
@@ -99,7 +99,7 @@ void qd_AChangeIsr(bool_t b_value, bool_t pushed)
     }
 }
 
-void qd_BChangeIsr(bool_t a_value, bool_t pushed)
+void qd_handleBchange_isr(bool_t a_value, bool_t pushed)
 {
     uint8_t new_state;
 
@@ -116,7 +116,7 @@ void qd_BChangeIsr(bool_t a_value, bool_t pushed)
 }
 
 
-int8_t qd_GetPushedDelta(void)
+int8_t qd_getPushedDelta(void)
 {
     int8_t delta = 0;
 
@@ -126,18 +126,18 @@ int8_t qd_GetPushedDelta(void)
         // Read out the delta value and reset it in one
         // atomic operation:
 
-        hal_DisableInterrupts();
+        hal_InterruptsDisable();
 
         delta = knobPushedDelta;
         knobPushedDelta = 0u;
 
-        hal_EnableInterrupts();
+        hal_InterruptsEnable();
     }
 
     return delta;
 }
 
-int8_t qd_GetDelta(void)
+int8_t qd_getDelta(void)
 {
     int8_t delta = 0;
 
@@ -147,12 +147,12 @@ int8_t qd_GetDelta(void)
         // Read out the delta value and reset it in one
         // atomic operation:
 
-        hal_DisableInterrupts();
+        hal_InterruptsDisable();
 
         delta = knobDelta;
         knobDelta = 0u;
 
-        hal_EnableInterrupts();
+        hal_InterruptsEnable();
     }
 
     return delta;

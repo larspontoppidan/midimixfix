@@ -7,10 +7,11 @@
 
 #include "common.h"
 #include "util.h"
+#include "pgmstrings.h"
 
 int16_t sutil_TenthsTab[5] = {10000, 1000, 100, 10, 1};
 
-char *util_StrWriteInt16(char *dest, int16_t value)
+char *util_strWriteInt16(char *dest, int16_t value)
 {
     uint8_t p;
     uint8_t c;
@@ -60,7 +61,7 @@ char *util_StrWriteInt16(char *dest, int16_t value)
 }
 
 
-char *util_StrWriteInt16LA(char *dest, int16_t value)
+char *util_strWriteInt16LA(char *dest, int16_t value)
 {
     uint8_t p;
     uint8_t c;
@@ -102,7 +103,7 @@ char *util_StrWriteInt16LA(char *dest, int16_t value)
 }
 
 
-char * util_StrWriteUint8(char *dest, uint8_t value)
+char * util_strWriteUint8(char *dest, uint8_t value)
 {
     uint8_t c;
     bool_t numbernow = FALSE;
@@ -146,7 +147,7 @@ char * util_StrWriteUint8(char *dest, uint8_t value)
 }
 
 
-char *util_StrWriteInt8LA(char *dest, int8_t x)
+char *util_strWriteInt8LA(char *dest, int8_t x)
 {
     uint8_t value;
     uint8_t c;
@@ -194,7 +195,7 @@ char *util_StrWriteInt8LA(char *dest, int8_t x)
 }
 
 
-char *util_StrWriteHex(char *dest, uint8_t x)
+char *util_strWriteHex(char *dest, uint8_t x)
 {
     uint8_t c;
 
@@ -224,7 +225,7 @@ char *util_StrWriteHex(char *dest, uint8_t x)
 }
 
 
-char *util_StrCpy_P(char *dest, PGM_P src)
+char *util_strCpy_P(char *dest, PGM_P src)
 {
     char c;
 
@@ -242,23 +243,71 @@ char *util_StrCpy_P(char *dest, PGM_P src)
     return dest;
 }
 
-int8_t util_BoundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
+int8_t util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
 {
-    int8_t x;
+    // Work in 16 bit signed space to avoid rollover
+    int16_t x;
 
-    x = value + add;
+    x = (int16_t)value + (int16_t)add;
 
-    if (x < min)
+    if (x < (int16_t)min)
     {
         x = min;
     }
-    else if (x > max)
+    else if (x > (int16_t)max)
     {
         x = max;
     }
 
-    return x;
+    return (int8_t)x;
 }
+
+
+// Specialized function for writing right aligned component status
+//
+// Writes the following to dest[0] to dest[4]:
+// "(OFF)"   value = 0
+// "  (1)"   value = 1
+// "  (2)"   value = 2
+// " (10)"   value = 10
+// "(200)"   value = 200
+
+void util_strWriteNumberParentheses(char *dest, uint8_t value)
+{
+    if (value == 0)
+    {
+        util_strCpy_P(dest, pstr_OffParentheses);
+    }
+    else
+    {
+        if (value < 10)
+        {
+            // One digit
+            dest[0] = ' ';
+            dest[1] = ' ';
+            dest[2] = '(';
+            dest[3] = value + '0';
+        }
+        else if (value < 100)
+        {
+            // Two digits
+            dest[0] = ' ';
+            dest[1] = '(';
+            util_strWriteInt8LA(&(dest[2]), value);
+        }
+        else
+        {
+            // Three digits
+            dest[0] = '(';
+            util_strWriteInt16LA(&(dest[1]), (int16_t)value);
+        }
+
+        dest[4] = ')';
+    }
+
+}
+
+
 /*
  *
 void lcd_WriteBin(uint8_t x)

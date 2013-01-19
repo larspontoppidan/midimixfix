@@ -10,20 +10,41 @@
 
 #include "common.h"
 
-// Error codes:
-#define ERR_MIDIIN1_OVERFLOW  1
-#define ERR_MIDIIN2_OVERFLOW  2
 
-#define ERR_INVALID_MENU_ENTITY  1   // componentfactory.c
-#define ERR_INTERNAL1   100   // lcd.c, lcd_SetCursor: Invalid column / row
-#define ERR_INTERNAL2   101   // quaddecode.c, lcd_SetCursor: Invalid column / row
-#define ERR_INTERNAL3   102   // midimessage.c, mmsg_UpdateParser
-#define ERR_INTERNAL4   103   // midimessage.c, mmsg_GetMsgByte
-#define ERR_INTERNAL5   105   // hal.c
-#define ERR_INTERNAL6   106   // midilogger.c
+enum
+{
+    ERR_MODULE_MAIN,
+    ERR_MODULE_HAL,
+    ERR_MODULE_LCD,
+    ERR_MODULE_BLOCKF,
+    ERR_MODULE_CURVEF,
+    ERR_MODULE_CMATH,
+    ERR_MODULE_ERR,
+    ERR_MODULE_GENMSG,
+    ERR_MODULE_MMENU,
+    ERR_MODULE_MENU,
+    ERR_MODULE_MENUE,
+    ERR_MODULE_MIDIIO,
+    ERR_MODULE_MLOG,
+    ERR_MODULE_MMSG,
+    ERR_MODULE_MPARSER,
+    ERR_MODULE_PSTR,
+    ERR_MODULE_PRESETS,
+    ERR_MODULE_QD,
+    ERR_MODULE_UTIL
+};
 
-void err_Register(uint8_t err_code);
-void err_UnRegister(uint8_t err_code);
+void err_Initialize(void);
+void err_Raise(uint8_t module, uint16_t line_number);
+
+void err_DebugPrint(uint8_t x);
+void err_DebugPrintBlock(const void *src, uint8_t size);
+
+void err_Reset(void);
+char * err_Print(char *dest, uint8_t number);
+uint8_t err_GetCount(void);
+
+void err_PrintDebug(char *dst);
 
 
 #endif /* ERRORS_H_ */

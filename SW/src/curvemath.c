@@ -13,7 +13,7 @@
 
 // Curve type names
 
-char CurveNames[CURVEM_TYPES][4] PROGMEM =
+static char curveNames[CURVEM_TYPES][4] PROGMEM =
 {
     {"Lin"},  // 0
     {"0.6"},  // 1
@@ -24,7 +24,7 @@ char CurveNames[CURVEM_TYPES][4] PROGMEM =
     {"-N-"},  // 6
 };
 
-#define CURVEM_GAIN_SCALE  64
+#define GAIN_FIXPOINT_SCALE  64
 
 
 
@@ -45,7 +45,7 @@ char CurveNames[CURVEM_TYPES][4] PROGMEM =
 // array(a).reshape(-1,8)
 
 
-uint8_t CurveTable[CURVEM_TYPES][128] PROGMEM =
+static uint8_t curveTables[CURVEM_TYPES][128] PROGMEM =
 {
     // Linear
     {   0,   2,   4,   6,   8,  10,  12,  14,
@@ -204,11 +204,11 @@ int16_t curvem_CalculateHigh(int16_t gain, int8_t offset)
     // Apply gain on maximum value
     w = ((int16_t)254) * gain;
 
-    // Gain is a fix-point number with scaling factor CURVEM_GAIN_SCALE
+    // Gain is a fix-point number with scaling factor GAIN_FIXPOINT_SCALE
     // The curve lookup also has scaling a factor: 2
 
     // Convert back to normal scale
-    w = w / (CURVEM_GAIN_SCALE*2);
+    w = w / (GAIN_FIXPOINT_SCALE*2);
 
     // Add offset
     w += offset;
@@ -218,48 +218,49 @@ int16_t curvem_CalculateHigh(int16_t gain, int8_t offset)
 
 // PUBLIC
 
-void curvem_ResetCurve(curvemath_t *curve)
+void cmath_CurveReset(cmath_curve_t *curve)
 {
-    curve->curve_type = 0;
-    curve->gain = CURVEM_GAIN_SCALE;
+    curve->type = 0;
+    curve->gain = GAIN_FIXPOINT_SCALE;
     curve->offset = 0;
 }
 
 // Functions for displaying the curve spec
-char *curvem_WriteLow(char *dest, curvemath_t *curve)
+char *cmath_WriteLow(char *dest, cmath_curve_t *curve)
 {
-    return util_StrWriteInt8LA(dest, curve->offset);
+    return util_strWriteInt8LA(dest, curve->offset);
 }
 
-char *curvem_WriteType(char *dest, curvemath_t *curve)
+char *cmath_WriteType(char *dest, cmath_curve_t *curve)
 {
-    return util_StrCpy_P(dest, CurveNames[curve->curve_type]);
+    return util_strCpy_P(dest, curveNames[curve->type]);
 }
 
-char *curvem_WriteHigh(char *dest, curvemath_t *curve)
+char *cmath_WriteHigh(char *dest, cmath_curve_t *curve)
 {
     int16_t high = curvem_CalculateHigh(curve->gain, curve->offset);
 
-    return util_StrWriteInt16LA(dest, high);
+    return util_strWriteInt16LA(dest, high);
 }
 
 // Applying curve on a value
-uint8_t curvem_ApplyCurve(uint8_t x, curvemath_t *curve)
+uint8_t cmath_CurveApply(uint8_t x, cmath_curve_t *curve)
 {
     uint8_t ret;
     int16_t w;
 
     // Non-linear curve look up
-    x = pgm_read_byte(&(CurveTable[curve->curve_type][x]));
+    x = pgm_read_byte(&(curveTables[curve->type][x]));
 
     // Apply gain on x
     w = ((int16_t)x) * (curve->gain);
 
-    // Gain is a fix-point number with scaling factor CURVEM_GAIN_SCALE
+    // Gain is a fix-point number with scaling factor GAIN_FIXPOINT_SCALE
     // The curve lookup also has scaling a factor: 2
 
     // Convert back to normal scale
-    w = w / (CURVEM_GAIN_SCALE * 2);
+    //w = w / (GAIN_FIXPOINT_SCALE * 2);
+    w >>= 7;
 
     // Add offset
     w += (int16_t)(curve->offset);

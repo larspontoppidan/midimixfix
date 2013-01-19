@@ -13,13 +13,13 @@
 
 void    blockf_Initialize(void);
 
-void    blockf_MessageIsrHook(mmsg_t *msg);
-void    blockf_TickIsrHook(void);
-void    blockf_MainLoopHook(void);
+void    blockf_HookMidiMsg_ISR(mmsg_t *msg);
+void    blockf_HookTick_ISR(void);
+void    blockf_HookMainLoop(void);
 
-uint8_t blockf_GetSubMenuCount(void);
-void    blockf_GetMenuText(char *dest, uint8_t item);
-uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
+uint8_t blockf_MenuGetSubCount(void);
+void    blockf_MenuGetText(char *dest, uint8_t item);
+uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
 
 uint8_t blockf_ConfigGetSize(void);
 void    blockf_ConfigSave(uint8_t *dest);

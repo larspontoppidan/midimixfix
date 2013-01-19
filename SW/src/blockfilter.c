@@ -35,36 +35,38 @@ typedef struct
 //    uint8_t status_compare;
 //    uint8_t byte1_mask;
 //    uint8_t byte1_compare;
-} bfBlock_t;
+} blockFilter_t;
 
 // Variables
 
-bool_t bfEnabled;
+static bool_t filterEnabled;
 
-char   bfTitle[]  PROGMEM = "Block filter ";
+static char titleString[] PROGMEM = "Block filter ";
 
-uint8_t bfManageMode;
+static uint8_t menuManageMode;
 
-#define BF_BLOCK_MAX 8
+#define FILTER_COUNT_MAX 8
 
-uint8_t bfBlocks;
-bfBlock_t bfBlock[8];
+static uint8_t filterCount;
+static blockFilter_t filters[FILTER_COUNT_MAX];
+
+
 
 void blockf_Initialize(void)
 {
-    bfBlocks = 0;
-    bfEnabled = FALSE;
+    filterCount = 0;
+    filterEnabled = FALSE;
 }
 
-void blockf_MessageIsrHook(mmsg_t *msg)
+void blockf_HookMidiMsg_ISR(mmsg_t *msg)
 {
     /*
-    if (bfEnabled != FALSE)
+    if (filterEnabled != FALSE)
     {
         uint8_t i;
         uint8_t x;
 
-        for (i = 0; i < bfBlocks; i++)
+        for (i = 0; i < filter_count; i++)
         {
             if ((msg->source & source) != 0)
             {
@@ -85,21 +87,21 @@ void blockf_MessageIsrHook(mmsg_t *msg)
 
     // Right now, lets just implement a simplified version, only source / channel blocks:
 
-    if (bfEnabled != FALSE)
+    if (filterEnabled != FALSE)
     {
         uint8_t i;
         uint8_t x;
 
-        for (i = 0; i < bfBlocks; i++)
+        for (i = 0; i < filterCount; i++)
         {
-            if ((msg->flags & bfBlock[i].source) != 0)
+            if ((msg->flags & filters[i].source) != 0)
             {
                 x = msg->midi_status;
 
                 if ((x & 0xF0) != 0xF0u)
                 {
                     // Its a channel something message, check if we allow this channel
-                    if ((x & 0x0F) == bfBlock[i].chan)
+                    if ((x & 0x0F) == filters[i].chan)
                     {
                         // This message has to stop!
                         msg->flags |= MMSG_FLAG_DISCARD;
@@ -112,76 +114,76 @@ void blockf_MessageIsrHook(mmsg_t *msg)
 
 }
 
-void blockf_TickIsrHook(void)
+void blockf_HookTick_ISR(void)
 {
 
 }
 
-void blockf_MainLoopHook(void)
+void blockf_HookMainLoop(void)
 {
 
 }
 
-uint8_t blockf_GetSubMenuCount(void)
+uint8_t blockf_MenuGetSubCount(void)
 {
-    return bfEnabled ? (bfBlocks + 1) : 0;
+    return filterEnabled ? (filterCount + 1) : 0;
 }
 
 char *blockf_RenderBlock(char *dest, uint8_t i)
 {
-    dest = pstr_WriteInX(dest, bfBlock[i].source);
+    dest = pstr_writeInX(dest, filters[i].source);
     (*dest++) = ' ';
 
-    dest = util_StrCpy_P(dest, pstr_Chan);
-    dest = util_StrWriteInt8LA(dest, bfBlock[i].chan + 1);
+    dest = util_strCpy_P(dest, pstr_Chan);
+    dest = util_strWriteInt8LA(dest, filters[i].chan + 1);
 
     return dest;
 }
 
 void blockf_AddBlock(void)
 {
-    if (bfBlocks < BF_BLOCK_MAX)
+    if (filterCount < FILTER_COUNT_MAX)
     {
-        bfBlock[bfBlocks].source = 1;
-        bfBlock[bfBlocks].chan = 0;
-        bfBlocks++;
+        filters[filterCount].source = 1;
+        filters[filterCount].chan = 0;
+        filterCount++;
     }
 }
 
 void blockf_RemoveBlock(void)
 {
-    if (bfBlocks > 0)
+    if (filterCount > 0)
     {
-        bfBlocks--;
+        filterCount--;
     }
 }
 
-void blockf_GetMenuText(char *dest, uint8_t item)
+void blockf_MenuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        util_StrCpy_P(dest, bfTitle);
+        util_strCpy_P(dest, titleString);
 
-        if (bfEnabled)
+        if (filterEnabled)
         {
-            util_StrCpy_P(dest + 14, pstr_OnParentheses);
+            util_strCpy_P(dest + 14, pstr_OnParentheses);
         }
         else
         {
-            util_StrCpy_P(dest + 14, pstr_OffParentheses);
+            util_strCpy_P(dest + 14, pstr_OffParentheses);
         }
     }
-    else if (item == (bfBlocks + 1))
+    else if (item == (filterCount + 1))
     {
-        dest = util_StrCpy_P(dest, pstr_ManageEllipsis);
+        dest = util_strCpy_P(dest, pstr_ManageEllipsis);
 
-        if (bfManageMode == 1)
+        if (menuManageMode == 1)
         {
-            util_StrCpy_P(dest, pstr_Add);
+            util_strCpy_P(dest, pstr_Add);
         }
-        else if (bfManageMode == 2)
+        else if (menuManageMode == 2)
         {
-            util_StrCpy_P(dest, pstr_Remove);
+            util_strCpy_P(dest, pstr_Remove);
         }
     }
     else
@@ -190,7 +192,7 @@ void blockf_GetMenuText(char *dest, uint8_t item)
     }
 }
 
-uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 
@@ -211,14 +213,14 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
             if ((user_event == MENU_EVENT_TURN) || (user_event == MENU_EVENT_TURN_PUSH))
             {
                 // Toggle on / off status
-                bfEnabled = util_BoundedAddInt8(bfEnabled, 0, 1, knob_delta);
+                filterEnabled = util_boundedAddInt8(filterEnabled, 0, 1, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
                 ret = 16 | MENU_UPDATE_ALL;
             }
         }
     }
-    else if (item == (bfBlocks + 1))
+    else if (item == (filterCount + 1))
     {
         if (edit_mode == 0)
         {
@@ -228,7 +230,7 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
                 ret = 10;
 
                 // Our mode is initially Add
-                bfManageMode = 1;
+                menuManageMode = 1;
             }
         }
         else if (edit_mode == 1)
@@ -238,28 +240,28 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
             if ((user_event == MENU_EVENT_TURN) || (user_event == MENU_EVENT_TURN_PUSH))
             {
                 // User is turning knob in manage mode
-                bfManageMode = util_BoundedAddInt8(bfManageMode, 1, 2, knob_delta);
+                menuManageMode = util_boundedAddInt8(menuManageMode, 1, 2, knob_delta);
             }
             else if (user_event == MENU_EVENT_SELECT)
             {
                 // User is selecting current manage mode
-                if (bfManageMode == 1)
+                if (menuManageMode == 1)
                 {
                     blockf_AddBlock();
-                    bfManageMode = 0;
+                    menuManageMode = 0;
                     ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
                 }
-                else if (bfManageMode == 2)
+                else if (menuManageMode == 2)
                 {
                     blockf_RemoveBlock();
-                    bfManageMode = 0;
+                    menuManageMode = 0;
                     ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
                 }
             }
             else if (user_event == MENU_EVENT_BACK)
             {
                 // Backing out of manage mode
-                bfManageMode = 0;
+                menuManageMode = 0;
             }
         }
     }
@@ -284,14 +286,14 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
             if (edit_mode == 1)
             {
                 ret = 0;
-                bfBlock[item-1].source =
-                        util_BoundedAddInt8(bfBlock[item-1].source, 1, 3, knob_delta);
+                filters[item-1].source =
+                        util_boundedAddInt8(filters[item-1].source, 1, 3, knob_delta);
             }
             else if (edit_mode == 2)
             {
                 ret = 4;
-                bfBlock[item-1].chan =
-                    util_BoundedAddInt8(bfBlock[item-1].chan, 0, 15, knob_delta);
+                filters[item-1].chan =
+                    util_boundedAddInt8(filters[item-1].chan, 0, 15, knob_delta);
             }
         }
     }
@@ -303,21 +305,21 @@ uint8_t blockf_MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, in
 
 uint8_t blockf_ConfigGetSize(void)
 {
-    return 2 + BF_BLOCK_MAX * sizeof(bfBlock_t);
+    return 2 + FILTER_COUNT_MAX * sizeof(blockFilter_t);
 }
 
 void blockf_ConfigSave(uint8_t *dest)
 {
-    *(dest++) = bfEnabled;
-    *(dest++) = bfBlocks;
+    *(dest++) = filterEnabled;
+    *(dest++) = filterCount;
 
-    memcpy(dest, &(bfBlock[0]), BF_BLOCK_MAX * sizeof(bfBlock_t));
+    memcpy(dest, &(filters[0]), FILTER_COUNT_MAX * sizeof(blockFilter_t));
 }
 
 void blockf_ConfigLoad(uint8_t *dest)
 {
-    bfEnabled = *(dest++);
-    bfBlocks = *(dest++);
+    filterEnabled = *(dest++);
+    filterCount = *(dest++);
 
-    memcpy(&(bfBlock[0]), dest, BF_BLOCK_MAX * sizeof(bfBlock_t));
+    memcpy(&(filters[0]), dest, FILTER_COUNT_MAX * sizeof(blockFilter_t));
 }
