@@ -102,10 +102,7 @@ typedef struct
 
 // Variables
 
-static bool_t filterEnabled;
 static char   titleString[]  PROGMEM = "Curve filter ";
-
-uint8_t menuManageMode;
 
 #define FILTER_COUNT_MAX 8
 
@@ -119,13 +116,25 @@ static uint8_t filterMidiStatus[FILTER_COUNT_MAX];
 
 void curvef_Initialize(void)
 {
+    uint8_t i;
+
     filterCount = 0;
-    filterEnabled = FALSE;
+
+    // Set default curves in all slots
+    for (i = 0; i < FILTER_COUNT_MAX; i++)
+    {
+        filters[i].source = 1;
+        filters[i].ctrlNo = 0;
+        filters[i].mode = FILTER_NOTE_ON;
+        filterMidiStatus[i] = MIDI_STATUS_NOTE_ON;
+        cmath_CurveReset(&(filters[i].curve));
+    }
+
 }
 
 void curvef_HookMidiMsg_ISR(mmsg_t *msg)
 {
-    if (filterEnabled != FALSE)
+    if (filterCount != 0)
     {
         // Check that OK flag is on, DISCARD flag is off, RAW flag is off
         if ((msg->flags & (MMSG_FLAG_MSG_OK | MMSG_FLAG_DISCARD | MMSG_FLAG_RAW)) == MMSG_FLAG_MSG_OK)
@@ -207,63 +216,7 @@ void curvef_HookMainLoop(void)
 
 uint8_t curvef_MenuGetSubCount(void)
 {
-    return filterEnabled ? ((filterCount * 2) + 1) : 0;
-}
-
-char *curvef_RenderSubMenu(char *dest, uint8_t i)
-{
-    uint8_t c = i >> 1;
-
-    if ((i & 1) == 0)
-    {
-        // First line of a curve setup "InX ..."
-        dest = pstr_writeInX(dest, filters[c].source);
-        (*dest++) = ' ';
-
-        dest = util_strCpy_P(dest, filterModeNames[filters[c].mode]);
-
-        // If this is a controller, also write name of controller
-        if (filters[c].mode == FILTER_CTRL)
-        {
-            dest = mmsg_WriteControllerName(dest, filters[c].ctrlNo);
-        }
-    }
-    else
-    {
-        // Second line of a curve setup. Write the curve math specs
-        // " -127 2.0 -127"
-        (*dest++) = ' ';
-        dest = cmath_WriteLow(dest, &(filters[c].curve));
-        (*dest++) = ' ';
-        dest = cmath_WriteType(dest, &(filters[c].curve));
-        (*dest++) = ' ';
-        dest = cmath_WriteHigh(dest, &(filters[c].curve));
-    }
-
-    return dest;
-}
-
-void curvef_AddCurve(void)
-{
-    // Add new curve.
-    if (filterCount < FILTER_COUNT_MAX)
-    {
-        // Set default values
-        filters[filterCount].source = 1;
-        filters[filterCount].ctrlNo = 0;
-        filters[filterCount].mode = FILTER_NOTE_ON;
-        filterMidiStatus[filterCount] = MIDI_STATUS_NOTE_ON;
-        cmath_CurveReset(&(filters[filterCount].curve));
-        filterCount++;
-    }
-}
-
-void curvef_RemoveCurve(void)
-{
-    if (filterCount > 0)
-    {
-        filterCount--;
-    }
+    return filterCount * 2;
 }
 
 void curvef_MenuGetText(char *dest, uint8_t item)
@@ -271,32 +224,37 @@ void curvef_MenuGetText(char *dest, uint8_t item)
     if (item == 0)
     {
         util_strCpy_P(dest, titleString);
-
-        if (filterEnabled)
-        {
-            util_strCpy_P(dest + 14, pstr_OnParentheses);
-        }
-        else
-        {
-            util_strCpy_P(dest + 14, pstr_OffParentheses);
-        }
-    }
-    else if (item == ((filterCount * 2) + 1))
-    {
-        dest = util_strCpy_P(dest, pstr_ManageEllipsis);
-
-        if (menuManageMode == 1)
-        {
-            util_strCpy_P(dest, pstr_Add);
-        }
-        else if (menuManageMode == 2)
-        {
-            util_strCpy_P(dest, pstr_Remove);
-        }
+        util_strWriteNumberParentheses(dest + 14, filterCount);
     }
     else
     {
-        curvef_RenderSubMenu(dest, item - 1);
+        uint8_t c = (item - 1) >> 1;
+
+        if ((item & 1) == 1)
+        {
+            // First line of a curve setup "InX ..."
+            dest = pstr_writeInX(dest, filters[c].source);
+            (*dest++) = ' ';
+
+            dest = util_strCpy_P(dest, filterModeNames[filters[c].mode]);
+
+            // If this is a controller, also write name of controller
+            if (filters[c].mode == FILTER_CTRL)
+            {
+                dest = mmsg_WriteControllerName(dest, filters[c].ctrlNo);
+            }
+        }
+        else
+        {
+            // Second line of a curve setup. Write the curve math specs
+            // " -127 2.0 -127"
+            (*dest++) = ' ';
+            dest = cmath_WriteLow(dest, &(filters[c].curve));
+            (*dest++) = ' ';
+            dest = cmath_WriteType(dest, &(filters[c].curve));
+            (*dest++) = ' ';
+            dest = cmath_WriteHigh(dest, &(filters[c].curve));
+        }
     }
 }
 
@@ -320,63 +278,18 @@ uint8_t curvef_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
                 // We are at root level and user wants to edit title menu
 
                 // Ok, move cursor to ON / OFF
-                ret = 16;
+                ret = 17;
             }
         }
         else if (edit_mode == 1)
         {
             if (user_event == MENU_EVENT_TURN)
             {
-                // Toggle on / off status
-                filterEnabled = util_boundedAddInt8(filterEnabled, 0, 1, knob_delta);
+                // Modify filter count
+                filterCount = util_boundedAddInt8(filterCount, 0, FILTER_COUNT_MAX, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
-                ret = 16 | MENU_UPDATE_ALL;
-            }
-        }
-    }
-    else if (item == ((filterCount * 2) + 1))
-    {
-        if (edit_mode == 0)
-        {
-            if (user_event == MENU_EVENT_SELECT)
-            {
-                // User starts to enter manage mode
-                ret = 10;
-
-                // Our mode is initially Add
-                menuManageMode = 1;
-            }
-        }
-        else if (edit_mode == 1)
-        {
-            ret = 10;
-
-            if (user_event == MENU_EVENT_TURN)
-            {
-                // User is turning knob in manage mode
-                menuManageMode = util_boundedAddInt8(menuManageMode, 1, 2, knob_delta);
-            }
-            else if (user_event == MENU_EVENT_SELECT)
-            {
-                // User is selecting current manage mode
-                if (menuManageMode == 1)
-                {
-                    curvef_AddCurve();
-                    menuManageMode = 0;
-                    ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
-                }
-                else if (menuManageMode == 2)
-                {
-                    curvef_RemoveCurve();
-                    menuManageMode = 0;
-                    ret = MENU_EDIT_MODE_UNAVAIL | MENU_UPDATE_ALL;
-                }
-            }
-            else if (user_event == MENU_EVENT_BACK)
-            {
-                // Backing out of manage mode
-                menuManageMode = 0;
+                ret = 17 | MENU_UPDATE_ALL;
             }
         }
     }
@@ -479,12 +392,11 @@ uint8_t curvef_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
 
 uint8_t curvef_ConfigGetSize(void)
 {
-    return 2 + FILTER_COUNT_MAX * sizeof(curveFilter_t);
+    return 1 + FILTER_COUNT_MAX * sizeof(curveFilter_t);
 }
 
 void curvef_ConfigSave(uint8_t *dest)
 {
-    *(dest++) = filterEnabled;
     *(dest++) = filterCount;
 
     memcpy(dest, &(filters[0]), FILTER_COUNT_MAX * sizeof(curveFilter_t));
@@ -492,13 +404,13 @@ void curvef_ConfigSave(uint8_t *dest)
 
 void curvef_ConfigLoad(uint8_t *dest)
 {
-    bool_t new_enabled;
+    bool_t new_filterCount;
     uint8_t i;
 
-    filterEnabled = FALSE;
+    // Disable filter while we load the new settings
+    filterCount = 0;
 
-    new_enabled = *(dest++);
-    filterCount = *(dest++);
+    new_filterCount = *(dest++);
 
     memcpy(&(filters[0]), dest, FILTER_COUNT_MAX * sizeof(curveFilter_t));
 
@@ -508,5 +420,5 @@ void curvef_ConfigLoad(uint8_t *dest)
         filterMidiStatus[i] = pgm_read_byte(&(filterModeStatusses[filters[i].mode]));
     }
 
-    filterEnabled = new_enabled;
+    filterCount = new_filterCount;
 }

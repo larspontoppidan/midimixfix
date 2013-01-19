@@ -15,16 +15,13 @@ char pstr_Off[] PROGMEM = "Off";
 
 char pstr_PlusParentheses[]  PROGMEM = "(+)";
 char pstr_MinusParentheses[] PROGMEM = "(-)";
-char pstr_OnParentheses[]  PROGMEM = " (ON)";
+//char pstr_OnParentheses[]  PROGMEM = " (ON)";
 char pstr_OffParentheses[] PROGMEM = "(OFF)";
 
 char pstr_Discard[] PROGMEM = "Discard";
 char pstr_Through[] PROGMEM = "Through";
 char pstr_Use[]     PROGMEM = "Use";
 
-char pstr_ManageEllipsis[] PROGMEM = "Manage... ";
-char pstr_Add[]    PROGMEM = "Add";
-char pstr_Remove[] PROGMEM = "Remove";
 char pstr_Chan[]   PROGMEM = "Chan";
 
 
