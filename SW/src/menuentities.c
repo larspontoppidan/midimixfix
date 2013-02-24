@@ -15,6 +15,7 @@
 #include "generatemsg.h"
 #include "blockfilter.h"
 #include "curvefilter.h"
+#include "superdelay.h"
 #include "presets.h"
 
 enum
@@ -25,6 +26,7 @@ enum
     ENTITY_GENERATEMSG,
     ENTITY_BLOCKFILTER,
     ENTITY_CURVEFILTER,
+    ENTITY_SUPERDELAY,
     ENTITY_MIDILOG
 };
 
@@ -54,6 +56,9 @@ uint8_t menue_GetSubCount(uint8_t entity)
         break;
     case ENTITY_CURVEFILTER:
         ret = curvef_MenuGetSubCount();
+        break;
+    case ENTITY_SUPERDELAY:
+        ret = sdelay_MenuGetSubCount();
         break;
     default:
         err_Raise(ERR_MODULE_MENUE, __LINE__);
@@ -88,6 +93,9 @@ void menue_GetText(uint8_t entity, char *dest, uint8_t item)
     case ENTITY_CURVEFILTER:
         curvef_MenuGetText(dest, item);
         break;
+    case ENTITY_SUPERDELAY:
+        sdelay_MenuGetText(dest, item);
+        break;
     default:
         err_Raise(ERR_MODULE_MENUE, __LINE__);
         break;
@@ -121,6 +129,9 @@ uint8_t menue_HandleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
         break;
     case ENTITY_CURVEFILTER:
         ret = curvef_MenuHandleEvent(item, edit_mode, user_event, knob_delta);
+        break;
+    case ENTITY_SUPERDELAY:
+        ret = sdelay_MenuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     default:
         err_Raise(ERR_MODULE_MENUE, __LINE__);
@@ -158,6 +169,9 @@ uint8_t menue_ConfigGetSize(uint8_t entity)
     case ENTITY_CURVEFILTER:
         ret = curvef_ConfigGetSize();
         break;
+    case ENTITY_SUPERDELAY:
+        ret = sdelay_ConfigGetSize();
+        break;
     default:
         err_Raise(ERR_MODULE_MENUE, __LINE__);
         break;
@@ -188,6 +202,9 @@ void menue_ConfigSave(uint8_t entity, uint8_t *dest)
     case ENTITY_CURVEFILTER:
         curvef_ConfigSave(dest);
         break;
+    case ENTITY_SUPERDELAY:
+        sdelay_ConfigSave(dest);
+        break;
     default:
         err_Raise(ERR_MODULE_MENUE, __LINE__);
         break;
@@ -215,6 +232,9 @@ void menue_ConfigLoad(uint8_t entity, uint8_t *dest)
         break;
     case ENTITY_CURVEFILTER:
         curvef_ConfigLoad(dest);
+        break;
+    case ENTITY_SUPERDELAY:
+        sdelay_ConfigLoad(dest);
         break;
     default:
         err_Raise(ERR_MODULE_MENUE, __LINE__);

@@ -14,6 +14,7 @@
 #include "midilogger.h"
 #include "blockfilter.h"
 #include "curvefilter.h"
+#include "superdelay.h"
 #include "presets.h"
 
 // Components can hook up functions to be called at different points in the program flow.
@@ -26,6 +27,7 @@
     curvef_Initialize();        \
     genmsg_initialize();        \
     presets_initialize();       \
+    sdelay_Initialize();        \
     } while (0)
 
 // For processing normal incoming messages
@@ -34,6 +36,7 @@
     mlog_handleMidiMsgIn_ISR(x);   \
     blockf_HookMidiMsg_ISR(x);   \
     curvef_HookMidiMsg_ISR(x);   \
+    sdelay_HookMidiMsg_ISR(x);   \
     } while (0)
 
 // For processing incoming realtime messages
@@ -49,10 +52,11 @@
     } while (0)
 
 // For hooking up to the tick interrupt
-#define COMP_TICK_ISR_HOOKS()     \
+#define COMP_TICK_ISR_HOOKS()   \
     do {                        \
-    mlog_handleTick_ISR();         \
-    blockf_HookTick_ISR();       \
+    mlog_handleTick_ISR();      \
+    blockf_HookTick_ISR();      \
+    sdelay_HookTick_ISR();      \
     } while (0)
 
 // For hooking up to the main loop idle loop
@@ -61,6 +65,7 @@
     mlog_handleMainLoop();        \
     blockf_HookMainLoop();      \
     curvef_HookMainLoop();      \
+    sdelay_HookMainLoop();      \
     } while (0)
 
 
