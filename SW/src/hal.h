@@ -44,7 +44,8 @@ uint8_t hal_ButtonStatesGet(void);
 void hal_InterruptsDisable(void);
 void hal_InterruptsEnable(void);
 
-uint16_t hal_TickCountGet_SAFE(void);
+uint16_t hal_TickCountGet_ISR(void);
+uint16_t hal_TickCountGet(void);
 
 bool_t hal_MidiTxActiveGet_ISR(void);
 void   hal_MidiTxSend_ISR(uint8_t x);

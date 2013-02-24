@@ -353,6 +353,14 @@ void genmsg_configSave(uint8_t *dest)
 
 void genmsg_configLoad(uint8_t *dest)
 {
+    uint8_t i;
+
     MessageCount = *(dest++);
     memcpy(&(Messages[0]), dest, MESSAGES_MAX * sizeof(message_t));
+
+    // Send all messages after preset load!
+    for (i = 0; i < MessageCount; i++)
+    {
+        SendMessage(i);
+    }
 }

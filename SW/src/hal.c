@@ -11,6 +11,7 @@
 #include "errors.h"
 #include "midiio.h"
 #include "midiparser.h"
+#include "componenthooks.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -40,24 +41,11 @@
 
 
 static void hal_MidiIoSetup(void);
+static void hal_TickIsrSetup(void);
 
 /////////////////////////   Variables    /////////////////////////
 
-
-//////////////////// Interrupt service routines //////////////////
-
-
-ISR(INT1_vect)
-{
-    qd_handleAchange_isr(QUADB_PIN & QUADB_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
-}
-
-
-ISR(PCINT0_vect)
-{
-    qd_handleBchange_isr(QUADA_PIN & QUADA_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
-}
-
+static uint16_t tickCount;
 
 
 ///////////////////////// Implementation /////////////////////////
@@ -90,7 +78,9 @@ void hal_Initialize(void)
     BUTTONS_PORT |= (HAL_BUTTON_PUSH | HAL_BUTTON_SEL | HAL_BUTTON_BACK);
     BUTTONS_DDR &= ~(HAL_BUTTON_PUSH | HAL_BUTTON_SEL | HAL_BUTTON_BACK);
 
+    // Init other stuff
     hal_MidiIoSetup();
+    hal_TickIsrSetup();
 }
 
 void hal_StatusLedSet(bool_t on)
@@ -130,6 +120,20 @@ uint8_t hal_EncoderQuadGet(void)
     return ret;
 }
 
+
+ISR(INT1_vect)
+{
+    qd_handleAchange_isr(QUADB_PIN & QUADB_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
+}
+
+
+ISR(PCINT0_vect)
+{
+    qd_handleBchange_isr(QUADA_PIN & QUADA_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
+}
+
+
+
 uint8_t hal_ButtonStatesGet(void)
 {
     uint8_t ret;
@@ -148,13 +152,6 @@ void hal_InterruptsDisable(void)
 void hal_InterruptsEnable(void)
 {
     sei();
-}
-
-
-uint16_t hal_TickCountGet_SAFE(void)
-{
-    // TODO this
-    return 0u;
 }
 
 
@@ -253,7 +250,49 @@ void hal_MidiTxIsrEnable_ISR(bool_t en)
 
 }
 
+// 100 HZ tick implementation
+
+static void hal_TickIsrSetup(void)
+{
+    // We want to generate a 100 Hz TICK interrupt based on the 20 MHz MCU clock.
+    // The prescaler configuration of AVR does not allow this to be done accurately
+    // with an 8-bit timer. But it is possible with the 16-bit timer.
+    //
+    // In this case, 16-bit timer1 is configured to Clear on Compare Match (CTC),
+    // (WGM = 4), with an 1/8 prescaler and a OCR register value of:
+    //
+    //   OCR   = f(clk) / (N * f(OCR)) - 1
+    //         = 20e6 / (8 * 100) - 1 = 24999
+
+    tickCount = 0;
+
+    TCCR1A = 0;
+    TCCR1B = (1<<WGM12) | (1<<CS11);
+    OCR1A = 24999u;
+    TIMSK1 = (1<<OCIE1A);
+}
+
+// TICK ISR. Executes with 100 Hz
+ISR(TIMER1_COMPA_vect)
+{
+    tickCount++;
+    COMP_TICK_ISR_HOOKS();
+}
+
+uint16_t hal_TickCountGet_ISR(void)
+{
+    return tickCount;
+}
 
 
+uint16_t hal_TickCountGet(void)
+{
+    uint16_t tc;
 
+    hal_InterruptsDisable(); // TODO check if this inlines
+    tc = tickCount;
+    hal_InterruptsEnable();
+
+    return tc;
+}
 

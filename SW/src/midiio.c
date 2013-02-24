@@ -225,7 +225,7 @@ uint8_t midiio_MsgNew_ISR(uint8_t flags, uint8_t midi_status)
     statusBuffer[msg_index] = STATUS_RECEIVING;
 
     // Initialize msg
-    MsgBuffer[msg_index].receive_tick = hal_TickCountGet_SAFE();
+    MsgBuffer[msg_index].receive_tick = hal_TickCountGet_ISR();
     MsgBuffer[msg_index].flags = flags;
     MsgBuffer[msg_index].midi_status = midi_status;
     MsgBuffer[msg_index].midi_data_len = 0;
@@ -287,7 +287,7 @@ uint8_t midiio_MsgNew_Main(uint8_t flags, uint8_t midi_status)
     // reserved for whoever is going to put data into it.
 
     // Initialize msg
-    MsgBuffer[msg_index].receive_tick = hal_TickCountGet_SAFE();
+    MsgBuffer[msg_index].receive_tick = hal_TickCountGet();
     MsgBuffer[msg_index].flags = flags;
     MsgBuffer[msg_index].midi_status = midi_status;
     MsgBuffer[msg_index].midi_data_len = 0;

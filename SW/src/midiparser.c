@@ -187,7 +187,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
 // The Input2Rx function is an exact copy of Input1Rx function, except that all occurrences of
 // "Input1" is exchanged to "Input2" and "INPUT1" with "INPUT2"
 //
-// Note: Copying a function is not elegant, but it allows the compiler to directly access the
+// Note: Copying a function may not be elegant, but it allows the compiler to directly access the
 //       input state struct members without indirection. Since these functions are called by ISR
 //       and are always in the midi processing chain, they should be as lightweight as possible.
 //
