@@ -31,7 +31,8 @@ enum
     ERR_MODULE_PSTR,    // 15
     ERR_MODULE_PRESETS, // 16
     ERR_MODULE_QD,      // 17
-    ERR_MODULE_UTIL     // 18
+    ERR_MODULE_UTIL,    // 18
+    ERR_MODULE_SDELAY   // 19
 };
 
 void err_Initialize(void);
