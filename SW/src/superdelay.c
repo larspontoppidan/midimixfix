@@ -96,7 +96,7 @@
 #define USE_VELOCITY_NOTE_OFF 3
 #define USE_VELOCITY_CC_FLAG  128
 
-#define OVERLAP_TIME_DIFF     5      // x10 ms
+#define OVERLAP_TIME_DIFF     6      // x10 ms
 
 typedef struct
 {
@@ -107,13 +107,13 @@ typedef struct
     bool_t  quantizeOn;    // TODO If true, start notes fixed on delay speed
     uint8_t tapKey;        // TODO Tapping this key will set speed
     uint8_t speed;         // Delay speed in tick count
+    uint8_t prolong_speed; // Delay speed in tick count. Makes swing effect if longer than speed
     uint8_t feedback;      // 128 is 100%, 64 is 50%, 255 is 200%
     uint8_t stopVelocity;  // Velocity to stop repeating at
     uint8_t stopRepeat;    // 0 means unlimited. Repeat count limit
     uint8_t useVelocity;   // Special ways to change velocity of ongoing delay
 } delaySetup_t;
 
-// TODO swing delay?!
 
 #define STATUS_FREE           0x00 // Delay inactive
 #define STATUS_GOT_NOTE_ON    0x01 // We have received note on
@@ -122,6 +122,7 @@ typedef struct
 #define STATUS_ARM_NOTE_ON    0x08 // Next NoteOn event is armed
 #define STATUS_ARM_NOTE_OFF   0x10 // Next NoteOff event is armed
 #define STATUS_DELAY_DONE     0x20 // Next NoteOff event stops this delay voice
+#define STATUS_PROLONGED      0x40 // This delay cycle uses the prologned speed
 
 typedef struct
 {
@@ -162,7 +163,7 @@ static uint8_t FindQuietestVoice(void);
 static void KillAllVoices(void);
 
 // Go through delay voices and check if any of them is holding key
-static bool_t CheckNoteActiveState(uint8_t key);
+static uint8_t CheckNoteActiveState(uint8_t key);
 
 // ---- DelayVoice Events ----
 
@@ -231,15 +232,29 @@ static bool_t CheckIfMasked(uint8_t voice)
                     // If [i] is later than [voice]:     0 to (delay speed / 2)
                     // If [voice] is later than [i]:     (delayspeed/2 to delayspeed)
 
-                    if ((time_diff < OVERLAP_TIME_DIFF) ||
-                         ((DelaySetup.speed - time_diff) < OVERLAP_TIME_DIFF) )
+                    if (DelayVoices[i].status & STATUS_PROLONGED)
                     {
-                        masked = TRUE;
-                        break;
+                        if ((time_diff < OVERLAP_TIME_DIFF) ||
+                             ((DelaySetup.prolong_speed - time_diff) < OVERLAP_TIME_DIFF) )
+                        {
+                            masked = TRUE;
+                        }
                     }
-
+                    else
+                    {
+                        if ((time_diff < OVERLAP_TIME_DIFF) ||
+                             ((DelaySetup.speed - time_diff) < OVERLAP_TIME_DIFF) )
+                        {
+                            masked = TRUE;
+                        }
+                    }
                 }
             }
+        }
+
+        if (masked)
+        {
+            break;
         }
     }
 
@@ -279,7 +294,7 @@ static uint8_t FindQuietestVoice(void)
     return best;
 }
 
-// Go through the delay voices and return the one which is the least active
+// Find the voice which has registered note on, but not note off, for key
 static uint8_t FindActiveVoice(uint8_t key)
 {
     uint8_t i;
@@ -314,9 +329,9 @@ static void KillAllVoices(void)
 }
 
 // Go through delay voices and check if any of them is holding key
-static bool_t CheckNoteActiveState(uint8_t key)
+static uint8_t CheckNoteActiveState(uint8_t key)
 {
-    bool_t key_active = FALSE;
+    uint8_t key_active = 0;
     uint8_t i;
 
     for (i = 0; i < DELAY_VOICES_MAX; i++)
@@ -326,14 +341,19 @@ static bool_t CheckNoteActiveState(uint8_t key)
             if (DelayVoices[i].status & STATUS_IS_NOTE_ON)
             {
                 // A delay voice is generating a note
-                key_active = TRUE;
+                key_active = DelayVoices[i].velocity;
             }
             else if ((DelayVoices[i].status & (STATUS_GOT_NOTE_ON | STATUS_GOT_NOTE_OFF))
                     == STATUS_GOT_NOTE_ON)
             {
                 // We have got note on, but not note off. It means user is holding key.
-                key_active = TRUE;
+                key_active = DelayVoices[i].velocity;
             }
+        }
+
+        if (key_active != 0)
+        {
+            break;
         }
     }
 
@@ -365,6 +385,9 @@ static void SetupNextDelayCycle(uint8_t index)
     // Store time of the current event we just had
     uint16_t this_event_time = DelayVoices[index].nextNoteOnTime;
 
+    // Toggle prolonged state
+    DelayVoices[index].status ^= STATUS_PROLONGED;
+
     // Have we reached end of delaying?
     if ((DelayVoices[index].velocity <= DelaySetup.stopVelocity) ||
             ((DelaySetup.stopRepeat != 0) && (DelayVoices[index].repeats >= DelaySetup.stopRepeat)))
@@ -378,7 +401,15 @@ static void SetupNextDelayCycle(uint8_t index)
     else
     {
         // Prepare next Note On event
-        DelayVoices[index].nextNoteOnTime = this_event_time + (uint16_t)(DelaySetup.speed);
+        if (DelayVoices[index].status & STATUS_PROLONGED)
+        {
+            DelayVoices[index].nextNoteOnTime = this_event_time + (uint16_t)(DelaySetup.prolong_speed);
+        }
+        else
+        {
+            DelayVoices[index].nextNoteOnTime = this_event_time + (uint16_t)(DelaySetup.speed);
+        }
+
         DelayVoices[index].status |= STATUS_ARM_NOTE_ON;
     }
 
@@ -429,7 +460,7 @@ static void HandleNoteOff(uint8_t index, mmsg_t *msg)
         // If delay voice has already stopped sounding, we need to take care of the note off event here
         if (DelayVoices[index].status & STATUS_DELAY_DONE)
         {
-            DelayVoices[index].nextNoteOffTime = (msg->receive_tick) + (uint16_t)(DelaySetup.speed);
+            DelayVoices[index].nextNoteOffTime = (msg->receive_tick) + (uint16_t)(DelaySetup.prolong_speed);
             DelayVoices[index].status |= STATUS_ARM_NOTE_OFF;
         }
     }
@@ -475,9 +506,9 @@ static void KillVoice(uint8_t voice, uint8_t dont_touch_this_key)
 
         DelayVoices[voice].status = STATUS_FREE;
 
-        if (CheckNoteActiveState(key) == FALSE)
+        if (key != dont_touch_this_key)
         {
-            if (key != dont_touch_this_key)
+            if (CheckNoteActiveState(key) == FALSE)
             {
                 SendNoteOff(key);
             }
@@ -525,16 +556,26 @@ static void HandleTick(uint8_t voice, uint16_t tick)
             {
                 if (CheckIfMasked(voice) == FALSE)
                 {
-                    // We must generate a note on
+                    uint8_t velocity;
 
-                    if (CheckNoteActiveState(DelayVoices[voice].key) == TRUE)
+                    // We must generate a note on
+                    velocity = CheckNoteActiveState(DelayVoices[voice].key);
+
+                    if (velocity != 0u)
                     {
                         SendNoteOff(DelayVoices[voice].key);
                     }
 
+                    // Use the highest velocity of our delayvoice and the note
+                    // we may just have silenced:
+                    if (DelayVoices[voice].velocity > velocity)
+                    {
+                        velocity = DelayVoices[voice].velocity;
+                    }
+
                     DelayVoices[voice].status = status | STATUS_IS_NOTE_ON;
 
-                    SendNoteOn(DelayVoices[voice].key, DelayVoices[voice].velocity);
+                    SendNoteOn(DelayVoices[voice].key, velocity);
                 }
 
                 // Advance to next delay cycle in any case
@@ -581,10 +622,11 @@ void sdelay_Initialize(void)
     InitVoices();
 
     // Set some defaults for testing:
-    DelaySetup.feedback = 90;
+    DelaySetup.feedback = 100;
     DelaySetup.stopRepeat = 0;
     DelaySetup.stopVelocity = 4;
-    DelaySetup.speed = 50; // One second
+    DelaySetup.speed = 21;
+    DelaySetup.prolong_speed = 29;
     DelaySetup.chan = 0;
     DelaySetup.source = MMSG_SOURCE_INPUT1;
     DelaySetup.sendNoteOff = FALSE;// TRUE;
