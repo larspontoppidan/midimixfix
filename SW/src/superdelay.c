@@ -11,11 +11,11 @@
 // Superdelay
 //
 //
-// Every delay voice works as follows:
 //
 //
-//  Example
+//  In this example, the player plays two note ons on the same key:
 //
+//  Delay
 //  Beat     Player       DelayVoice1       DelayVoice2      Output
 //  ----     ------       -----------       -----------      ------
 //   x  .... NoteOn(1) ....................................  NoteOn
@@ -98,6 +98,8 @@
 
 #define OVERLAP_TIME_DIFF     6      // x10 ms
 
+#define MINIMUM_SPEED         8      // x10 ms
+
 typedef struct
 {
     uint8_t source;
@@ -107,7 +109,7 @@ typedef struct
     bool_t  quantizeOn;    // TODO If true, start notes fixed on delay speed
     uint8_t tapKey;        // TODO Tapping this key will set speed
     uint8_t speed;         // Delay speed in tick count
-    uint8_t prolong_speed; // Delay speed in tick count. Makes swing effect if longer than speed
+    int8_t  swing_amount;  // Added to speed of 1 3 5... beats, subtracted from 2 4 6... beats
     uint8_t feedback;      // 128 is 100%, 64 is 50%, 255 is 200%
     uint8_t stopVelocity;  // Velocity to stop repeating at
     uint8_t stopRepeat;    // 0 means unlimited. Repeat count limit
@@ -122,7 +124,7 @@ typedef struct
 #define STATUS_ARM_NOTE_ON    0x08 // Next NoteOn event is armed
 #define STATUS_ARM_NOTE_OFF   0x10 // Next NoteOff event is armed
 #define STATUS_DELAY_DONE     0x20 // Next NoteOff event stops this delay voice
-#define STATUS_PROLONGED      0x40 // This delay cycle uses the prologned speed
+#define STATUS_PROLONGED      0x40 // This delay cycle uses the speed + swing_amount (instead of - )
 
 typedef struct
 {
@@ -143,7 +145,10 @@ typedef struct
 static delayVoice_t DelayVoices[DELAY_VOICES_MAX];
 static delaySetup_t DelaySetup;
 
-bool_t filterEnabled;
+static bool_t filterEnabled;
+
+static uint16_t TapSpeedTick;
+static bool_t TapSpeedValid;
 
 /////////////////////////   Prototypes   /////////////////////////
 
@@ -183,6 +188,11 @@ static void AdjustVelocity(uint8_t voice, uint8_t velocity);
 
 // May generate NoteOff
 static void KillVoice(uint8_t voice, uint8_t dont_touch_this_key);
+
+// ---- TapSpeed functionality
+
+static void HandleTapSpeedEvent(uint16_t tick);
+static void HandleTapSpeedTick(uint16_t tick);
 
 // ---- MidiMessage sending ----
 
@@ -235,7 +245,7 @@ static bool_t CheckIfMasked(uint8_t voice)
                     if (DelayVoices[i].status & STATUS_PROLONGED)
                     {
                         if ((time_diff < OVERLAP_TIME_DIFF) ||
-                             ((DelaySetup.prolong_speed - time_diff) < OVERLAP_TIME_DIFF) )
+                             (((uint16_t)(DelaySetup.speed + DelaySetup.swing_amount) - time_diff) < OVERLAP_TIME_DIFF) )
                         {
                             masked = TRUE;
                         }
@@ -243,7 +253,7 @@ static bool_t CheckIfMasked(uint8_t voice)
                     else
                     {
                         if ((time_diff < OVERLAP_TIME_DIFF) ||
-                             ((DelaySetup.speed - time_diff) < OVERLAP_TIME_DIFF) )
+                             (((uint16_t)(DelaySetup.speed - DelaySetup.swing_amount) - time_diff) < OVERLAP_TIME_DIFF) )
                         {
                             masked = TRUE;
                         }
@@ -401,14 +411,18 @@ static void SetupNextDelayCycle(uint8_t index)
     else
     {
         // Prepare next Note On event
+        uint8_t speed;
+
         if (DelayVoices[index].status & STATUS_PROLONGED)
         {
-            DelayVoices[index].nextNoteOnTime = this_event_time + (uint16_t)(DelaySetup.prolong_speed);
+            speed = DelaySetup.speed + DelaySetup.swing_amount;
         }
         else
         {
-            DelayVoices[index].nextNoteOnTime = this_event_time + (uint16_t)(DelaySetup.speed);
+            speed = DelaySetup.speed - DelaySetup.swing_amount;
         }
+
+        DelayVoices[index].nextNoteOnTime = this_event_time + (uint16_t)(speed);
 
         DelayVoices[index].status |= STATUS_ARM_NOTE_ON;
     }
@@ -460,7 +474,7 @@ static void HandleNoteOff(uint8_t index, mmsg_t *msg)
         // If delay voice has already stopped sounding, we need to take care of the note off event here
         if (DelayVoices[index].status & STATUS_DELAY_DONE)
         {
-            DelayVoices[index].nextNoteOffTime = (msg->receive_tick) + (uint16_t)(DelaySetup.prolong_speed);
+            DelayVoices[index].nextNoteOffTime = (msg->receive_tick) + (uint16_t)(DelaySetup.speed);
             DelayVoices[index].status |= STATUS_ARM_NOTE_OFF;
         }
     }
@@ -585,6 +599,59 @@ static void HandleTick(uint8_t voice, uint16_t tick)
     }
 }
 
+// ---- Tap Speed handling ----
+
+static void HandleTapSpeedEvent(uint16_t tick)
+{
+    if (TapSpeedValid)
+    {
+        uint16_t speedProposal;
+        uint8_t swing;
+
+        speedProposal = tick - TapSpeedTick;
+        swing = DelaySetup.swing_amount;
+
+        if ((int8_t)swing < 0)
+        {
+            // Maybe we have use weird negative swing...
+            swing = -swing;
+        }
+
+        if (swing != 0)
+        {
+            // We have swing going, user probably wants to tap double tempo
+            speedProposal >>= 1;
+        }
+
+        if ((speedProposal < (uint16_t)(254 - swing)) &&
+            (speedProposal > (uint16_t)(MINIMUM_SPEED + swing)))
+        {
+            // Allright, we got a new delay speed:
+            DelaySetup.speed = (uint8_t)speedProposal;
+        }
+
+    }
+
+    // In any case, we got a new valid speed tapping input
+    TapSpeedTick = tick;
+    TapSpeedValid = TRUE;
+}
+
+static void HandleTapSpeedTick(uint16_t tick)
+{
+    // Make sure we invalidate a speed tap, if we are above limit
+
+    if (TapSpeedValid)
+    {
+        uint16_t speedProposal;
+        speedProposal = tick - TapSpeedTick;
+
+        if (speedProposal > 255)
+        {
+            TapSpeedValid = FALSE;
+        }
+    }
+}
 
 // ---- MidiMessage sending ----
 
@@ -616,17 +683,19 @@ void sdelay_Initialize(void)
 {
     // Set setup defaults
     filterEnabled = FALSE;
+    TapSpeedValid = FALSE;
     memset(&DelaySetup, 0, sizeof(delaySetup_t));
 
     // Set delay state defaults
     InitVoices();
 
     // Set some defaults for testing:
-    DelaySetup.feedback = 100;
+    DelaySetup.feedback = 90;
     DelaySetup.stopRepeat = 0;
     DelaySetup.stopVelocity = 4;
-    DelaySetup.speed = 21;
-    DelaySetup.prolong_speed = 29;
+    DelaySetup.speed = 50;
+    DelaySetup.swing_amount = 0;
+    DelaySetup.tapKey = 0x1C;
     DelaySetup.chan = 0;
     DelaySetup.source = MMSG_SOURCE_INPUT1;
     DelaySetup.sendNoteOff = FALSE;// TRUE;
@@ -647,27 +716,42 @@ void sdelay_HookMidiMsg_ISR(mmsg_t *msg)
         {
             uint8_t voice;
 
-            // Deal with this message if status is something we are interested in
-            switch (x & MIDI_STATUS_MASK)
+            // Maybe this is tap speed?
+            if (msg->midi_data[0] == DelaySetup.tapKey)
             {
-            case MIDI_STATUS_NOTE_ON:
-                // Find a delayvoice for this note on
-                voice = FindQuietestVoice();
-                KillVoice(voice, msg->midi_data[0]);
-                HandleNoteOn(voice, msg);
-                break;
+                if ((x & MIDI_STATUS_MASK) == MIDI_STATUS_NOTE_ON)
+                {
+                    // TODO BUG HERE! this will not work with NOTE_OFF using NOTE_ON at velocity 0!!!
+                    HandleTapSpeedEvent(msg->receive_tick);
+                }
 
-            case MIDI_STATUS_NOTE_OFF:
-                // Find the delayvoice that needs to get this note off
-                voice = FindActiveVoice(msg->midi_data[0]);
-                HandleNoteOff(voice, msg);
-                break;
+                // Discard all messages regarding this key
+                msg->flags |= MMSG_FLAG_DISCARD;
+            }
+            else
+            {
+                // Deal with this message if status is something we are interested in
+                switch (x & MIDI_STATUS_MASK)
+                {
+                case MIDI_STATUS_NOTE_ON:
+                    // Find a delayvoice for this note on
+                    voice = FindQuietestVoice();
+                    KillVoice(voice, msg->midi_data[0]);
+                    HandleNoteOn(voice, msg);
+                    break;
 
-            case MIDI_STATUS_KEY_ATOUCH:
-                // Find the delayvoice that needs to get this note off
-                //voice = FindActiveVoice(msg->midi_data[0]);
-                //AdjustVelocity(voice, msg->midi_data[1]);
-                break;
+                case MIDI_STATUS_NOTE_OFF:
+                    // Find the delayvoice that needs to get this note off
+                    voice = FindActiveVoice(msg->midi_data[0]);
+                    HandleNoteOff(voice, msg);
+                    break;
+
+                case MIDI_STATUS_KEY_ATOUCH:
+                    // Find the delayvoice that needs to get this note off
+                    //voice = FindActiveVoice(msg->midi_data[0]);
+                    //AdjustVelocity(voice, msg->midi_data[1]);
+                    break;
+                }
             }
         }
     }
@@ -680,6 +764,8 @@ void sdelay_HookTick_ISR(void)
 
     uint8_t i;
     uint16_t tickNow = hal_TickCountGet_ISR();
+
+    HandleTapSpeedTick(tickNow);
 
     for (i = 0; i < DELAY_VOICES_MAX; i++)
     {

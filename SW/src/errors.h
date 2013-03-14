@@ -45,7 +45,5 @@ void err_Reset(void);
 char * err_Print(char *dest, uint8_t number);
 uint8_t err_GetCount(void);
 
-void err_PrintDebug(char *dst);
-
 
 #endif /* ERRORS_H_ */
