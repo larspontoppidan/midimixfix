@@ -356,6 +356,13 @@ char *mmsg_WriteMsgRaw(char *dest, mmsg_t *msg)
     return dest;
 }
 
+char *mmsg_WriteNoteName(char *dest, uint8_t note_number)
+{
+    dest = util_strCpy_P(dest, NoteNames[(note_number % 12)]);
+    dest = util_strWriteInt8LA(dest, (int8_t)(note_number / 12) - (int8_t)5);
+    return dest;
+}
+
 char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
 {
     if (msg->flags == 0u)
@@ -414,9 +421,7 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
             case MIDI_STATUS_NOTE_OFF:
             case MIDI_STATUS_KEY_ATOUCH:
                 // Decode note number
-                dest = util_strCpy_P(dest, NoteNames[(msg->midi_data[0] % 12)]);
-                dest = util_strWriteInt8LA(dest,
-                        (int8_t)(msg->midi_data[0] / 12) - (int8_t)5);
+                dest = mmsg_WriteNoteName(dest, msg->midi_data[0]);
                 *(dest++) = ' ';
 
                 // Add velocity / pressure

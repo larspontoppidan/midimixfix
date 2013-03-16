@@ -8,6 +8,7 @@
 #include "common.h"
 #include "util.h"
 #include "pgmstrings.h"
+#include "midimessage.h"
 
 int16_t sutil_TenthsTab[5] = {10000, 1000, 100, 10, 1};
 
@@ -194,6 +195,62 @@ char *util_strWriteInt8LA(char *dest, int8_t x)
     return dest;
 }
 
+char *util_strWriteInt8(char *dest, int8_t x)
+{
+    uint8_t value;
+    uint8_t c;
+
+    bool_t numbernow = FALSE;
+
+    if (x < 0)
+    {
+        *(dest++) = '-';
+        value = (uint8_t)(-x);
+    }
+    else
+    {
+        *(dest++) = ' ';
+        value = (uint8_t)x;
+    }
+
+    c = 0u;
+    while (value >= 100u)
+    {
+        c++;
+        value -= 100u;
+    }
+
+    if (c != 0u)
+    {
+        *(dest++) = c + '0';
+        numbernow = TRUE;
+    }
+    else
+    {
+        *(dest++) = ' ';
+    }
+
+    c = 0u;
+    while (value >= 10u)
+    {
+        c++;
+        value -= 10u;
+    }
+
+    if (numbernow || (c != 0u))
+    {
+        *(dest++) = c + '0';
+    }
+    else
+    {
+        *(dest++) = ' ';
+    }
+
+    *(dest++) = value + '0';
+
+    return dest;
+}
+
 
 char *util_strWriteHex(char *dest, uint8_t x)
 {
@@ -262,6 +319,25 @@ int8_t util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
     return (int8_t)x;
 }
 
+uint8_t util_boundedAddUint8(uint8_t value, uint8_t min, uint8_t max, int8_t add)
+{
+    // Work in 16 bit signed space to avoid rollover
+    int16_t x;
+
+    x = (int16_t)value + (int16_t)add;
+
+    if (x < (int16_t)min)
+    {
+        x = min;
+    }
+    else if (x > (int16_t)max)
+    {
+        x = max;
+    }
+
+    return (uint8_t)x;
+}
+
 
 // Specialized function for writing right aligned component status
 //
@@ -305,6 +381,87 @@ void util_strWriteNumberParentheses(char *dest, uint8_t value)
         dest[4] = ')';
     }
 
+}
+
+
+// Write data from scr in dest until \0 is encountered
+//
+// Formatting specifiers in src will be used for writing the value from data
+// in a certain way:
+//
+//   %U    Write data as uint8
+//   %I    Write data as int8
+//   %i    Write data as int8 left adjusted
+//   %x    Write data as hex
+//   %O    Boolean written as " (ON)" or "(OFF)"
+//   %c    Write data as midi controller
+//   %n    Write data as note name "C#-4" for example
+//
+char *util_strWriteFormat_P(char *dest, PGM_P src, uint8_t data)
+{
+    bool_t finished = FALSE;
+    char c;
+
+    do
+    {
+        c = pgm_read_byte(src);
+        src++;
+
+        if (c == 0u)
+        {
+            finished = TRUE;
+        }
+        else if (c == '%')
+        {
+            c = pgm_read_byte(src);
+            src++;
+
+            switch (c)
+            {
+            case 'U':
+                dest = util_strWriteUint8(dest, data);
+                break;
+            case 'I':
+                dest = util_strWriteInt8(dest, data);
+                break;
+            case 'i':
+                dest = util_strWriteInt8LA(dest, data);
+                break;
+            case 'x':
+                dest = util_strWriteHex(dest, data);
+                break;
+            case 'c':
+                if (data == 0xFF)
+                {
+                    dest = util_strCpy_P(dest, pstr_Off);
+                }
+                else
+                {
+                    dest = mmsg_WriteControllerName(dest, data);
+                }
+                break;
+            case 'n':
+                dest = mmsg_WriteNoteName(dest, data);
+                break;
+            case 'O':
+                dest = util_strCpy_P(dest, data ? pstr_OnParentheses : pstr_OffParentheses);
+                break;
+            case 0:
+                finished = TRUE;
+                break;
+            default:
+                *(dest++) = '%';
+                *(dest++) = c;
+            }
+        }
+        else
+        {
+            *(dest++) = c;
+        }
+
+    } while (finished == FALSE);
+
+    return dest;
 }
 
 

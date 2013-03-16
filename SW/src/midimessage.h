@@ -43,6 +43,7 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg);
 
 // Translating aspects of a message:
 uint8_t mmsg_getDataType(uint8_t x);
+char *mmsg_WriteNoteName(char *dest, uint8_t note_number);
 char *mmsg_WriteControllerName(char *dest, uint8_t ctrl);
 uint8_t mmsg_dataCountGet(uint8_t midi_status);
 

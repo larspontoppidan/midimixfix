@@ -15,7 +15,7 @@ char pstr_Off[] PROGMEM = "Off";
 
 char pstr_PlusParentheses[]  PROGMEM = "(+)";
 char pstr_MinusParentheses[] PROGMEM = "(-)";
-//char pstr_OnParentheses[]  PROGMEM = " (ON)";
+char pstr_OnParentheses[]  PROGMEM = " (ON)";
 char pstr_OffParentheses[] PROGMEM = "(OFF)";
 
 char pstr_Discard[] PROGMEM = "Discard";

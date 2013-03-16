@@ -22,6 +22,9 @@ void menu_UserTurns(int8_t delta, bool_t pushed);
 void menu_UserSelects(void);
 void menu_UserBacks(void);
 
+void menu_NotifyRefresh_SAFE(void);
+
+void menu_HookMainLoop(void);
 
 ///////// Defines
 

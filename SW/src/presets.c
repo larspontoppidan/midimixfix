@@ -60,7 +60,7 @@ uint16_t PresetRecordSize;
 // Starting from position 0 is the EEPROM header:
 typedef struct
 {
-    uint8_t Sig[3];    // Should be "MMF"
+    uint8_t Sig[4];    // Should be "MMF"
     uint8_t VerMajor;  // Major version
     uint8_t VerMinor;  // Minor version
     uint8_t PresetSlots;
@@ -71,6 +71,11 @@ typedef struct
 #define EEPROM_CHKSUM_SIZE   1
 
 #define EEPROM_CHKSUM_RESET  0xBB
+
+#define SIG_1   'M'
+#define SIG_2   'M'
+#define SIG_3   'F'
+#define SIG_4   0
 
 // Directly after the header comes the preset slots
 // Each preset slot takes RecordSize bytes + one byte checksum
@@ -99,9 +104,10 @@ void presets_FillEepromHeader(eeprom_header_t *header)
 {
     uint8_t i;
 
-    header->Sig[0] = 'M';
-    header->Sig[1] = 'M';
-    header->Sig[2] = 'F';
+    header->Sig[0] = SIG_1;
+    header->Sig[1] = SIG_2;
+    header->Sig[2] = SIG_3;
+    header->Sig[3] = SIG_4;
     header->VerMajor = BUILD_VERSION_MAJOR;
     header->VerMinor = BUILD_VERSION_MINOR;
     header->PresetSlots = PRESET_SLOTS_COUNT;

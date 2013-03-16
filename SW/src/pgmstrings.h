@@ -15,7 +15,7 @@ extern char PROGMEM pstr_Off[];
 
 extern char PROGMEM pstr_PlusParentheses[];
 extern char PROGMEM pstr_MinusParentheses[];
-//extern char PROGMEM pstr_OnParentheses[];
+extern char PROGMEM pstr_OnParentheses[];
 extern char PROGMEM pstr_OffParentheses[];
 extern char PROGMEM pstr_Discard[];
 extern char PROGMEM pstr_Through[];

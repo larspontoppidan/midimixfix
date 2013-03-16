@@ -110,6 +110,9 @@ int main(void)
         // Component hooks for main loop
         COMP_MAIN_LOOP_HOOKS();
 
+        // We are handling menu aspectes here. Call the menu hook
+        menu_HookMainLoop();
+
         // Check if user did something on the controls
         HandleUi();
     }

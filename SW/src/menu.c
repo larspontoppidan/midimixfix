@@ -44,6 +44,8 @@ static uint8_t currentEditMode;
 
 static uint8_t lineBuffer[LCD_COLUMNS + 5];
 
+static volatile bool_t refreshRequested;
+
 //////////// PROTOTYPES
 
 static void RenderRow(uint8_t row, uint8_t component, uint8_t subitem);
@@ -258,12 +260,30 @@ void menu_Initialize(void)
     currentComponent = 1;
     currentSubItem = 0;
     currentEditMode = 0;
+    refreshRequested = FALSE;
 
     // Render all
     Render(TRUE);
 
     // Set cursor
     SetCursor(currentRow, 0u);
+}
+
+
+void menu_NotifyRefresh_SAFE(void)
+{
+    refreshRequested = TRUE;
+}
+
+void menu_HookMainLoop(void)
+{
+    if (refreshRequested == TRUE)
+    {
+        refreshRequested = FALSE;
+
+        Render(TRUE);
+        SetCursor(currentRow, 0u);
+    }
 }
 
 void menu_UserTurns(int8_t delta, bool_t pushed)
@@ -417,6 +437,4 @@ void menu_UserBacks(void)
     // Set cursor
     SetCursor(currentRow, 0u);
 }
-
-
 

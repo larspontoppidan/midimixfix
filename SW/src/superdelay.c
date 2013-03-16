@@ -100,20 +100,19 @@
 
 #define MINIMUM_SPEED         8      // x10 ms
 
+#define INVALID_NUMBER        0xFF
+
 typedef struct
 {
     uint8_t source;
     uint8_t chan;
-    bool_t  sendNoteOff;   // TODO If true, send NoteOff before repeating a note
-    bool_t  hardOff;       // TODO If true, stop delaying instantly at note off
-    bool_t  quantizeOn;    // TODO If true, start notes fixed on delay speed
     uint8_t tapKey;        // TODO Tapping this key will set speed
     uint8_t speed;         // Delay speed in tick count
     int8_t  swing_amount;  // Added to speed of 1 3 5... beats, subtracted from 2 4 6... beats
     uint8_t feedback;      // 128 is 100%, 64 is 50%, 255 is 200%
     uint8_t stopVelocity;  // Velocity to stop repeating at
     uint8_t stopRepeat;    // 0 means unlimited. Repeat count limit
-    uint8_t useVelocity;   // Special ways to change velocity of ongoing delay
+    uint8_t enableCc;      // Midi controller to enable / disable new delay voices
 } delaySetup_t;
 
 
@@ -125,6 +124,7 @@ typedef struct
 #define STATUS_ARM_NOTE_OFF   0x10 // Next NoteOff event is armed
 #define STATUS_DELAY_DONE     0x20 // Next NoteOff event stops this delay voice
 #define STATUS_PROLONGED      0x40 // This delay cycle uses the speed + swing_amount (instead of - )
+
 
 typedef struct
 {
@@ -140,6 +140,32 @@ typedef struct
 #define DELAY_VOICES_MAX 20
 
 
+// Menu
+
+
+#define MENU_TITLE     0  // " Midi delay     (ON)"
+#define MENU_IN_CHAN   1  // "  Use In:1 Chan:1   "
+#define MENU_SPEED     2  // "  Delay Time:XXXX ms"
+#define MENU_SWING     3  // "  Swing     :XXX  ms"
+#define MENU_FEEDBACK  4  // "  Feedback  :110    "
+#define MENU_STOP_VEL  5  // "  Stop Velocity:XX  "
+#define MENU_STOP_REP  6  // "  Stop Repeats :XX  "
+#define MENU_ENABLE_CC 7  // "  EnableCC:OFF      "
+#define MENU_TAP_SPEED 8  // "  Tap Speed Key:C-4 "
+
+#define MENU_SUB_ITEMS 8
+
+typedef struct
+{
+    char text[19];
+    uint8_t cursor;
+    void *data;
+} menuItem_t;
+
+#define MENU_ITEMS 10
+#define MENU_SPECIAL_CHAN 9
+
+
 /////////////////////////   Variables    /////////////////////////
 
 static delayVoice_t DelayVoices[DELAY_VOICES_MAX];
@@ -150,6 +176,24 @@ static bool_t filterEnabled;
 static uint16_t TapSpeedTick;
 static bool_t TapSpeedValid;
 
+static bool_t dynamicEnable;
+
+
+menuItem_t MenuItems[MENU_ITEMS] PROGMEM =
+{
+    {"Midi delay    %O",  17, &(filterEnabled) },
+    {"Input: %i",          7, &(DelaySetup.source) },
+    {"Del.Time: %U0 ms",  13, &(DelaySetup.speed) },
+    {"Swing   :%I",       13, &(DelaySetup.swing_amount) },
+    {"Feedback:  %U",     13, &(DelaySetup.feedback) },
+    {"Stop Vel:  %U",     13, &(DelaySetup.stopVelocity) },
+    {"Stop Rep:  %U",     13, &(DelaySetup.stopRepeat) },
+    {"EnableCC:%c",        9, &(DelaySetup.enableCc) },
+    {"TapSpeed: %n",      10, &(DelaySetup.tapKey) },
+    {" Chan: %i",         15, &(DelaySetup.chan) },
+};
+
+
 /////////////////////////   Prototypes   /////////////////////////
 
 
@@ -158,14 +202,12 @@ static bool_t TapSpeedValid;
 // Set all voices to reset state
 static void InitVoices(void);
 
+static void SetFilterEnabled(bool_t enable);  // TODO mark as main thread!
 
 static bool_t CheckIfMasked(uint8_t voice);
 
 // Go through the delay voices and return the one which is the least active
 static uint8_t FindQuietestVoice(void);
-
-// Ask all delay voices to shut up
-static void KillAllVoices(void);
 
 // Go through delay voices and check if any of them is holding key
 static uint8_t CheckNoteActiveState(uint8_t key);
@@ -183,9 +225,6 @@ static void HandleTick(uint8_t voice, uint16_t tick);
 // Registers note off event
 static void HandleNoteOff(uint8_t voice, mmsg_t *msg);
 
-// Change intensity of delay state
-static void AdjustVelocity(uint8_t voice, uint8_t velocity);
-
 // May generate NoteOff
 static void KillVoice(uint8_t voice, uint8_t dont_touch_this_key);
 
@@ -198,6 +237,10 @@ static void HandleTapSpeedTick(uint16_t tick);
 
 static void SendNoteOn(uint8_t key, uint8_t velocity);
 static void SendNoteOff(uint8_t key);
+
+// ---- MENU implementation ----
+
+static char *WriteMenuLine(char *dest, uint8_t item);
 
 ///////////////////////// Implementation /////////////////////////
 
@@ -214,6 +257,40 @@ static void InitVoices(void)
     {
         DelayVoices[i].status = STATUS_FREE;
     }
+}
+
+// Main thread function
+static void SetFilterEnabled(bool_t enable)
+{
+    if (enable)
+    {
+        InitVoices();
+        TapSpeedValid = FALSE;
+        dynamicEnable = (DelaySetup.enableCc == -1);
+    }
+    else
+    {
+        if (filterEnabled)
+        {
+            uint8_t i;
+
+            // Filter is enabled right now. We must make sure active voices send a note off
+            hal_InterruptsDisable();
+
+            for (i = 0; i < DELAY_VOICES_MAX; i++)
+            {
+                if (DelayVoices[i].status != STATUS_FREE)
+                {
+                    DelayVoices[i].status |= STATUS_DELAY_DONE;
+                }
+            }
+
+            hal_InterruptsEnable();
+        }
+    }
+
+
+    filterEnabled = enable;
 }
 
 // Voice is about to sound. Check if some other delay voice actually masks the contribution
@@ -327,17 +404,6 @@ static uint8_t FindActiveVoice(uint8_t key)
 }
 
 
-// Ask all delay voices to shut up
-static void KillAllVoices(void)
-{
-    uint8_t i;
-
-    for (i = 0; i < DELAY_VOICES_MAX; i++)
-    {
-        KillVoice(i, 255);
-    }
-}
-
 // Go through delay voices and check if any of them is holding key
 static uint8_t CheckNoteActiveState(uint8_t key)
 {
@@ -387,6 +453,7 @@ static void SetupNextDelayCycle(uint8_t index)
     {
         w = 127;
     }
+
     DelayVoices[index].velocity = w;
 
     // Increment repeat counter
@@ -445,18 +512,13 @@ static void SetupNextDelayCycle(uint8_t index)
 // Sets up delay voice according to note message
 static void HandleNoteOn(uint8_t index, mmsg_t *msg)
 {
-    // At note on we don't generate the note on message. It will must be
-    // let through in the hook msg interrupt function
-
-    // Set up the delay voice according to the note on message
     DelayVoices[index].key = msg->midi_data[0];
     DelayVoices[index].keyOnDuration = msg->receive_tick;
     DelayVoices[index].nextNoteOnTime = msg->receive_tick;
-    DelayVoices[index].status = STATUS_GOT_NOTE_ON;
     DelayVoices[index].repeats = 0;
     DelayVoices[index].velocity = msg->midi_data[1];
+    DelayVoices[index].status = STATUS_GOT_NOTE_ON;
 
-    // Prepare next delay cycle
     SetupNextDelayCycle(index);
 }
 
@@ -487,24 +549,6 @@ static void HandleNoteOff(uint8_t index, mmsg_t *msg)
     }
 }
 
-// Change intensity of delay state
-static void AdjustVelocity(uint8_t voice, uint8_t vel)
-{
-    uint8_t new_vel = vel;
-
-    if (new_vel < 20)
-    {
-        new_vel = 20;
-    }
-
-    new_vel += DelayVoices[voice].velocity;
-    new_vel >>= 1;
-
-    new_vel += DelayVoices[voice].velocity;
-    new_vel >>= 1;
-
-    DelayVoices[voice].velocity = new_vel;
-}
 
 // Kill off a voice. If key of voice == dont_touch_this_key, no noteoff will be sent
 static void KillVoice(uint8_t voice, uint8_t dont_touch_this_key)
@@ -592,7 +636,6 @@ static void HandleTick(uint8_t voice, uint16_t tick)
                     SendNoteOn(DelayVoices[voice].key, velocity);
                 }
 
-                // Advance to next delay cycle in any case
                 SetupNextDelayCycle(voice);
             }
         }
@@ -628,6 +671,8 @@ static void HandleTapSpeedEvent(uint16_t tick)
         {
             // Allright, we got a new delay speed:
             DelaySetup.speed = (uint8_t)speedProposal;
+
+            menu_NotifyRefresh_SAFE();
         }
 
     }
@@ -675,22 +720,16 @@ static void SendNoteOff(uint8_t key)
 
 
 
-
-
 // ---- Public functions ----
 
 void sdelay_Initialize(void)
 {
     // Set setup defaults
     filterEnabled = FALSE;
+    dynamicEnable = TRUE;
     TapSpeedValid = FALSE;
-    memset(&DelaySetup, 0, sizeof(delaySetup_t));
 
-    // Set delay state defaults
-    InitVoices();
-
-    // Set some defaults for testing:
-    DelaySetup.feedback = 90;
+    DelaySetup.feedback = 110;
     DelaySetup.stopRepeat = 0;
     DelaySetup.stopVelocity = 4;
     DelaySetup.speed = 50;
@@ -698,59 +737,88 @@ void sdelay_Initialize(void)
     DelaySetup.tapKey = 0x1C;
     DelaySetup.chan = 0;
     DelaySetup.source = MMSG_SOURCE_INPUT1;
-    DelaySetup.sendNoteOff = FALSE;// TRUE;
+    DelaySetup.enableCc = -1;
 
-    filterEnabled = TRUE;
+    // Set delay state defaults
+    InitVoices();
 }
 
 void sdelay_HookMidiMsg_ISR(mmsg_t *msg)
 {
-    if ((msg->flags & DelaySetup.source) != 0)
+    if (filterEnabled)
     {
-        // TODO also check if message is OK
-
-        uint8_t x = msg->midi_status;
-
-        // Do we listen to this channel
-        if ((x & MIDI_CHANNEL_MASK) == DelaySetup.chan)
+        if ((msg->flags & DelaySetup.source) != 0)
         {
-            uint8_t voice;
+            // TODO also check if message is OK
 
-            // Maybe this is tap speed?
-            if (msg->midi_data[0] == DelaySetup.tapKey)
+            uint8_t x = msg->midi_status;
+
+            // Do we listen to this channel
+            if ((x & MIDI_CHANNEL_MASK) == DelaySetup.chan)
             {
-                if ((x & MIDI_STATUS_MASK) == MIDI_STATUS_NOTE_ON)
+                uint8_t voice;
+                bool_t done_with_msg = FALSE;
+
+                // Maybe this is tap speed?
+                if (msg->midi_data[0] == DelaySetup.tapKey)
                 {
-                    // TODO BUG HERE! this will not work with NOTE_OFF using NOTE_ON at velocity 0!!!
-                    HandleTapSpeedEvent(msg->receive_tick);
+                    switch (x & MIDI_STATUS_MASK)
+                    {
+                    case MIDI_STATUS_NOTE_ON:
+                        // TODO GENERAL BUG ! this will not work with NOTE_OFF's using NOTE_ON at velocity 0
+                        // This should be fixed on a general level, affects all filters
+
+                        HandleTapSpeedEvent(msg->receive_tick);
+
+                    case MIDI_STATUS_NOTE_OFF:   // NOTE: Intentional fall through
+
+                    case MIDI_STATUS_KEY_ATOUCH: // NOTE: Intentional fall through
+
+                        // Discard all NoteOn/Off/Aftertouch messages regarding this key
+                        msg->flags |= MMSG_FLAG_DISCARD;
+                        done_with_msg = TRUE;
+                    }
                 }
 
-                // Discard all messages regarding this key
-                msg->flags |= MMSG_FLAG_DISCARD;
-            }
-            else
-            {
-                // Deal with this message if status is something we are interested in
-                switch (x & MIDI_STATUS_MASK)
+                if (done_with_msg == FALSE)
                 {
-                case MIDI_STATUS_NOTE_ON:
-                    // Find a delayvoice for this note on
-                    voice = FindQuietestVoice();
-                    KillVoice(voice, msg->midi_data[0]);
-                    HandleNoteOn(voice, msg);
-                    break;
+                    // Deal with this message if status is something we are interested in
+                    switch (x & MIDI_STATUS_MASK)
+                    {
+                    case MIDI_STATUS_NOTE_ON:
+                        if (dynamicEnable)
+                        {
+                            // Find a delayvoice for this note on
+                            voice = FindQuietestVoice();
+                            // Make sure to generate note-off for the voice if required
+                            KillVoice(voice, msg->midi_data[0]);
+                            // Setup voice according to this note on
+                            HandleNoteOn(voice, msg);
+                        }
+                        break;
 
-                case MIDI_STATUS_NOTE_OFF:
-                    // Find the delayvoice that needs to get this note off
-                    voice = FindActiveVoice(msg->midi_data[0]);
-                    HandleNoteOff(voice, msg);
-                    break;
+                    case MIDI_STATUS_NOTE_OFF:
+                        // Find the delayvoice that needs to get this note off
+                        voice = FindActiveVoice(msg->midi_data[0]);
+                        HandleNoteOff(voice, msg);
+                        break;
 
-                case MIDI_STATUS_KEY_ATOUCH:
-                    // Find the delayvoice that needs to get this note off
-                    //voice = FindActiveVoice(msg->midi_data[0]);
-                    //AdjustVelocity(voice, msg->midi_data[1]);
-                    break;
+                    case MIDI_STATUS_CTRL_CHANGE:
+
+                        // Are we listening to this controller?
+                        if (msg->midi_data[0] == DelaySetup.enableCc)
+                        {
+                            dynamicEnable = (msg->midi_data[1] > 0x40);
+                            msg->flags |= MMSG_FLAG_DISCARD;
+                        }
+                        break;
+
+                        //case MIDI_STATUS_KEY_ATOUCH:
+                        //    // Find the delayvoice that needs to get this note off
+                        //    voice = FindActiveVoice(msg->midi_data[0]);
+                        //    AdjustVelocity(voice, msg->midi_data[1]);
+                        //    break;
+                    }
                 }
             }
         }
@@ -776,29 +844,157 @@ void sdelay_HookTick_ISR(void)
 
 void sdelay_HookMainLoop(void)
 {
-    // TODO Maybe do maintenance to make sure we don't have stuck delays hanging around
+    // Maybe do maintenance to make sure we don't have stuck delays hanging around
 }
-
 
 
 uint8_t sdelay_MenuGetSubCount(void)
 {
-    return 0;
+    return filterEnabled ? MENU_SUB_ITEMS : 0;
 }
 
-void    sdelay_MenuGetText(char *dest, uint8_t item)
+static char *WriteMenuLine(char *dest, uint8_t item)
 {
-    dest[0] = 'S';
-    dest[1] = 'D';
-    dest[2] = 0;
+    uint8_t *p;
+    uint8_t data;
+
+    // Write the menu line of text
+
+    // First we must retrieve the data pointer from PROGMEM table:
+    p = (uint8_t*) pgm_read_word( &(MenuItems[item].data) );
+    data = *p;
+
+    // Special processing necessary?
+    if (item == MENU_SPECIAL_CHAN)
+    {
+        data++;
+    }
+
+    // Write the formatted menu text
+    return util_strWriteFormat_P(dest, MenuItems[item].text, data);
+}
+
+void sdelay_MenuGetText(char *dest, uint8_t item)
+{
+
+    dest = WriteMenuLine(dest, item);
+
+    // Some items need special handling
+
+    switch(item)
+    {
+    case MENU_IN_CHAN:
+        // We are not done yet, write channel also:
+        dest = WriteMenuLine(dest, MENU_SPECIAL_CHAN);
+        break;
+
+    case MENU_SWING:
+        // Only write 0 if swing is 0
+        if (DelaySetup.swing_amount == 0)
+        {
+            dest = util_strCpy_P(dest - 2, PSTR("OFF"));
+        }
+        else
+        {
+            dest = util_strCpy_P(dest, PSTR("0 ms"));
+        }
+        break;
+    }
+
 }
 
 uint8_t sdelay_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
-    return 0;
+    uint8_t ret;
+    uint8_t menu_item;
+
+    // Are we changing the edit_mode level?
+    if (user_event == MENU_EVENT_SELECT)
+    {
+        edit_mode++;
+    }
+    else if (user_event == MENU_EVENT_BACK)
+    {
+        edit_mode--;
+    }
+
+    // Is current position valid, and what menu_item (in our system) does it represent?
+    menu_item = INVALID_NUMBER;
+    if (edit_mode == 1)
+    {
+        // OK
+        menu_item = item;
+    }
+    else if (edit_mode == 2)
+    {
+        // Only possible at IN_CHAN combined menu
+        if (item == MENU_IN_CHAN)
+        {
+            menu_item = MENU_SPECIAL_CHAN;
+        }
+    }
+
+
+    // Set return value. If we can accept the edit mode, send cursor position:
+
+    if (menu_item != INVALID_NUMBER)
+    {
+        ret = pgm_read_byte( &(MenuItems[menu_item].cursor) );
+    }
+    else
+    {
+        ret = MENU_EDIT_MODE_UNAVAIL;
+    }
+
+    if ((user_event == MENU_EVENT_TURN) || (user_event == MENU_EVENT_TURN_PUSH))
+    {
+        // If we are turning pushed, multiply advance by 10
+        if (user_event == MENU_EVENT_TURN_PUSH)
+        {
+            knob_delta *= 10;
+        }
+
+        // Adjust what must be adjusted
+        switch (menu_item)
+        {
+        case MENU_TITLE:
+            SetFilterEnabled(knob_delta > 0);
+            ret |= MENU_UPDATE_ALL;
+            break;
+        case MENU_IN_CHAN:
+            DelaySetup.source = util_boundedAddInt8(DelaySetup.source, 1, 2, knob_delta);
+            break;
+        case MENU_SPEED:
+            DelaySetup.speed = util_boundedAddUint8(DelaySetup.speed, MINIMUM_SPEED, 255, knob_delta);
+            break;
+        case MENU_SWING:
+            DelaySetup.swing_amount = util_boundedAddInt8(DelaySetup.swing_amount, -100, 100, knob_delta);
+            break;
+        case MENU_FEEDBACK:
+            DelaySetup.feedback = util_boundedAddUint8(DelaySetup.feedback, 1, 127, knob_delta);
+            break;
+        case MENU_STOP_VEL:
+            DelaySetup.stopVelocity = util_boundedAddUint8(DelaySetup.stopVelocity, 1, 127, knob_delta);
+            break;
+        case MENU_STOP_REP:
+            DelaySetup.stopRepeat = util_boundedAddUint8(DelaySetup.stopRepeat, 0, 100, knob_delta);
+            break;
+        case MENU_ENABLE_CC:
+            DelaySetup.enableCc = util_boundedAddInt8(DelaySetup.enableCc, -1, 64, knob_delta);
+            // If we are changing how to use enable / disable, better make sure we are enabled actually
+            dynamicEnable = (DelaySetup.enableCc == -1);
+            break;
+        case MENU_TAP_SPEED:
+            DelaySetup.tapKey = util_boundedAddUint8(DelaySetup.tapKey, 0, 127, knob_delta);
+            break;
+        case MENU_SPECIAL_CHAN:
+            DelaySetup.chan = util_boundedAddInt8(DelaySetup.chan, 0, 15, knob_delta);
+            break;
+        }
+    }
+
+    return ret;
 }
-
-
 
 
 uint8_t sdelay_ConfigGetSize(void)
@@ -815,9 +1011,15 @@ void sdelay_ConfigSave(uint8_t *dest)
 
 void sdelay_ConfigLoad(uint8_t *dest)
 {
-    filterEnabled = *(dest++);
+    bool_t enable;
 
+    enable = *(dest++);
+
+    hal_InterruptsDisable();
     memcpy(&(DelaySetup), dest, sizeof(delaySetup_t));
+    hal_InterruptsEnable();
+
+    SetFilterEnabled(enable);
 }
 
 
