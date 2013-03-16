@@ -6,7 +6,8 @@
  */
 
 
-// Block filter
+/////////////////////////    INCLUDES    /////////////////////////
+
 
 #include "common.h"
 #include "blockfilter.h"
@@ -16,120 +17,419 @@
 #include "pgmstrings.h"
 #include <string.h>
 
-// The block filter can do blocks of:
+// The rules have the following structure:
+//
+// Input:   In1 In2 In*
+// Map:     Chan1 - Chan16, P.Wheel, Chan.AT, Ctl:0 to Ctl:64
+// To:      Chan1 - Chan16, P.Wheel, Chan.AT, Ctl:0 to Ctl:64, or NULL
+//
+// Map and Block (OFF)
+// "In1 Chan2"
+//   To block"
+// "In:1 Ctl:4"
+//   To Ctl:6"
+// "In:1 Chan:1"
+//   To Chan:2
+//
 
-// Channels:            In1 Ch1 to In2 Ch16
 
+// The user interface settings boils down to the following rule structure used for the filter:
+//
+// Rule structure:
+//
+// Selection of message:
+//   Input filter:     1, 2, *
+//   Channel filter:   1 - 16, *
+//   Msg type filter:  Chan-A touch, Pich bend, Key atouch, Controller ..., *
+//   Msg data filter:  Value, *
+//
+// What to do:
+//   Action:           Discard, Change chan, Change CC, Chan.A.touch-To-Controller, Controller-To-Chan.A.touch
+//   Action-data:      <depending on action>
+
+
+/////////////////////////    Defines     /////////////////////////
+
+
+// ---- The rule engine ----
+
+// Note input is always filtered. Otherwise TYPE_GENERATED messages might be processed by
+// the engine, which we don't want
+
+#define MODE_OFF             0     // This rule is off
+
+#define MODE_FILTER_CHAN     0x01  // Channel must equal filter_data1
+#define MODE_FILTER_TYPE     0x02  // Midi message type must equal filter_data1
+#define MODE_FILTER_DATA     0x04  // Midi message data1 must equal filter_data2
+
+#define MODE_ACTION_MASK     0xF0
+#define MODE_ACTION_DISCARD  0x10
+#define MODE_ACTION_SET_CHAN 0x20  // Modify channel
+#define MODE_ACTION_SET_CC   0x30  // Modify continuous controller type
+#define MODE_ACTION_1_TO_CC  0x40  // Byte 1 of midi data to CC number action_data
+//#define MODE_ACTION_1_TO_CAT 0x50  // Byte 1 of midi data to Channel-A.Touch
+//#define MODE_ACTION_2_TO_CC  0x60  // Byte 2 of midi data to CC number action_data
+#define MODE_ACTION_2_TO_CAT 0x70  // Byte 2 of midi data to Channel-A.Touch
+
+typedef struct
+{
+    uint8_t mode;
+
+    uint8_t filter_input;
+    uint8_t filter_data1;
+    uint8_t filter_data2;
+
+    uint8_t action_data;
+} rule_t;
+
+#define RULE_MAX 10
+
+
+
+// ---- The user interface ----
+
+// The user selects input 1, 2, *  then filter target is selected, which can be:
+
+// Targets:
+//   0  Discard (only valid as a input target)
+#define TARGET_DISCARD      0
+
+//   1  Chan 1
+//   ...
+//   16 Chan 16
+
+#define TARGET_KEY_A_TOUCH  17
+#define TARGET_CHAN_A_TOUCH 18
+#define TARGET_PROG_CHANGE  19
+#define TARGET_PITCH_WHEEL  20
+
+static uint8_t targetStatusMap[4] PROGMEM =
+{
+        MIDI_STATUS_KEY_ATOUCH,
+        MIDI_STATUS_CHAN_ATOUCH,
+        MIDI_STATUS_PROG_CHANGE,
+        MIDI_STATUS_PITCH_WHEEL
+};
+
+#define TARGET_FIRST_CC     21
+//   21 CC:1
+//   22 CC:2
+//   ...
+
+#define TARGET_LAST_CC      (TARGET_FIRST_CC + 63)
+
+#define TARGET_MAX  TARGET_LAST_CC
 
 typedef struct
 {
     // The block filter is configured by these:
-    int8_t source;
-    int8_t chan;
+    uint8_t input;
+    uint8_t target_in;
+    uint8_t target_out;
 
-//    int8_t type;
-//
-//    // To make the ISR implementation efficient, the filter is realized by
-//    // these four variables
-//    uint8_t status_mask;
-//    uint8_t status_compare;
-//    uint8_t byte1_mask;
-//    uint8_t byte1_compare;
-} blockFilter_t;
+} ruleConfig_t;
 
-// Variables
 
-static char titleString[] PROGMEM = "Block filter ";
+static char titleString[] PROGMEM = "Block and map";
 
-#define FILTER_COUNT_MAX 10
 
-static uint8_t filterCount;
-static blockFilter_t filters[FILTER_COUNT_MAX];
+
+/////////////////////////   Variables    /////////////////////////
+
+
+static uint8_t ruleCount;
+
+static ruleConfig_t ruleConfigs[RULE_MAX];
+static rule_t       rules[RULE_MAX];
+
+
+
+/////////////////////////   Prototypes   /////////////////////////
+
+static bool_t ProcessRuleConfig(uint8_t index);
+
+static char *WriteTargetName(char *dest, uint8_t target);
+
+
+///////////////////////// Implementation /////////////////////////
+
+// Process the input and output configured by user. A corresponding rule is set up
+// if possible and TRUE is returned. Otherwise FALSE is returned.
+static bool_t ProcessRuleConfig(uint8_t index)
+{
+    uint8_t mode = 0;
+    uint8_t t_in = ruleConfigs[index].target_in;
+    uint8_t t_out = ruleConfigs[index].target_out;
+    bool_t rule_accepted = FALSE;
+
+    rules[index].mode = MODE_OFF;
+    rules[index].filter_input = ruleConfigs[index].input;
+
+    if (t_in == TARGET_DISCARD)
+    {
+        // We can't have "discard" as input
+    }
+    else if (t_in > TARGET_LAST_CC)
+    {
+        // Out of range
+    }
+    else if (t_in < 17)
+    {
+        // The input is a channel
+
+        mode |= MODE_FILTER_CHAN;
+        rules[index].filter_data1 = t_in - 1;
+
+        // Output can be discard or another channel
+
+        if (t_out == TARGET_DISCARD)
+        {
+            mode |= MODE_ACTION_DISCARD;
+            rule_accepted = TRUE;
+        }
+        else if (t_out < 17)
+        {
+            mode |= MODE_ACTION_SET_CHAN;
+            rules[index].action_data = t_out - 1;
+            rule_accepted = TRUE;
+        }
+    }
+    else if ((t_in >= TARGET_FIRST_CC) &&
+             (t_in <= TARGET_LAST_CC))
+    {
+        // Input is a continuous controller
+
+        mode |= MODE_FILTER_TYPE | MODE_FILTER_DATA;
+        rules[index].filter_data1 = MIDI_STATUS_CTRL_CHANGE;
+        rules[index].filter_data2 = t_in - TARGET_FIRST_CC;
+
+        // Output can be discard, another controller or chan.a.touch
+
+        if (t_out == TARGET_DISCARD)
+        {
+            mode |= MODE_ACTION_DISCARD;
+            rule_accepted = TRUE;
+        }
+        else if  ((t_out >= TARGET_FIRST_CC) &&
+                  (t_out <= TARGET_LAST_CC))
+        {
+            mode |= MODE_ACTION_SET_CC;
+            rules[index].action_data = t_out - TARGET_FIRST_CC;
+            rule_accepted = TRUE;
+        }
+        else if (t_out == TARGET_CHAN_A_TOUCH)
+        {
+            // Convert from continuous controller to chan aftertouch,
+            // this means byte 2 of midi message must be passed on:
+            mode |= MODE_ACTION_2_TO_CAT;
+            rule_accepted = TRUE;
+        }
+    }
+    else if (t_in == TARGET_CHAN_A_TOUCH)
+    {
+        // Input is channel after touch
+
+        mode |= MODE_FILTER_TYPE;
+        rules[index].filter_data1 = MIDI_STATUS_CHAN_ATOUCH;
+
+        // Output can be discard or another controller
+
+        if (t_out == TARGET_DISCARD)
+        {
+            mode |= MODE_ACTION_DISCARD;
+            rule_accepted = TRUE;
+        }
+        else if  ((t_out >= TARGET_FIRST_CC) &&
+                  (t_out <= TARGET_LAST_CC))
+        {
+            // Convert from chan aftertouch to continuous controller,
+            // this means byte 1 of midi message must be passed on:
+            mode |= MODE_ACTION_1_TO_CC;
+            rules[index].action_data = t_out - TARGET_FIRST_CC;
+            rule_accepted = TRUE;
+        }
+    }
+    else
+    {
+        mode |= MODE_FILTER_TYPE;
+        rules[index].filter_data1 = pgm_read_byte( & (targetStatusMap[t_in - 17]));
+
+        // For these target types, we only allow discard as output
+
+        if (t_out == TARGET_DISCARD)
+        {
+            mode |= MODE_ACTION_DISCARD;
+            rule_accepted = TRUE;
+        }
+    }
+
+    if (rule_accepted)
+    {
+        rules[index].mode = mode;
+    }
+    else
+    {
+        rules[index].mode = MODE_OFF;
+    }
+
+    return rule_accepted;
+}
+
+
+static char *WriteTargetName(char *dest, uint8_t target)
+{
+    if (target == TARGET_DISCARD)
+    {
+        dest = util_strCpy_P(dest, PSTR("discard"));
+    }
+    else if (target < 17)
+    {
+        // A channel
+        dest = util_strWriteFormat_P(dest, PSTR("Chan %i"), target);
+    }
+    else if (target < TARGET_FIRST_CC)
+    {
+        // A midi message type
+        dest = mmsg_WriteStatusName(dest, pgm_read_byte( & (targetStatusMap[target - 17])) );
+    }
+    else if (target <= TARGET_LAST_CC)
+    {
+        // A controller
+        dest = util_strCpy_P(dest, PSTR("CC: "));
+        dest = mmsg_WriteControllerName(dest, target - TARGET_FIRST_CC);
+    }
+
+    return dest;
+}
 
 
 void blockf_Initialize(void)
 {
     uint8_t i;
 
-    filterCount = 0;
+    ruleCount = 0;
 
-    // Set default curves in all slots
-    for (i = 0; i < FILTER_COUNT_MAX; i++)
+    // Set default setup in all slots
+    for (i = 0; i < RULE_MAX; i++)
     {
-        filters[i].source = 1;
-        filters[i].chan = 0;
+        ruleConfigs[i].input = 1;
+        ruleConfigs[i].target_in = 1;
+        ruleConfigs[i].target_out = 0;
+        ProcessRuleConfig(i);
     }
 
 }
 
 void blockf_HookMidiMsg_ISR(mmsg_t *msg)
 {
-    /*
-    if (filterEnabled != FALSE)
-    {
-        uint8_t i;
-        uint8_t x;
+    uint8_t midistatus = msg->midi_status;
 
-        for (i = 0; i < filter_count; i++)
+    // TODO check if message is valid
+
+    if ((midistatus & 0xF0) != 0xF0u)
+    {
+        // Its a channel something message, we only deal with this kind of message
+
+        uint8_t i;
+        bool_t discard = FALSE;
+
+        for (i = 0; i < ruleCount; i++)
         {
-            if ((msg->source & source) != 0)
+            // Always check source
+
+            if ((msg->flags & rules[i].filter_input) != 0)
             {
-                if ((msg->midi_status & bfBlock[i].status_mask)
-                        == bfBlock[i].status_compare)
+                uint8_t mode = rules[i].mode;
+                bool_t selected;
+
+                if (mode & MODE_FILTER_CHAN)
                 {
-                    if ((msg->midi_data[0] & bfBlock[i].byte1_mask)
-                            == bfBlock[i].byte1_compare)
+                    // We want a certain channel
+                    selected = (midistatus & MIDI_CHANNEL_MASK) == rules[i].filter_data1;
+                }
+                else
+                {
+                    selected = TRUE;
+
+                    if (mode & MODE_FILTER_TYPE)
                     {
-                        msg->flags |= MMSG_FLAG_DISCARD;
+                        // We want a certain status type
+                        selected = selected && ((midistatus & MIDI_STATUS_MASK) == rules[i].filter_data1);
+                    }
+
+                    if (mode & MODE_FILTER_DATA)
+                    {
+                        // We want first data byte to match
+                        selected = selected && (msg->midi_data[0] == rules[i].filter_data2);
+                    }
+                }
+
+                if (selected)
+                {
+                    // Selection filter suggests we deal with this message,
+                    // do what we have to do:
+
+                    switch (mode & MODE_ACTION_MASK)
+                    {
+                    case MODE_ACTION_DISCARD:
+                        discard = TRUE;
+                        break;
+
+                    case MODE_ACTION_SET_CHAN:
+                        //
+                        midistatus = (midistatus & ~MIDI_CHANNEL_MASK) | rules[i].action_data;
+                        msg->midi_status = midistatus;
+                        break;
+
+                    case MODE_ACTION_SET_CC:
+                        // Change continuous controller type
+                        msg->midi_data[0] = rules[i].action_data;
+                        break;
+
+                    case MODE_ACTION_1_TO_CC:
+                        // Convert message to continuous controller
+                        midistatus = (midistatus & ~MIDI_STATUS_MASK) | MIDI_STATUS_CTRL_CHANGE;
+                        msg->midi_status = midistatus;
+                        msg->midi_data[1] = msg->midi_data[0];
+                        msg->midi_data[0] = rules[i].action_data;
+                        msg->midi_data_len = 2;
+                        break;
+
+                    case MODE_ACTION_2_TO_CAT:
+                        // Convert message to channel after touch
+                        midistatus = (midistatus & ~MIDI_STATUS_MASK) | MIDI_STATUS_CHAN_ATOUCH;
+                        msg->midi_status = midistatus;
+                        msg->midi_data[0] = msg->midi_data[1];
+                        msg->midi_data_len = 1;
                         break;
                     }
                 }
             }
-        }
-    }
-    */
 
-    // Right now, lets just implement a simplified version, only source / channel blocks:
-
-    uint8_t i;
-    uint8_t x;
-
-    for (i = 0; i < filterCount; i++)
-    {
-        if ((msg->flags & filters[i].source) != 0)
-        {
-            x = msg->midi_status;
-
-            if ((x & 0xF0) != 0xF0u)
+            if (discard)
             {
-                // Its a channel something message, check if we allow this channel
-                if ((x & 0x0F) == filters[i].chan)
-                {
-                    // This message has to stop!
-                    msg->flags |= MMSG_FLAG_DISCARD;
-                    break;
-                }
+                msg->flags |= MMSG_FLAG_DISCARD;
+                break;
             }
-        }
-    }
 
+        } // END: for (i = 0; i < ruleCount; i++)
+    }
 }
 
 void blockf_HookTick_ISR(void)
 {
-
+    // TODO remove
 }
 
 void blockf_HookMainLoop(void)
 {
-
+    // TODO remove
 }
 
 uint8_t blockf_MenuGetSubCount(void)
 {
-    return filterCount;
+    return ruleCount * 2;
 }
-
 
 void blockf_MenuGetText(char *dest, uint8_t item)
 {
@@ -137,22 +437,49 @@ void blockf_MenuGetText(char *dest, uint8_t item)
     {
         // Write first menu line
         util_strCpy_P(dest, titleString);
-        util_strWriteNumberParentheses(dest + 14, filterCount);
+        util_strWriteNumberParentheses(dest + 14, ruleCount);
     }
     else
     {
-        // Write block filter definition:
-        dest = pstr_writeInX(dest, filters[item - 1].source);
-        (*dest++) = ' ';
+        uint8_t c = (item - 1) >> 1;
 
-        dest = util_strCpy_P(dest, pstr_Chan);
-        dest = util_strWriteInt8LA(dest, filters[item - 1].chan + 1);
+        if ((item & 1) == 1)
+        {
+            // First line of a block filter, write: "InX ..."
+            dest = pstr_writeInX(dest, ruleConfigs[c].input);
+            (*dest++) = ' ';
+
+            // Write input target
+            dest = WriteTargetName(dest, ruleConfigs[c].target_in);
+        }
+        else
+        {
+            // Second line of a block filter, write " to "
+            dest = util_strCpy_P(dest, PSTR(" to "));
+
+            // Write output target
+            dest = WriteTargetName(dest, ruleConfigs[c].target_out);
+
+            // Notify user if this config is invalid
+            if (rules[c].mode == MODE_OFF)
+            {
+                dest = util_strCpy_P(dest, PSTR(" ERR!"));
+            }
+        }
+
     }
 }
 
 uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
+
+    // Generally, we want the pushed turns to be x10
+    if (user_event == MENU_EVENT_TURN_PUSH)
+    {
+        user_event = MENU_EVENT_TURN;
+        knob_delta *= 10;
+    }
 
     if (item == 0)
     {
@@ -171,7 +498,7 @@ uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
             if ((user_event == MENU_EVENT_TURN) || (user_event == MENU_EVENT_TURN_PUSH))
             {
                 // Modify filter count
-                filterCount = util_boundedAddInt8(filterCount, 0, FILTER_COUNT_MAX, knob_delta);
+                ruleCount = util_boundedAddInt8(ruleCount, 0, RULE_MAX, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
                 ret = 17 | MENU_UPDATE_ALL;
@@ -180,33 +507,66 @@ uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
     }
     else
     {
-        // We are highlighting one block filter
-        if (user_event == MENU_EVENT_SELECT)
+        uint8_t c = (item - 1) >> 1;
+
+        if ((item & 1) == 1)
         {
-            if (edit_mode == 0)
+            // We are highlighting block filter input
+            if (user_event == MENU_EVENT_SELECT)
             {
-                // User enters first edit mode
-                ret = 0;
+                if (edit_mode == 0)
+                {
+                    // User enters first edit mode
+                    ret = 0;
+                }
+                else if (edit_mode == 1)
+                {
+                    // User enters second edit mode
+                    ret = 4;
+                }
             }
-            else if (edit_mode == 1)
+            else if (user_event == MENU_EVENT_TURN)
             {
-                // User enters second edit mode
-                ret = 4;
+                if (edit_mode == 1)
+                {
+                    ret = 0;
+                    ruleConfigs[c].input =
+                            util_boundedAddInt8(ruleConfigs[c].input, 1, 3, knob_delta);
+                }
+                else if (edit_mode == 2)
+                {
+                    ret = 4 | MENU_UPDATE_ALL;
+
+                    ruleConfigs[c].target_in =
+                            util_boundedAddInt8(ruleConfigs[c].target_in, 1, TARGET_MAX, knob_delta);
+
+                }
+
+                ProcessRuleConfig(c);
             }
         }
-        else if ((user_event == MENU_EVENT_TURN) || (user_event == MENU_EVENT_TURN_PUSH))
+        else
         {
-            if (edit_mode == 1)
+            // We are highlighting block filter output line
+            if (user_event == MENU_EVENT_SELECT)
             {
-                ret = 0;
-                filters[item-1].source =
-                        util_boundedAddInt8(filters[item-1].source, 1, 3, knob_delta);
+                if (edit_mode == 0)
+                {
+                    // User enters first edit mode
+                    ret = 5;
+                }
             }
-            else if (edit_mode == 2)
+            else if (user_event == MENU_EVENT_TURN)
             {
-                ret = 4;
-                filters[item-1].chan =
-                    util_boundedAddInt8(filters[item-1].chan, 0, 15, knob_delta);
+                if (edit_mode == 1)
+                {
+                    ret = 5;
+
+                    ruleConfigs[c].target_out =
+                            util_boundedAddInt8(ruleConfigs[c].target_out, 0, TARGET_MAX, knob_delta);
+
+                    ProcessRuleConfig(c);
+                }
             }
         }
     }
@@ -218,19 +578,33 @@ uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
 
 uint8_t blockf_ConfigGetSize(void)
 {
-    return 1 + FILTER_COUNT_MAX * sizeof(blockFilter_t);
+    return 1 + RULE_MAX * sizeof(ruleConfig_t);
 }
 
 void blockf_ConfigSave(uint8_t *dest)
 {
-    *(dest++) = filterCount;
+    *(dest++) = ruleCount;
 
-    memcpy(dest, &(filters[0]), FILTER_COUNT_MAX * sizeof(blockFilter_t));
+    memcpy(dest, &(ruleConfigs[0]), RULE_MAX * sizeof(ruleConfig_t));
 }
 
 void blockf_ConfigLoad(uint8_t *dest)
 {
-    filterCount = *(dest++);
+    uint8_t new_count;
+    uint8_t i;
 
-    memcpy(&(filters[0]), dest, FILTER_COUNT_MAX * sizeof(blockFilter_t));
+    ruleCount = 0;
+
+    new_count = *(dest++);
+
+    memcpy(&(ruleConfigs[0]), dest, RULE_MAX * sizeof(ruleConfig_t));
+
+    for (i = 0; i < new_count; i++)
+    {
+        ProcessRuleConfig(i);
+    }
+
+    ruleCount = new_count;
+
 }
+

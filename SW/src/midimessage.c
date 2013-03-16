@@ -123,10 +123,10 @@ char MidiStatusNames[8][9] PROGMEM =
 {
         {"N.Off "},    // 0x80
         {"N.On  "},     // 0x90
-        {"ATouch "},   // 0xA0
+        {"KeyAT "},   // 0xA0
         {""},          // 0xB0   // Control change, don't write name of this status
         {"ProgChg "},  // 0xC0
-        {"ATouch "},   // 0xD0
+        {"ChanAT "},   // 0xD0
         {"PitchW "},   // 0xE0
         {"System "}    // 0xF0
 };
@@ -362,6 +362,13 @@ char *mmsg_WriteNoteName(char *dest, uint8_t note_number)
     dest = util_strWriteInt8LA(dest, (int8_t)(note_number / 12) - (int8_t)5);
     return dest;
 }
+
+char *mmsg_WriteStatusName(char *dest, uint8_t status)
+{
+    dest = util_strCpy_P(dest, MidiStatusNames[(status >> 4u) - 8]);
+    return dest;
+}
+
 
 char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
 {

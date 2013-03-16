@@ -398,7 +398,6 @@ static uint8_t FindActiveVoice(uint8_t key)
     }
 
     // Not found!
-    err_Raise(ERR_MODULE_SDELAY, __LINE__);
 
     return 0;
 }

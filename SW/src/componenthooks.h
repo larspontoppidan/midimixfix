@@ -26,8 +26,8 @@
     blockf_Initialize();        \
     curvef_Initialize();        \
     genmsg_initialize();        \
-    presets_initialize();       \
     sdelay_Initialize();        \
+    presets_initialize();       \
     } while (0)
 
 // For processing normal incoming messages

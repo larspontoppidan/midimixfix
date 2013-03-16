@@ -45,6 +45,8 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg);
 uint8_t mmsg_getDataType(uint8_t x);
 char *mmsg_WriteNoteName(char *dest, uint8_t note_number);
 char *mmsg_WriteControllerName(char *dest, uint8_t ctrl);
+char *mmsg_WriteStatusName(char *dest, uint8_t status);
+
 uint8_t mmsg_dataCountGet(uint8_t midi_status);
 
 // Is a certain key white or black on the keyboard?
