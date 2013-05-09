@@ -12,11 +12,11 @@
 #include <avr/io.h>
 
 
-void hal_Initialize(void);
+void Hal_initialize(void);
 
-void hal_StatusLedSet(bool_t on);
+void Hal_statusLedSet(bool_t on);
 
-void hal_LcdBacklightSet(bool_t on);
+void Hal_lcdBacklightSet(bool_t on);
 
 // LCD hardware defines
 #define HAL_LCD_DATA_PORT  PORTC
@@ -32,23 +32,23 @@ void hal_LcdBacklightSet(bool_t on);
 
 #define HAL_ENCODER_QUAD_A     0x01
 #define HAL_ENCODER_QUAD_B     0x02
-uint8_t hal_EncoderQuadGet(void);
+uint8_t Hal_encoderQuadGet(void);
 
 // Button states
 #define HAL_BUTTON_PUSH  (1u << 5)
 #define HAL_BUTTON_SEL   (1u << 4)
 #define HAL_BUTTON_BACK  (1u << 3)
-uint8_t hal_ButtonStatesGet(void);
+uint8_t Hal_buttonStatesGet(void);
 
 
-void hal_InterruptsDisable(void);
-void hal_InterruptsEnable(void);
+void Hal_interruptsDisable(void);
+void Hal_interruptsEnable(void);
 
-uint16_t hal_TickCountGet_ISR(void);
-uint16_t hal_TickCountGet(void);
+uint16_t Hal_tickCountGet_ISR(void);
+uint16_t Hal_tickCountGet_MAIN(void);
 
-bool_t hal_MidiTxActiveGet_ISR(void);
-void   hal_MidiTxSend_ISR(uint8_t x);
-void   hal_MidiTxIsrEnable_ISR(bool_t en);
+bool_t Hal_midiTxGetActive_ISR(void);
+void   Hal_midiTxSend_ISR(uint8_t x);
+void   Hal_midiTxEnableIsr_ISR(bool_t en);
 
 #endif /* HAL_H_ */

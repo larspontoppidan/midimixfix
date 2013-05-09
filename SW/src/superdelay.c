@@ -277,7 +277,7 @@ static void SetFilterEnabled(bool_t enable)
             uint8_t i;
 
             // Filter is enabled right now. We must make sure active voices send a note off
-            hal_InterruptsDisable();
+            Hal_interruptsDisable();
 
             for (i = 0; i < DELAY_VOICES_MAX; i++)
             {
@@ -287,7 +287,7 @@ static void SetFilterEnabled(bool_t enable)
                 }
             }
 
-            hal_InterruptsEnable();
+            Hal_interruptsEnable();
         }
     }
 
@@ -688,7 +688,7 @@ static void HandleTapSpeedEvent(uint16_t tick)
             // Allright, we got a new delay speed:
             DelaySetup.speed = (uint8_t)speedProposal;
 
-            menu_NotifyRefresh_SAFE();
+            Menu_notifyRefresh_SAFE();
         }
 
     }
@@ -718,20 +718,20 @@ static void HandleTapSpeedTick(uint16_t tick)
 
 static void SendNoteOn(uint8_t key, uint8_t velocity)
 {
-    uint8_t msg_index = midiio_MsgNew_ISR(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK,
+    uint8_t msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK,
             MIDI_STATUS_NOTE_ON | DelaySetup.chan);
-    midiio_MsgAddData_ISR(msg_index, key);
-    midiio_MsgAddData_ISR(msg_index, velocity);
-    midiio_MsgFinish_ISR(msg_index, 0);
+    MidiIo_msgAddData_ISR(msg_index, key);
+    MidiIo_msgAddData_ISR(msg_index, velocity);
+    MidiIo_msgFinish_ISR(msg_index, 0);
 }
 
 static void SendNoteOff(uint8_t key)
 {
-    uint8_t msg_index = midiio_MsgNew_ISR(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK,
+    uint8_t msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK,
             MIDI_STATUS_NOTE_OFF | DelaySetup.chan);
-    midiio_MsgAddData_ISR(msg_index, key);
-    midiio_MsgAddData_ISR(msg_index, NOTE_OFF_VELOCITY);
-    midiio_MsgFinish_ISR(msg_index, 0);
+    MidiIo_msgAddData_ISR(msg_index, key);
+    MidiIo_msgAddData_ISR(msg_index, NOTE_OFF_VELOCITY);
+    MidiIo_msgFinish_ISR(msg_index, 0);
 }
 
 
@@ -844,7 +844,7 @@ void sdelay_HookTick_ISR(void)
     // Go through the active delays and check if there are delay events to do
 
     uint8_t i;
-    uint16_t tickNow = hal_TickCountGet_ISR();
+    uint16_t tickNow = Hal_tickCountGet_ISR();
 
     HandleTapSpeedTick(tickNow);
 
@@ -1028,9 +1028,9 @@ void sdelay_ConfigLoad(uint8_t *dest)
 
     enable = *(dest++);
 
-    hal_InterruptsDisable();
+    Hal_interruptsDisable();
     memcpy(&(DelaySetup), dest, sizeof(delaySetup_t));
-    hal_InterruptsEnable();
+    Hal_interruptsEnable();
 
     SetFilterEnabled(enable);
 }

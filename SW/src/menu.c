@@ -28,75 +28,75 @@
 // Menu state:
 
 // A component may take exclusive LCD access, then componentExclusive is TRUE
-static bool_t componentExclusive;
+static bool_t ComponentExclusive;
 
 // Current row highlighted on display, 0 to 3:
-static uint8_t currentRow;
+static uint8_t CurrentRow;
 
 // The component providing stuff for currently selected menu item:
-static uint8_t currentComponent;
+static uint8_t CurrentComponent;
 
 // The subitem of the component's menu currently active:
-static uint8_t currentSubItem;  // 0 means title item, 1 means subitem 0, ...
+static uint8_t CurrentSubItem;  // 0 means title item, 1 means subitem 0, ...
 
 // Edit mode, if any:
-static uint8_t currentEditMode;
+static uint8_t CurrentEditMode;
 
-static uint8_t lineBuffer[LCD_COLUMNS + 5];
+static uint8_t LineBuffer[LCD_COLUMNS + 5];
 
-static volatile bool_t refreshRequested;
+static volatile bool_t RefreshRequested;
 
 //////////// PROTOTYPES
 
-static void RenderRow(uint8_t row, uint8_t component, uint8_t subitem);
-static void WriteBlankRow(uint8_t row);
-static bool_t GetPreviousMenuItem(uint8_t *comp, uint8_t *subitem);
-static bool_t GetNextMenuItem(uint8_t *comp, uint8_t *subitem);
-static void Render(bool_t render_all);
-static void SetCursor(uint8_t row, uint8_t column);
+static void renderRow(uint8_t row, uint8_t component, uint8_t subitem);
+static void writeBlankRow(uint8_t row);
+static bool_t getPreviousMenuItem(uint8_t *comp, uint8_t *subitem);
+static bool_t getNextMenuItem(uint8_t *comp, uint8_t *subitem);
+static void render(bool_t render_all);
+static void setCursor(uint8_t row, uint8_t column);
 
 //////////// IMPLEMENTATION PRIVATE FUNCTIONS
 
-static void RenderRow(uint8_t row, uint8_t component, uint8_t subitem)
+static void renderRow(uint8_t row, uint8_t component, uint8_t subitem)
 {
     uint8_t i;
 
     // Clear line buffer
-    memset(lineBuffer, 0u, LCD_COLUMNS);
+    memset(LineBuffer, 0u, LCD_COLUMNS);
 
     // Ask component to write into linebuffer at some offset
     if (subitem == 0u)
     {
-        menue_GetText(component, (char*) &(lineBuffer[1u]), subitem);
+        MenuEnts_getText(component, (char*) &(LineBuffer[1u]), subitem);
     }
     else
     {
-        lineBuffer[1u] = MENU_INDENT_CHAR;
-        menue_GetText(component, (char*) &(lineBuffer[2u]), subitem);
+        LineBuffer[1u] = MENU_INDENT_CHAR;
+        MenuEnts_getText(component, (char*) &(LineBuffer[2u]), subitem);
     }
 
-    lcd_CursorSet(row, 1u);
+    Lcd_setCursor(row, 1u);
 
     for (i = 1u; i < LCD_COLUMNS; i++)
     {
-        if (lineBuffer[i] != 0)
+        if (LineBuffer[i] != 0)
         {
-            lcd_Write(lineBuffer[i]);
+            Lcd_write(LineBuffer[i]);
         }
         else
         {
-            lcd_Write(' ');
+            Lcd_write(' ');
         }
     }
 }
 
-static void WriteBlankRow(uint8_t row)
+static void writeBlankRow(uint8_t row)
 {
-    lcd_CursorSet(row, 1u);
-    lcd_WriteRepeat(' ', LCD_COLUMNS - 1);
+    Lcd_setCursor(row, 1u);
+    Lcd_writeRepeat(' ', LCD_COLUMNS - 1);
 }
 
-static bool_t GetPreviousMenuItem(uint8_t *comp, uint8_t *subitem)
+static bool_t getPreviousMenuItem(uint8_t *comp, uint8_t *subitem)
 {
     bool_t success;
 
@@ -108,7 +108,7 @@ static bool_t GetPreviousMenuItem(uint8_t *comp, uint8_t *subitem)
     else if (*comp >= 1)
     {
         (*comp)--;
-        *subitem = menue_GetSubCount(*comp);
+        *subitem = MenuEnts_getSubCount(*comp);
         success = TRUE;
     }
     else
@@ -119,12 +119,12 @@ static bool_t GetPreviousMenuItem(uint8_t *comp, uint8_t *subitem)
     return success;
 }
 
-static bool_t GetNextMenuItem(uint8_t *comp, uint8_t *subitem)
+static bool_t getNextMenuItem(uint8_t *comp, uint8_t *subitem)
 {
     bool_t success;
     uint8_t subitemcount;
 
-    subitemcount = menue_GetSubCount(*comp);
+    subitemcount = MenuEnts_getSubCount(*comp);
 
     if (*subitem < subitemcount)
     {
@@ -147,25 +147,25 @@ static bool_t GetNextMenuItem(uint8_t *comp, uint8_t *subitem)
 
 // Render draws current selected line or all.
 // Modifies cursor!
-static void Render(bool_t render_all)
+static void render(bool_t render_all)
 {
     uint8_t subitemcount;
 
     // Start with current row. Is the menu item even existing?
 
-    subitemcount = menue_GetSubCount(currentComponent);
+    subitemcount = MenuEnts_getSubCount(CurrentComponent);
 
-    if (subitemcount < currentSubItem)
+    if (subitemcount < CurrentSubItem)
     {
         // No! Back into what's available in selected component
-        currentSubItem = subitemcount;
+        CurrentSubItem = subitemcount;
 
         // Menu has changed, we must ensure all is rendered
         render_all = TRUE;
     }
 
     // Render current row
-    RenderRow(currentRow, currentComponent, currentSubItem);
+    renderRow(CurrentRow, CurrentComponent, CurrentSubItem);
 
     if (render_all)
     {
@@ -174,9 +174,9 @@ static void Render(bool_t render_all)
         uint8_t subitem;
 
         // Rows below current row?
-        row = currentRow;
-        comp = currentComponent;
-        subitem = currentSubItem;
+        row = CurrentRow;
+        comp = CurrentComponent;
+        subitem = CurrentSubItem;
 
         while ((row + 1) < LCD_ROWS)
         {
@@ -184,22 +184,22 @@ static void Render(bool_t render_all)
             row++;
 
             // Go to next menu item
-            if (GetNextMenuItem(&comp, &subitem))
+            if (getNextMenuItem(&comp, &subitem))
             {
                 // It exists
-                RenderRow(row, comp, subitem);
+                renderRow(row, comp, subitem);
             }
             else
             {
                 // We exceeded bottom of menu
-                WriteBlankRow(row);
+                writeBlankRow(row);
             }
         }
 
         // Rows above current row?
-        row = currentRow;
-        comp = currentComponent;
-        subitem = currentSubItem;
+        row = CurrentRow;
+        comp = CurrentComponent;
+        subitem = CurrentSubItem;
 
         while (row >= 1)
         {
@@ -210,106 +210,106 @@ static void Render(bool_t render_all)
             if (subitem > 0)
             {
                 subitem--;
-                RenderRow(row, comp, subitem);
+                renderRow(row, comp, subitem);
             }
             else if (comp >= 1)
             {
                 comp--;
-                subitemcount = menue_GetSubCount(comp);
+                subitemcount = MenuEnts_getSubCount(comp);
                 subitem = subitemcount;
-                RenderRow(row, comp, subitem);
+                renderRow(row, comp, subitem);
             }
             else
             {
                 // We exceeded top of menu
-                WriteBlankRow(row);
+                writeBlankRow(row);
             }
         }
     }
 }
 
-static void SetCursor(uint8_t row, uint8_t column)
+static void setCursor(uint8_t row, uint8_t column)
 {
     // Place correct row cursor
     uint8_t i;
 
     for (i = 0u; i < LCD_ROWS; i++)
     {
-        lcd_CursorSet(i, 0u);
+        Lcd_setCursor(i, 0u);
         if (i == row)
         {
-            lcd_Write(MENU_CURSOR_CHAR);
+            Lcd_write(MENU_CURSOR_CHAR);
         }
         else
         {
-            lcd_Write(' ');
+            Lcd_write(' ');
         }
     }
 
     // Set cursor at requested spot
-    lcd_CursorSet(row, column);
+    Lcd_setCursor(row, column);
 }
 
 //////////// IMPLEMENTATION PUBLIC FUNCTIONS
 
 
-void menu_Initialize(void)
+void Menu_initialize(void)
 {
-    componentExclusive = FALSE;
-    currentRow = 1;
-    currentComponent = 1;
-    currentSubItem = 0;
-    currentEditMode = 0;
-    refreshRequested = FALSE;
+    ComponentExclusive = FALSE;
+    CurrentRow = 1;
+    CurrentComponent = 1;
+    CurrentSubItem = 0;
+    CurrentEditMode = 0;
+    RefreshRequested = FALSE;
 
     // Render all
-    Render(TRUE);
+    render(TRUE);
 
     // Set cursor
-    SetCursor(currentRow, 0u);
+    setCursor(CurrentRow, 0u);
 }
 
 
-void menu_NotifyRefresh_SAFE(void)
+void Menu_notifyRefresh_SAFE(void)
 {
-    refreshRequested = TRUE;
+    RefreshRequested = TRUE;
 }
 
-void menu_HookMainLoop(void)
+void Menu_handleMainLoopHook(void)
 {
-    if (refreshRequested == TRUE)
+    if (RefreshRequested == TRUE)
     {
-        refreshRequested = FALSE;
+        RefreshRequested = FALSE;
 
-        Render(TRUE);
-        SetCursor(currentRow, 0u);
+        render(TRUE);
+        setCursor(CurrentRow, 0u);
     }
 }
 
-void menu_UserTurns(int8_t delta, bool_t pushed)
+void Menu_handleUserTurns(int8_t delta, bool_t pushed)
 {
     uint8_t event;
 
     event = pushed ? MENU_EVENT_TURN_PUSH : MENU_EVENT_TURN;
 
-    if (componentExclusive)
+    if (ComponentExclusive)
     {
         // Let component handle event
-        menue_HandleEvent(currentComponent, currentSubItem, currentEditMode, event, delta);
+        MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode, event, delta);
     }
     else
     {
-        if (currentEditMode == 0)
+        if (CurrentEditMode == 0)
         {
             // Moving cursor at root level
             while (delta > 0)
             {
-                if (GetNextMenuItem(&currentComponent, &currentSubItem))
+                if (getNextMenuItem(&CurrentComponent, &CurrentSubItem))
                 {
                     // Successfully moved one down
-                    if ((currentRow + 2) < LCD_ROWS)
+                    if ((CurrentRow + 2) < LCD_ROWS)
                     {
-                        currentRow++;
+                        CurrentRow++;
                     }
                 }
 
@@ -318,49 +318,49 @@ void menu_UserTurns(int8_t delta, bool_t pushed)
 
             while (delta < 0)
             {
-                if (GetPreviousMenuItem(&currentComponent, &currentSubItem))
+                if (getPreviousMenuItem(&CurrentComponent, &CurrentSubItem))
                 {
                     // Successfully moved one up
-                    if (currentRow > 1)
+                    if (CurrentRow > 1)
                     {
-                        currentRow--;
+                        CurrentRow--;
                     }
                 }
 
                 // Allow selecting row 0 on top menu item
-                if (currentComponent == 0)
+                if (CurrentComponent == 0)
                 {
-                    currentRow = 0;
+                    CurrentRow = 0;
                 }
 
                 delta++;
             }
 
             // Render all TODO maybe we just need to move cursor
-            Render(TRUE);
-            SetCursor(currentRow, 0u);
+            render(TRUE);
+            setCursor(CurrentRow, 0u);
         }
         else
         {
             uint8_t ret;
 
             // Editing stuff, let component handle event
-            ret = menue_HandleEvent(currentComponent, currentSubItem, currentEditMode, event, delta);
+            ret = MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode, event, delta);
 
             // Notify presets module that component may have changed its configuration
-            presets_configMayChangeNotify(currentComponent);
+            presets_configMayChangeNotify(CurrentComponent);
 
             // Update this line or all
-            Render(ret & MENU_UPDATE_ALL);
+            render(ret & MENU_UPDATE_ALL);
 
             // Set cursor
-            if (currentSubItem == 0)
+            if (CurrentSubItem == 0)
             {
-                SetCursor(currentRow, (ret & MENU_SET_CURSOR_MASK) + 1);
+                setCursor(CurrentRow, (ret & MENU_SET_CURSOR_MASK) + 1);
             }
             else
             {
-                SetCursor(currentRow, (ret & MENU_SET_CURSOR_MASK) + 2);
+                setCursor(CurrentRow, (ret & MENU_SET_CURSOR_MASK) + 2);
             }
 
 
@@ -368,12 +368,12 @@ void menu_UserTurns(int8_t delta, bool_t pushed)
     }
 }
 
-void menu_UserSelects(void)
+void Menu_handleUserSelects(void)
 {
-    if (componentExclusive)
+    if (ComponentExclusive)
     {
         // Let component handle event
-        menue_HandleEvent(currentComponent, currentSubItem, currentEditMode,
+        MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode,
                         MENU_EVENT_SELECT, 0u);
     }
     else
@@ -381,60 +381,60 @@ void menu_UserSelects(void)
         uint8_t ret;
 
         // Send the select command to component
-        ret = menue_HandleEvent(currentComponent, currentSubItem, currentEditMode,
+        ret = MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode,
                               MENU_EVENT_SELECT, 0u);
 
         // We advance edit mode if this is accepted by component
-        currentEditMode++;
+        CurrentEditMode++;
 
         if (ret == MENU_RESERVE_DISPLAY)
         {
             // Component wants to take over the display
-            componentExclusive = TRUE;
+            ComponentExclusive = TRUE;
         }
         else if ((ret & MENU_SET_CURSOR_MASK) == MENU_EDIT_MODE_UNAVAIL)
         {
             // OK, back out to root mode
-            currentEditMode = 0;
+            CurrentEditMode = 0;
 
             // Update this line or all
-            Render(ret & MENU_UPDATE_ALL);
-            SetCursor(currentRow, 0u);
+            render(ret & MENU_UPDATE_ALL);
+            setCursor(CurrentRow, 0u);
         }
         else
         {
             // Update this line or all
-            Render(ret & MENU_UPDATE_ALL);
+            render(ret & MENU_UPDATE_ALL);
 
             // Set cursor
-            if (currentSubItem == 0)
+            if (CurrentSubItem == 0)
             {
-                SetCursor(currentRow, (ret & MENU_SET_CURSOR_MASK) + 1);
+                setCursor(CurrentRow, (ret & MENU_SET_CURSOR_MASK) + 1);
             }
             else
             {
-                SetCursor(currentRow, (ret & MENU_SET_CURSOR_MASK) + 2);
+                setCursor(CurrentRow, (ret & MENU_SET_CURSOR_MASK) + 2);
             }
         }
     }
 }
 
 
-void menu_UserBacks(void)
+void Menu_handleUserBacks(void)
 {
     // Let component know back was pushed
-    menue_HandleEvent(currentComponent, currentSubItem, currentEditMode,
+    MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode,
                     MENU_EVENT_BACK, 0u);
 
     // Back button means we exit the exclusive mode
-    componentExclusive = FALSE;
+    ComponentExclusive = FALSE;
 
-    currentEditMode = 0;
+    CurrentEditMode = 0;
 
     // Render all
-    Render(TRUE);
+    render(TRUE);
 
     // Set cursor
-    SetCursor(currentRow, 0u);
+    setCursor(CurrentRow, 0u);
 }
 

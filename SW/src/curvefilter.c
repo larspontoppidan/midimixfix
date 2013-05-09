@@ -234,7 +234,7 @@ void CurveFlt_menuGetText(char *dest, uint8_t item)
         if ((item & 1) == 1)
         {
             // First line of a curve setup "InX ..."
-            dest = pstr_writeInX(dest, Filters[c].Source);
+            dest = PStr_writeInX(dest, Filters[c].Source);
             (*dest++) = ' ';
 
             dest = util_strCpy_P(dest, FilterModeNames[Filters[c].Mode]);

@@ -446,7 +446,7 @@ void BlockFlt_menuGetText(char *dest, uint8_t item)
         if ((item & 1) == 1)
         {
             // First line of a block filter, write: "InX ..."
-            dest = pstr_writeInX(dest, RuleConfigs[c].Input);
+            dest = PStr_writeInX(dest, RuleConfigs[c].Input);
             (*dest++) = ' ';
 
             // Write input target

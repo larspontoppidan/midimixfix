@@ -12,19 +12,19 @@
 #include "common.h"
 
 
-void menu_Initialize(void);
+void Menu_initialize(void);
 
 
 // User interface:
 
-void menu_UserTurns(int8_t delta, bool_t pushed);
+void Menu_handleUserTurns(int8_t delta, bool_t pushed);
 
-void menu_UserSelects(void);
-void menu_UserBacks(void);
+void Menu_handleUserSelects(void);
+void Menu_handleUserBacks(void);
 
-void menu_NotifyRefresh_SAFE(void);
+void Menu_notifyRefresh_SAFE(void);
 
-void menu_HookMainLoop(void);
+void Menu_handleMainLoopHook(void);
 
 ///////// Defines
 

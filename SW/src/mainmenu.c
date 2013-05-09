@@ -31,13 +31,13 @@ static char setupString5[] PROGMEM = "Send runn.st.:";
 static uint8_t cursorPositions[6] = {0, 11, 11, 11, 11, 14};
 
 
-static char *modeStrings[3] = {pstr_Discard, pstr_Through, pstr_Use};
+static char *modeStrings[3] = {PStr_Discard, PStr_Through, PStr_Use};
 
 static bool_t setupMenuVisible = FALSE;
 
 static bool_t titleMenuVisible = FALSE;
 
-uint8_t mmenu_TitleMenuGetSubCount(void)
+uint8_t MainMenu_titleGetSubCount(void)
 {
     if (titleMenuVisible)
     {
@@ -49,7 +49,7 @@ uint8_t mmenu_TitleMenuGetSubCount(void)
     }
 }
 
-void mmenu_TitleMenuGetText(char *dest, uint8_t item)
+void MainMenu_titleGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
@@ -73,7 +73,7 @@ void mmenu_TitleMenuGetText(char *dest, uint8_t item)
     }
 }
 
-uint8_t mmenu_TitleMenuHandleEvent(uint8_t item, uint8_t edit_mode,
+uint8_t MainMenu_titleHandleEvent(uint8_t item, uint8_t edit_mode,
                                 uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
@@ -99,12 +99,12 @@ uint8_t mmenu_TitleMenuHandleEvent(uint8_t item, uint8_t edit_mode,
 
 // The general setup options
 
-uint8_t mmenu_SetupMenuGetSubCount(void)
+uint8_t MainMenu_setupGetSubCount(void)
 {
     return setupMenuVisible ? 5 : 0;
 }
 
-void mmenu_SetupMenuGetText(char *dest, uint8_t item)
+void MainMenu_setupGetText(char *dest, uint8_t item)
 {
     uint8_t i;
 
@@ -114,18 +114,18 @@ void mmenu_SetupMenuGetText(char *dest, uint8_t item)
         util_strCpy_P(dest, setupString0);
         if (setupMenuVisible)
         {
-            dest = util_strCpy_P(dest + 16, pstr_MinusParentheses);
+            dest = util_strCpy_P(dest + 16, PStr_MinusParentheses);
         }
         else
         {
-            dest = util_strCpy_P(dest + 16, pstr_PlusParentheses);
+            dest = util_strCpy_P(dest + 16, PStr_PlusParentheses);
         }
         break;
 
     case 1: // In1
         dest = util_strCpy_P(dest, setupString1);
 
-        i = midiio_ModeGet(MMSG_SOURCE_INPUT1, FALSE);
+        i = MidiIo_getMode(MMSG_SOURCE_INPUT1, FALSE);
         dest = util_strCpy_P(dest, modeStrings[i]);
 
         break;
@@ -133,7 +133,7 @@ void mmenu_SetupMenuGetText(char *dest, uint8_t item)
     case 2: // In1 realtime:
         dest = util_strCpy_P(dest, setupString2);
 
-        i = midiio_ModeGet(MMSG_SOURCE_INPUT1, TRUE);
+        i = MidiIo_getMode(MMSG_SOURCE_INPUT1, TRUE);
         dest = util_strCpy_P(dest, modeStrings[i]);
 
         break;
@@ -141,7 +141,7 @@ void mmenu_SetupMenuGetText(char *dest, uint8_t item)
     case 3: // In2
         dest = util_strCpy_P(dest, setupString3);
 
-        i = midiio_ModeGet(MMSG_SOURCE_INPUT2, FALSE);
+        i = MidiIo_getMode(MMSG_SOURCE_INPUT2, FALSE);
         dest = util_strCpy_P(dest, modeStrings[i]);
 
         break;
@@ -149,7 +149,7 @@ void mmenu_SetupMenuGetText(char *dest, uint8_t item)
     case 4: // In2 realtime:
         dest = util_strCpy_P(dest, setupString4);
 
-        i = midiio_ModeGet(MMSG_SOURCE_INPUT2, TRUE);
+        i = MidiIo_getMode(MMSG_SOURCE_INPUT2, TRUE);
         dest = util_strCpy_P(dest, modeStrings[i]);
 
         break;
@@ -157,13 +157,13 @@ void mmenu_SetupMenuGetText(char *dest, uint8_t item)
     case 5: // Send runn. status
         dest = util_strCpy_P(dest, setupString5);
 
-        if (midiio_SendRunStatusGet())
+        if (MidiIo_getRunStatusMode())
         {
-            dest = util_strCpy_P(dest, pstr_On);
+            dest = util_strCpy_P(dest, PStr_On);
         }
         else
         {
-            dest = util_strCpy_P(dest, pstr_Off);
+            dest = util_strCpy_P(dest, PStr_Off);
         }
         break;
     }
@@ -171,7 +171,7 @@ void mmenu_SetupMenuGetText(char *dest, uint8_t item)
 }
 
 
-uint8_t mmenu_SetupMenuHandleEvent(uint8_t item, uint8_t edit_mode,
+uint8_t MainMenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
                                 uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
@@ -204,34 +204,34 @@ uint8_t mmenu_SetupMenuHandleEvent(uint8_t item, uint8_t edit_mode,
         {
         case 1: // In1
             // Get current mode
-            i = midiio_ModeGet(MMSG_SOURCE_INPUT1, FALSE);
+            i = MidiIo_getMode(MMSG_SOURCE_INPUT1, FALSE);
             // The available modes are 0, 1, 2. Add the knob delta with bounds
             i = util_boundedAddInt8(i, 0, 2, knob_delta);
             // Set new mode
-            midiio_ModeSet(i, MMSG_SOURCE_INPUT1, FALSE);
+            MidiIo_setMode(i, MMSG_SOURCE_INPUT1, FALSE);
             break;
 
         case 2: // In1 realtime
-            i = midiio_ModeGet(MMSG_SOURCE_INPUT1, TRUE);
+            i = MidiIo_getMode(MMSG_SOURCE_INPUT1, TRUE);
             i = util_boundedAddInt8(i, 0, 2, knob_delta);
-            midiio_ModeSet(i, MMSG_SOURCE_INPUT1, TRUE);
+            MidiIo_setMode(i, MMSG_SOURCE_INPUT1, TRUE);
             break;
 
         case 3: // In2
-            i = midiio_ModeGet(MMSG_SOURCE_INPUT2, FALSE);
+            i = MidiIo_getMode(MMSG_SOURCE_INPUT2, FALSE);
             i = util_boundedAddInt8(i, 0, 2, knob_delta);
-            midiio_ModeSet(i, MMSG_SOURCE_INPUT2, FALSE);
+            MidiIo_setMode(i, MMSG_SOURCE_INPUT2, FALSE);
             break;
 
         case 4: // In2 realtime
-            i = midiio_ModeGet(MMSG_SOURCE_INPUT2, TRUE);
+            i = MidiIo_getMode(MMSG_SOURCE_INPUT2, TRUE);
             i = util_boundedAddInt8(i, 0, 2, knob_delta);
-            midiio_ModeSet(i, MMSG_SOURCE_INPUT2, TRUE);
+            MidiIo_setMode(i, MMSG_SOURCE_INPUT2, TRUE);
             break;
 
         case 5:
             // Set the running status
-            midiio_SendRunStatusSet(knob_delta > 0 ? TRUE : FALSE);
+            MidiIo_setRunStatusMode(knob_delta > 0 ? TRUE : FALSE);
             break;
         }
     }
@@ -242,25 +242,25 @@ uint8_t mmenu_SetupMenuHandleEvent(uint8_t item, uint8_t edit_mode,
 
 // Configuration store and load implementation
 
-uint8_t mmenu_ConfigGetSize(void)
+uint8_t MainMenu_configGetSize(void)
 {
     return 5;
 }
 
-void mmenu_ConfigSave(uint8_t *dest)
+void MainMenu_configSave(uint8_t *dest)
 {
-    *(dest++) = midiio_ModeGet(MMSG_SOURCE_INPUT1, FALSE);
-    *(dest++) = midiio_ModeGet(MMSG_SOURCE_INPUT1, TRUE);
-    *(dest++) = midiio_ModeGet(MMSG_SOURCE_INPUT2, FALSE);
-    *(dest++) = midiio_ModeGet(MMSG_SOURCE_INPUT2, TRUE);
-    *(dest++) = midiio_SendRunStatusGet();
+    *(dest++) = MidiIo_getMode(MMSG_SOURCE_INPUT1, FALSE);
+    *(dest++) = MidiIo_getMode(MMSG_SOURCE_INPUT1, TRUE);
+    *(dest++) = MidiIo_getMode(MMSG_SOURCE_INPUT2, FALSE);
+    *(dest++) = MidiIo_getMode(MMSG_SOURCE_INPUT2, TRUE);
+    *(dest++) = MidiIo_getRunStatusMode();
 }
 
-void mmenu_ConfigLoad(uint8_t *dest)
+void MainMenu_configLoad(uint8_t *dest)
 {
-    midiio_ModeSet(*(dest++), MMSG_SOURCE_INPUT1, FALSE);
-    midiio_ModeSet(*(dest++), MMSG_SOURCE_INPUT1, TRUE);
-    midiio_ModeSet(*(dest++), MMSG_SOURCE_INPUT2, FALSE);
-    midiio_ModeSet(*(dest++), MMSG_SOURCE_INPUT2, TRUE);
-    midiio_SendRunStatusSet(*(dest++));
+    MidiIo_setMode(*(dest++), MMSG_SOURCE_INPUT1, FALSE);
+    MidiIo_setMode(*(dest++), MMSG_SOURCE_INPUT1, TRUE);
+    MidiIo_setMode(*(dest++), MMSG_SOURCE_INPUT2, FALSE);
+    MidiIo_setMode(*(dest++), MMSG_SOURCE_INPUT2, TRUE);
+    MidiIo_setRunStatusMode(*(dest++));
 }

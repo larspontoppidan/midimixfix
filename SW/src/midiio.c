@@ -49,11 +49,11 @@
 #define STATUS_TRANSMIT   2u
 #define STATUS_DISCARD    3u
 
-uint8_t statusBuffer[MIDIIO_BUFFER_SIZE];
-midiMsg_t  MsgBuffer[MIDIIO_BUFFER_SIZE];
+static uint8_t   StatusBuffer[MIDIIO_BUFFER_SIZE];
+static midiMsg_t MsgBuffer[MIDIIO_BUFFER_SIZE];
 
-uint8_t BufferHead;
-uint8_t BufferTail;
+static uint8_t BufferHead;
+static uint8_t BufferTail;
 
 // Ring buffer principle:
 //
@@ -102,27 +102,27 @@ uint8_t BufferTail;
 
 // Currently transmitting status
 
-midiMsg_t  *OutputMessage;
-uint8_t OutputTransmitIndex;
+static midiMsg_t *OutputMessage;
+static uint8_t    OutputTransmitIndex;
 
 
 // Configuration variables:
 
 // Messages with ConfigDiscardFlags set will be discarded right away,
 // with ConfigProcessFlags will be processed
-uint8_t ConfigDiscardFlags;
-uint8_t ConfigProcessFlags;
+static uint8_t ConfigDiscardFlags;
+static uint8_t ConfigProcessFlags;
 
 // Realtime messages with ConfigRtDiscardFlags set will be discarded right away,
 // with ConfigRtProcessFlags will be processed
-uint8_t ConfigRtDiscardFlags;
-uint8_t ConfigRtProcessFlags;
+static uint8_t ConfigRtDiscardFlags;
+static uint8_t ConfigRtProcessFlags;
 
 // Transmit with running status
-bool_t  ConfigSendRunningStatus; // Todo: Implement this
+static bool_t  ConfigSendRunningStatus; // Todo: Implement this
 
 
-void midiio_Initialize(void)
+void MidiIo_initialize(void)
 {
     BufferHead = 0u;
     BufferTail = 0u;
@@ -139,7 +139,7 @@ void midiio_Initialize(void)
     ConfigSendRunningStatus = FALSE;
 }
 
-void midiio_ModeSet(uint8_t mode, uint8_t source, bool_t rt)
+void MidiIo_setMode(uint8_t mode, uint8_t source, bool_t rt)
 {
     // Transform the desired mode and source into ready to use
     // bits in ConfigFlags:
@@ -159,7 +159,7 @@ void midiio_ModeSet(uint8_t mode, uint8_t source, bool_t rt)
     }
 }
 
-uint8_t midiio_ModeGet(uint8_t source, bool_t rt)
+uint8_t MidiIo_getMode(uint8_t source, bool_t rt)
 {
     uint8_t ret = MIDIIO_MODE_THROUGH;
 
@@ -189,18 +189,18 @@ uint8_t midiio_ModeGet(uint8_t source, bool_t rt)
     return ret;
 }
 
-void midiio_SendRunStatusSet(bool_t x)
+void MidiIo_setRunStatusMode(bool_t x)
 {
     ConfigSendRunningStatus = x;
 }
 
-bool_t midiio_SendRunStatusGet(void)
+bool_t MidiIo_getRunStatusMode(void)
 {
     return ConfigSendRunningStatus;
 }
 
 // Allocate new message, returns msg_index
-uint8_t midiio_MsgNew_ISR(uint8_t flags, uint8_t midi_status)
+uint8_t MidiIo_msgNew_ISR(uint8_t flags, uint8_t midi_status)
 {
     uint8_t msg_index;
 
@@ -222,10 +222,10 @@ uint8_t midiio_MsgNew_ISR(uint8_t flags, uint8_t midi_status)
     }
 
     // Set status
-    statusBuffer[msg_index] = STATUS_RECEIVING;
+    StatusBuffer[msg_index] = STATUS_RECEIVING;
 
     // Initialize msg
-    MsgBuffer[msg_index].ReceivedTick = hal_TickCountGet_ISR();
+    MsgBuffer[msg_index].ReceivedTick = Hal_tickCountGet_ISR();
     MsgBuffer[msg_index].Flags = flags;
     MsgBuffer[msg_index].MidiStatus = midi_status;
     MsgBuffer[msg_index].DataLen = 0;
@@ -237,7 +237,7 @@ uint8_t midiio_MsgNew_ISR(uint8_t flags, uint8_t midi_status)
 // This version of the function is intended to be called from
 // main thread. It will BLOCK if buffer is full, and wait for a free
 // spot before returning.
-uint8_t midiio_MsgNew_Main(uint8_t flags, uint8_t midi_status)
+uint8_t MidiIo_msgNew_MAIN(uint8_t flags, uint8_t midi_status)
 {
     uint8_t msg_index;
     bool_t got_msg_index;
@@ -248,7 +248,7 @@ uint8_t midiio_MsgNew_Main(uint8_t flags, uint8_t midi_status)
     {
         // Pull next free number in buffer with interrupts disabled
 
-        hal_InterruptsDisable();
+        Hal_interruptsDisable();
 
         // Lets use next free number in buffer
         msg_index = BufferHead;
@@ -268,15 +268,15 @@ uint8_t midiio_MsgNew_Main(uint8_t flags, uint8_t midi_status)
 
             // Exit critical region and wait a short while before attempting
             // this again
-            hal_InterruptsEnable();
+            Hal_interruptsEnable();
             _delay_ms(1);
         }
         else
         {
             // Buffer NOT overflow.
             // Set status for our new message and exit critical region
-            statusBuffer[msg_index] = STATUS_RECEIVING;
-            hal_InterruptsEnable();
+            StatusBuffer[msg_index] = STATUS_RECEIVING;
+            Hal_interruptsEnable();
 
             got_msg_index = TRUE;
         }
@@ -287,7 +287,7 @@ uint8_t midiio_MsgNew_Main(uint8_t flags, uint8_t midi_status)
     // reserved for whoever is going to put data into it.
 
     // Initialize msg
-    MsgBuffer[msg_index].ReceivedTick = hal_TickCountGet();
+    MsgBuffer[msg_index].ReceivedTick = Hal_tickCountGet_MAIN();
     MsgBuffer[msg_index].Flags = flags;
     MsgBuffer[msg_index].MidiStatus = midi_status;
     MsgBuffer[msg_index].DataLen = 0;
@@ -296,7 +296,7 @@ uint8_t midiio_MsgNew_Main(uint8_t flags, uint8_t midi_status)
 }
 
 // Add data to message
-void midiio_MsgAddData_ISR(uint8_t msg_index, uint8_t midi_data)
+void MidiIo_msgAddData_ISR(uint8_t msg_index, uint8_t midi_data)
 {
     uint8_t l;
 
@@ -317,7 +317,7 @@ void midiio_MsgAddData_ISR(uint8_t msg_index, uint8_t midi_data)
 
 
 // This function is called when message is complete and should be processed
-void midiio_MsgFinish_ISR(uint8_t msg_index, uint8_t flags)
+void MidiIo_msgFinish_ISR(uint8_t msg_index, uint8_t flags)
 {
     midiMsg_t *msg = &(MsgBuffer[msg_index]);
 
@@ -327,7 +327,7 @@ void midiio_MsgFinish_ISR(uint8_t msg_index, uint8_t flags)
     if ((msg->Flags) & ConfigDiscardFlags)
     {
         // OK, we discard the message directly
-        statusBuffer[msg_index] = STATUS_DISCARD;
+        StatusBuffer[msg_index] = STATUS_DISCARD;
     }
     else
     {
@@ -341,22 +341,22 @@ void midiio_MsgFinish_ISR(uint8_t msg_index, uint8_t flags)
         // Do we still want to send the message
         if ((msg->Flags) & MMSG_FLAG_DISCARD)
         {
-            statusBuffer[msg_index] = STATUS_DISCARD;
+            StatusBuffer[msg_index] = STATUS_DISCARD;
         }
         else
         {
             // OK, send the message
-            statusBuffer[msg_index] = STATUS_TRANSMIT;
+            StatusBuffer[msg_index] = STATUS_TRANSMIT;
         }
     }
 
     // Make sure the transmit interrupt system is running in any case
-    hal_MidiTxIsrEnable_ISR(TRUE);
+    Hal_midiTxEnableIsr_ISR(TRUE);
 }
 
 
 // Add realtime message (F8 <= midi_status <= FF)
-void midiio_RealtimeMsgAdd_ISR(uint8_t flags, uint8_t midi_status)
+void MidiIo_realtimeMsg_ISR(uint8_t flags, uint8_t midi_status)
 {
     if (flags & ConfigRtDiscardFlags)
     {
@@ -365,7 +365,7 @@ void midiio_RealtimeMsgAdd_ISR(uint8_t flags, uint8_t midi_status)
     else
     {
         // We need to deal with this message, add it
-        uint8_t msg_index = midiio_MsgNew_ISR(flags, midi_status);
+        uint8_t msg_index = MidiIo_msgNew_ISR(flags, midi_status);
 
         if (flags & ConfigRtProcessFlags)
         {
@@ -376,24 +376,24 @@ void midiio_RealtimeMsgAdd_ISR(uint8_t flags, uint8_t midi_status)
         // Do we still want to send the message
         if (MsgBuffer[msg_index].Flags & MMSG_FLAG_DISCARD)
         {
-            statusBuffer[msg_index] = STATUS_DISCARD;
+            StatusBuffer[msg_index] = STATUS_DISCARD;
         }
         else
         {
             // OK, send the message
-            statusBuffer[msg_index] = STATUS_TRANSMIT;
+            StatusBuffer[msg_index] = STATUS_TRANSMIT;
         }
 
         // Make sure the transmit interrupt system is running in any case
-        hal_MidiTxIsrEnable_ISR(TRUE);
+        Hal_midiTxEnableIsr_ISR(TRUE);
     }
 }
 
 
-void midiio_OutputTxComplete_ISR(void)
+void MidiIo_outputTxComplete_ISR(void)
 {
     // Is uart active right now?
-    if (hal_MidiTxActiveGet_ISR() == FALSE)
+    if (Hal_midiTxGetActive_ISR() == FALSE)
     {
         // Are we currently transmitting a message?
 
@@ -401,7 +401,7 @@ void midiio_OutputTxComplete_ISR(void)
         {
             // Yes, send next byte
             // TODO implement running status if configured to do such
-            hal_MidiTxSend_ISR(MidiMsg_getByte(OutputMessage, OutputTransmitIndex));
+            Hal_midiTxSend_ISR(MidiMsg_getByte(OutputMessage, OutputTransmitIndex));
             OutputTransmitIndex++;
 
             // More bytes left of this message?
@@ -425,11 +425,11 @@ void midiio_OutputTxComplete_ISR(void)
 
             while (BufferTail != BufferHead)
             {
-                if (statusBuffer[BufferTail] == STATUS_TRANSMIT)
+                if (StatusBuffer[BufferTail] == STATUS_TRANSMIT)
                 {
                     // We found a message to transmit
                     OutputMessage = &(MsgBuffer[BufferTail]);
-                    hal_MidiTxSend_ISR(MidiMsg_getByte(OutputMessage, 0));
+                    Hal_midiTxSend_ISR(MidiMsg_getByte(OutputMessage, 0));
                     OutputTransmitIndex = 1;
 
                     // Let output loggers peek at the message
@@ -453,11 +453,11 @@ void midiio_OutputTxComplete_ISR(void)
                     // Break out of while
                     break;
                 }
-                else if (statusBuffer[BufferTail] == STATUS_RECEIVING)
+                else if (StatusBuffer[BufferTail] == STATUS_RECEIVING)
                 {
                     // This message is being received. Stop searching,
                     // we will get started when it's done
-                    hal_MidiTxIsrEnable_ISR(FALSE);
+                    Hal_midiTxEnableIsr_ISR(FALSE);
                     break;
                 }
                 else
@@ -476,7 +476,7 @@ void midiio_OutputTxComplete_ISR(void)
             {
                 // We didn't find anything to send, or are already finished
                 // Turn off this interrupt
-                hal_MidiTxIsrEnable_ISR(FALSE);
+                Hal_midiTxEnableIsr_ISR(FALSE);
             }
 
         }

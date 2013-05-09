@@ -49,28 +49,28 @@
 
 /////////////////////////   Variables    /////////////////////////
 
-static bool_t lcdReady = FALSE;
+static bool_t LcdReady = FALSE;
 
 
 /////////////////////////   Prototypes   /////////////////////////
 
 
 // Low level LCD IO functions
-static void SendLcdCommand(uint8_t data);
-static void SendLcdData(uint8_t data);
+static void sendLcdCommand(uint8_t data);
+static void sendLcdData(uint8_t data);
 
-static uint8_t ReadLcdStatus(void);
+static uint8_t readLcdStatus(void);
 //static uint8_t ReadLcdData(void);
 
-static bool_t lcd_CheckReady();
+static bool_t checkReady();
 
 //////////////////////// Private functions ////////////////////////
 
 
-static void SendLcdCommand(uint8_t data)
+static void sendLcdCommand(uint8_t data)
 {
     // Wait for Lcd to be ready
-    while (!lcd_CheckReady())
+    while (!checkReady())
         ;
 
     // Load data to data port and set direction output
@@ -88,14 +88,14 @@ static void SendLcdCommand(uint8_t data)
     HAL_LCD_CTRL_PORT &= ~HAL_LCD_CLK_BIT;
 
     // Now display is in a non ready state
-    lcdReady = FALSE;
+    LcdReady = FALSE;
 }
 
 
-static void SendLcdData(uint8_t data)
+static void sendLcdData(uint8_t data)
 {
     // Wait for Lcd to be ready
-    while (!lcd_CheckReady())
+    while (!checkReady())
         ;
 
     // Load data to data port and set direction output
@@ -113,11 +113,11 @@ static void SendLcdData(uint8_t data)
     HAL_LCD_CTRL_PORT &= ~(HAL_LCD_CLK_BIT | HAL_LCD_RS_BIT);
 
     // Now display is in a non ready state
-    lcdReady = FALSE;
+    LcdReady = FALSE;
 }
 
 
-static uint8_t ReadLcdStatus(void)
+static uint8_t readLcdStatus(void)
 {
     uint8_t data;
 
@@ -166,23 +166,23 @@ static uint8_t ReadLcdStatus(void)
 
 // Read the LCD status and check if module is ready for new command or data
 // The ready status is cached such that extra requests are avoided
-static bool_t lcd_CheckReady()
+static bool_t checkReady()
 {
-    if (lcdReady == FALSE)
+    if (LcdReady == FALSE)
     {
-        if ((ReadLcdStatus() & FLAG_BUSY) == 0u)
+        if ((readLcdStatus() & FLAG_BUSY) == 0u)
         {
-            lcdReady = TRUE;
+            LcdReady = TRUE;
         }
     }
 
-    return lcdReady;
+    return LcdReady;
 }
 
 
 //////////////////////// Public functions ////////////////////////
 
-void lcd_Initialize(void)
+void Lcd_initialize(void)
 {
     // Make data port inputs and control signals low outputs
 
@@ -196,55 +196,55 @@ void lcd_Initialize(void)
 
     // Send initialize command and wait at least 4.1ms extra
     // Bypass lcd busy checking at this point
-    lcdReady = TRUE;
-    SendLcdCommand(CMD_INITIALIZE);
+    LcdReady = TRUE;
+    sendLcdCommand(CMD_INITIALIZE);
     _delay_ms(6);
 
     // Send initialize command and wait at least 100 us extra
     // Bypass lcd busy checking at this point
-    lcdReady = TRUE;
-    SendLcdCommand(CMD_INITIALIZE);
+    LcdReady = TRUE;
+    sendLcdCommand(CMD_INITIALIZE);
     _delay_ms(1);
 
     // Send initialize command one final time
     // Bypass ready checking at this point
-    lcdReady = TRUE;
-    SendLcdCommand(CMD_INITIALIZE);
+    LcdReady = TRUE;
+    sendLcdCommand(CMD_INITIALIZE);
 
     // Now we can use ready checking by the busy flag
 
     // Send function set command with configuration
-    SendLcdCommand(CMD_FUNC_SET |
+    sendLcdCommand(CMD_FUNC_SET |
                    FLAG_FUNC_8BIT |
                    FLAG_FUNC_MULT_LINES |
                    FLAG_FUNC_5X8_FONT);
 
     // Turn display off
-    SendLcdCommand(CMD_DISP_CTRL);
+    sendLcdCommand(CMD_DISP_CTRL);
 
     // Clear display
-    SendLcdCommand(CMD_CLEAR_DISP);
+    sendLcdCommand(CMD_CLEAR_DISP);
 
     // Set desired entry mode
-    SendLcdCommand(CMD_ENTRY_MODE |
+    sendLcdCommand(CMD_ENTRY_MODE |
                    FLAG_ENTRY_MODE_INC);
 
     // Turn display on, with desired cursor mode
-    SendLcdCommand(CMD_DISP_CTRL |
+    sendLcdCommand(CMD_DISP_CTRL |
                    FLAG_DISP_CTRL_ON | FLAG_DISP_CTRL_CURSOR);
 
     // Set DDRAM address to 0
-    SendLcdCommand(CMD_SET_DDRAM_ADDR);
+    sendLcdCommand(CMD_SET_DDRAM_ADDR);
 
     // Thats it!
 }
 
-void lcd_Clear(void)
+void Lcd_clear(void)
 {
-    SendLcdCommand(CMD_CLEAR_DISP);
+    sendLcdCommand(CMD_CLEAR_DISP);
 }
 
-void lcd_CursorSet(uint8_t row, uint8_t column)
+void Lcd_setCursor(uint8_t row, uint8_t column)
 {
     uint8_t addr;
 
@@ -266,35 +266,35 @@ void lcd_CursorSet(uint8_t row, uint8_t column)
         addr += column;
 
         // Set DDRAM address to 0
-        SendLcdCommand(CMD_SET_DDRAM_ADDR + addr);
+        sendLcdCommand(CMD_SET_DDRAM_ADDR + addr);
     }
 }
 
-void lcd_Write(uint8_t c)
+void Lcd_write(uint8_t c)
 {
-    SendLcdData(c);
+    sendLcdData(c);
 }
 
 
-void lcd_WriteRepeat(uint8_t c, uint8_t repeat)
+void Lcd_writeRepeat(uint8_t c, uint8_t repeat)
 {
     uint8_t i;
 
     for (i = 0; i < repeat; i++)
     {
-        SendLcdData(c);
+        sendLcdData(c);
     }
 }
 
 
-uint8_t lcd_WriteString(char const *s)
+uint8_t Lcd_writeString(char const *s)
 {
     uint8_t data;
     uint8_t l = 0;
 
     while ((data = (uint8_t)(*s)) != 0u)
     {
-        SendLcdData(data);
+        sendLcdData(data);
         s++;
         l++;
     }
@@ -302,14 +302,14 @@ uint8_t lcd_WriteString(char const *s)
     return l;
 }
 
-uint8_t lcd_WriteString_P(char const *s)
+uint8_t Lcd_writeString_P(char const *s)
 {
     uint8_t data;
     uint8_t l = 0;
 
     while ((data = (uint8_t)(pgm_read_byte(s))) != 0u)
     {
-        SendLcdData(data);
+        sendLcdData(data);
         s++;
         l++;
     }

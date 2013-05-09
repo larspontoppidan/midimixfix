@@ -353,7 +353,7 @@ void util_strWriteNumberParentheses(char *dest, uint8_t value)
 {
     if (value == 0)
     {
-        util_strCpy_P(dest, pstr_OffParentheses);
+        util_strCpy_P(dest, PStr_OffParentheses);
     }
     else
     {
@@ -434,7 +434,7 @@ char *util_strWriteFormat_P(char *dest, PGM_P src, uint8_t data)
             case 'c':
                 if (data == 0xFF)
                 {
-                    dest = util_strCpy_P(dest, pstr_Off);
+                    dest = util_strCpy_P(dest, PStr_Off);
                 }
                 else
                 {
@@ -445,7 +445,7 @@ char *util_strWriteFormat_P(char *dest, PGM_P src, uint8_t data)
                 dest = Midi_writeNoteName(dest, data);
                 break;
             case 'O':
-                dest = util_strCpy_P(dest, data ? pstr_OnParentheses : pstr_OffParentheses);
+                dest = util_strCpy_P(dest, data ? PStr_OnParentheses : PStr_OffParentheses);
                 break;
             case 0:
                 finished = TRUE;

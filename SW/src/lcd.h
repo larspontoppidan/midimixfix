@@ -13,16 +13,16 @@
 #include <avr/pgmspace.h>
 
 
-void lcd_Initialize(void);
+void Lcd_initialize(void);
 
-void lcd_Clear(void);
-void lcd_CursorSet(uint8_t row, uint8_t column);
+void Lcd_clear(void);
+void Lcd_setCursor(uint8_t row, uint8_t column);
 
-void lcd_Write(uint8_t c);
-void lcd_WriteRepeat(uint8_t c, uint8_t repeat);
+void Lcd_write(uint8_t c);
+void Lcd_writeRepeat(uint8_t c, uint8_t repeat);
 
-uint8_t lcd_WriteString(char const *s);
-uint8_t lcd_WriteString_P(char const *s);
+uint8_t Lcd_writeString(char const *s);
+uint8_t Lcd_writeString_P(char const *s);
 
 
 // LCD definitions

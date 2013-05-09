@@ -30,26 +30,26 @@ enum
     ENTITY_MIDILOG
 };
 
-uint8_t menue_GetSubCount(uint8_t entity)
+uint8_t MenuEnts_getSubCount(uint8_t entity)
 {
     uint8_t ret = 0u;
 
     switch(entity)
     {
     case ENTITY_MAINTITLE:
-        ret = mmenu_TitleMenuGetSubCount();
+        ret = MainMenu_titleGetSubCount();
         break;
     case ENTITY_PRESETS:
         ret = presets_menuGetSubCount();
         break;
     case ENTITY_MAINSETUP:
-        ret = mmenu_SetupMenuGetSubCount();
+        ret = MainMenu_setupGetSubCount();
         break;
     case ENTITY_GENERATEMSG:
         ret = genmsg_menuGetSubCount();
         break;
     case ENTITY_MIDILOG:
-        ret = mlog_menuGetSubCount();
+        ret = MidiLog_menuGetSubCount();
         break;
     case ENTITY_BLOCKFILTER:
         ret = BlockFlt_menuGetSubCount();
@@ -68,24 +68,24 @@ uint8_t menue_GetSubCount(uint8_t entity)
     return ret;
 }
 
-void menue_GetText(uint8_t entity, char *dest, uint8_t item)
+void MenuEnts_getText(uint8_t entity, char *dest, uint8_t item)
 {
     switch(entity)
     {
     case ENTITY_MAINTITLE:
-        mmenu_TitleMenuGetText(dest, item);
+        MainMenu_titleGetText(dest, item);
         break;
     case ENTITY_PRESETS:
         presets_menuGetText(dest, item);
         break;
     case ENTITY_MAINSETUP:
-        mmenu_SetupMenuGetText(dest, item);
+        MainMenu_setupGetText(dest, item);
         break;
     case ENTITY_GENERATEMSG:
         genmsg_menuGetText(dest, item);
         break;
     case ENTITY_MIDILOG:
-        mlog_menuGetText(dest, item);
+        MidiLog_menuGetText(dest, item);
         break;
     case ENTITY_BLOCKFILTER:
         BlockFlt_menuGetText(dest, item);
@@ -102,7 +102,7 @@ void menue_GetText(uint8_t entity, char *dest, uint8_t item)
     }
 }
 
-uint8_t menue_HandleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
+uint8_t MenuEnts_handleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
                        uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = 0u;
@@ -110,19 +110,19 @@ uint8_t menue_HandleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
     switch(entity)
     {
     case ENTITY_MAINTITLE:
-        ret = mmenu_TitleMenuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = MainMenu_titleHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_PRESETS:
         ret = presets_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_MAINSETUP:
-        ret = mmenu_SetupMenuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = MainMenu_setupHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_GENERATEMSG:
         ret = genmsg_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_MIDILOG:
-        ret = mlog_menuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = MidiLog_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_BLOCKFILTER:
         ret = BlockFlt_menuHandleEvent(item, edit_mode, user_event, knob_delta);
@@ -142,7 +142,7 @@ uint8_t menue_HandleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
 }
 
 
-uint8_t menue_ConfigGetSize(uint8_t entity)
+uint8_t MenuEnts_configGetSize(uint8_t entity)
 {
     uint8_t ret = 0u;
 
@@ -155,7 +155,7 @@ uint8_t menue_ConfigGetSize(uint8_t entity)
         ret = 0;
         break;
     case ENTITY_MAINSETUP:
-        ret = mmenu_ConfigGetSize();
+        ret = MainMenu_configGetSize();
         break;
     case ENTITY_GENERATEMSG:
         ret = genmsg_configGetSize();
@@ -180,7 +180,7 @@ uint8_t menue_ConfigGetSize(uint8_t entity)
     return ret;
 }
 
-void menue_ConfigSave(uint8_t entity, uint8_t *dest)
+void MenuEnts_configSave(uint8_t entity, uint8_t *dest)
 {
     switch(entity)
     {
@@ -189,7 +189,7 @@ void menue_ConfigSave(uint8_t entity, uint8_t *dest)
     case ENTITY_PRESETS:
         break;
     case ENTITY_MAINSETUP:
-        mmenu_ConfigSave(dest);
+        MainMenu_configSave(dest);
         break;
     case ENTITY_GENERATEMSG:
         genmsg_configSave(dest);
@@ -211,7 +211,7 @@ void menue_ConfigSave(uint8_t entity, uint8_t *dest)
     }
 }
 
-void menue_ConfigLoad(uint8_t entity, uint8_t *dest)
+void MenuEnts_configLoad(uint8_t entity, uint8_t *dest)
 {
     switch(entity)
     {
@@ -220,7 +220,7 @@ void menue_ConfigLoad(uint8_t entity, uint8_t *dest)
     case ENTITY_PRESETS:
         break;
     case ENTITY_MAINSETUP:
-        mmenu_ConfigLoad(dest);
+        MainMenu_configLoad(dest);
         break;
     case ENTITY_GENERATEMSG:
         genmsg_configLoad(dest);

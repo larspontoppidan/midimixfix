@@ -43,21 +43,21 @@ static void HandleUi(void)
 
     if (i != 0u)
     {
-        menu_UserTurns(i, FALSE);
+        Menu_handleUserTurns(i, FALSE);
     }
 
     i = qd_getPushedDelta();
 
     if (i != 0u)
     {
-        menu_UserTurns(i, TRUE);
+        Menu_handleUserTurns(i, TRUE);
     }
 
-    if (hal_ButtonStatesGet() & HAL_BUTTON_SEL)
+    if (Hal_buttonStatesGet() & HAL_BUTTON_SEL)
     {
         if (!uiSelectPushed)
         {
-            menu_UserSelects();
+            Menu_handleUserSelects();
             uiSelectPushed = TRUE;
         }
     }
@@ -66,11 +66,11 @@ static void HandleUi(void)
         uiSelectPushed = FALSE;
     }
 
-    if (hal_ButtonStatesGet() & HAL_BUTTON_BACK)
+    if (Hal_buttonStatesGet() & HAL_BUTTON_BACK)
     {
         if (!uiBackPushed)
         {
-            menu_UserBacks();
+            Menu_handleUserBacks();
             uiBackPushed = TRUE;
         }
     }
@@ -87,23 +87,23 @@ int main(void)
 {
     // Initialize basic modules
     err_Initialize();
-    hal_Initialize();
-    lcd_Initialize();
+    Hal_initialize();
+    Lcd_initialize();
     qd_initialize();
-    midiio_Initialize();
+    MidiIo_initialize();
     mparser_initialize();
 
     // Initialize components
     COMP_INITIALIZE_HOOKS();
 
     // Interrupts can start firing now
-    hal_InterruptsEnable();
+    Hal_interruptsEnable();
 
     // Let menu start up
-    menu_Initialize();
+    Menu_initialize();
 
     // Turn on display
-    hal_LcdBacklightSet(TRUE);
+    Hal_lcdBacklightSet(TRUE);
 
     while(TRUE)
     {
@@ -111,7 +111,7 @@ int main(void)
         COMP_MAIN_LOOP_HOOKS();
 
         // We are handling menu aspectes here. Call the menu hook
-        menu_HookMainLoop();
+        Menu_handleMainLoopHook();
 
         // Check if user did something on the controls
         HandleUi();

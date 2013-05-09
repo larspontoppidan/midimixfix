@@ -76,7 +76,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
     {
-        midiio_RealtimeMsgAdd_ISR(MMSG_SOURCE_INPUT1 | MMSG_FLAG_MSG_OK, x);
+        MidiIo_realtimeMsg_ISR(MMSG_SOURCE_INPUT1 | MMSG_FLAG_MSG_OK, x);
     }
     else
     {
@@ -94,7 +94,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                 if (type != MIDI_TYPE_DATA)
                 {
                     // Yes, we'll use it for status, create new message
-                    Input1State.msg_index = midiio_MsgNew_ISR(MMSG_SOURCE_INPUT1, x);
+                    Input1State.msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_INPUT1, x);
                     Input1State.midi_status = x;
                     x_used = TRUE;
 
@@ -118,7 +118,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                     if (Input1State.allow_running_status)
                     {
                         // Ok, this is normal running status, create message
-                        Input1State.msg_index = midiio_MsgNew_ISR(
+                        Input1State.msg_index = MidiIo_msgNew_ISR(
                                 MMSG_SOURCE_INPUT1 | MMSG_FLAG_RUNNING_STATUS,
                                 Input1State.midi_status);
 
@@ -129,7 +129,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                     {
                         // We can't do running status, so we don't know what status is!
                         // Add data as raw
-                        Input1State.msg_index = midiio_MsgNew_ISR(MMSG_SOURCE_INPUT1 | MMSG_FLAG_RAW, 0);
+                        Input1State.msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_INPUT1 | MMSG_FLAG_RAW, 0);
 
                         Input1State.expected_data_count = 0xFF;
                     }
@@ -142,7 +142,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                 if (Input1State.expected_data_count == Input1State.data_count)
                 {
                     // Yep
-                    midiio_MsgFinish_ISR(Input1State.msg_index, MMSG_FLAG_MSG_OK);
+                    MidiIo_msgFinish_ISR(Input1State.msg_index, MMSG_FLAG_MSG_OK);
                     Input1State.receiving = FALSE;
                 }
             }
@@ -153,7 +153,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                 if (type == MIDI_TYPE_DATA)
                 {
                     // Yes, store it
-                    midiio_MsgAddData_ISR(Input1State.msg_index, x);
+                    MidiIo_msgAddData_ISR(Input1State.msg_index, x);
                     Input1State.data_count++;
                     x_used = TRUE;
 
@@ -161,7 +161,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                     if (Input1State.expected_data_count == Input1State.data_count)
                     {
                         // Yep
-                        midiio_MsgFinish_ISR(Input1State.msg_index, MMSG_FLAG_MSG_OK);
+                        MidiIo_msgFinish_ISR(Input1State.msg_index, MMSG_FLAG_MSG_OK);
                         Input1State.receiving = FALSE;
                     }
                 }
@@ -171,7 +171,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
 
                     // We must finish current message. Do so without the OK flag, since it didn't
                     // have the expected length
-                    midiio_MsgFinish_ISR(Input1State.msg_index, 0u);
+                    MidiIo_msgFinish_ISR(Input1State.msg_index, 0u);
                     Input1State.receiving = FALSE;
 
                     // We didn't use x at this point.
@@ -201,7 +201,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
     {
-        midiio_RealtimeMsgAdd_ISR(MMSG_SOURCE_INPUT2 | MMSG_FLAG_MSG_OK, x);
+        MidiIo_realtimeMsg_ISR(MMSG_SOURCE_INPUT2 | MMSG_FLAG_MSG_OK, x);
     }
     else
     {
@@ -219,7 +219,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                 if (type != MIDI_TYPE_DATA)
                 {
                     // Yes, we'll use it for status, create new message
-                    Input2State.msg_index = midiio_MsgNew_ISR(MMSG_SOURCE_INPUT2, x);
+                    Input2State.msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_INPUT2, x);
                     Input2State.midi_status = x;
                     x_used = TRUE;
 
@@ -243,7 +243,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                     if (Input2State.allow_running_status)
                     {
                         // Ok, this is normal running status, create message
-                        Input2State.msg_index = midiio_MsgNew_ISR(
+                        Input2State.msg_index = MidiIo_msgNew_ISR(
                                 MMSG_SOURCE_INPUT2 | MMSG_FLAG_RUNNING_STATUS,
                                 Input2State.midi_status);
 
@@ -254,7 +254,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                     {
                         // We can't do running status, so we don't know what status is!
                         // Add data as raw
-                        Input2State.msg_index = midiio_MsgNew_ISR(MMSG_SOURCE_INPUT2 | MMSG_FLAG_RAW, 0);
+                        Input2State.msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_INPUT2 | MMSG_FLAG_RAW, 0);
 
                         Input2State.expected_data_count = 0xFF;
                     }
@@ -267,7 +267,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                 if (Input2State.expected_data_count == Input2State.data_count)
                 {
                     // Yep
-                    midiio_MsgFinish_ISR(Input2State.msg_index, MMSG_FLAG_MSG_OK);
+                    MidiIo_msgFinish_ISR(Input2State.msg_index, MMSG_FLAG_MSG_OK);
                     Input2State.receiving = FALSE;
                 }
             }
@@ -278,7 +278,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                 if (type == MIDI_TYPE_DATA)
                 {
                     // Yes, store it
-                    midiio_MsgAddData_ISR(Input2State.msg_index, x);
+                    MidiIo_msgAddData_ISR(Input2State.msg_index, x);
                     Input2State.data_count++;
                     x_used = TRUE;
 
@@ -286,7 +286,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                     if (Input2State.expected_data_count == Input2State.data_count)
                     {
                         // Yep
-                        midiio_MsgFinish_ISR(Input2State.msg_index, MMSG_FLAG_MSG_OK);
+                        MidiIo_msgFinish_ISR(Input2State.msg_index, MMSG_FLAG_MSG_OK);
                         Input2State.receiving = FALSE;
                     }
                 }
@@ -296,7 +296,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
 
                     // We must finish current message. Do so without the OK flag, since it didn't
                     // have the expected length
-                    midiio_MsgFinish_ISR(Input2State.msg_index, 0u);
+                    MidiIo_msgFinish_ISR(Input2State.msg_index, 0u);
                     Input2State.receiving = FALSE;
 
                     // We didn't use x at this point.

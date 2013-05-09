@@ -126,12 +126,12 @@ int8_t qd_getPushedDelta(void)
         // Read out the delta value and reset it in one
         // atomic operation:
 
-        hal_InterruptsDisable();
+        Hal_interruptsDisable();
 
         delta = knobPushedDelta;
         knobPushedDelta = 0u;
 
-        hal_InterruptsEnable();
+        Hal_interruptsEnable();
     }
 
     return delta;
@@ -147,12 +147,12 @@ int8_t qd_getDelta(void)
         // Read out the delta value and reset it in one
         // atomic operation:
 
-        hal_InterruptsDisable();
+        Hal_interruptsDisable();
 
         delta = knobDelta;
         knobDelta = 0u;
 
-        hal_InterruptsEnable();
+        Hal_interruptsEnable();
     }
 
     return delta;

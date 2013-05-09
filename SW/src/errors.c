@@ -56,13 +56,13 @@ void err_DebugPrint(uint8_t x)
     // TODO this better
     char buffer[3];
 
-    lcd_CursorSet(0, DebugCursor);
+    Lcd_setCursor(0, DebugCursor);
 
     util_strWriteHex(buffer, x);
 
-    lcd_Write(buffer[0]);
-    lcd_Write(buffer[1]);
-    lcd_Write('<');
+    Lcd_write(buffer[0]);
+    Lcd_write(buffer[1]);
+    Lcd_write('<');
 
     DebugCursor += 2;
 

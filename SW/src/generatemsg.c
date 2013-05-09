@@ -208,7 +208,7 @@ static void SendMessage(uint8_t msg)
     uint8_t len;
 
     // Reserve an index in the midiio buffer
-    msg_index = midiio_MsgNew_Main(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK, Messages[msg].MidiStatus);
+    msg_index = MidiIo_msgNew_MAIN(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK, Messages[msg].MidiStatus);
 
     // Ensure we use the correct length
     len = Midi_getDataCount(Messages[msg].MidiStatus);
@@ -216,11 +216,11 @@ static void SendMessage(uint8_t msg)
     // Put in the data
     for (i = 0; i < len; i++)
     {
-        midiio_MsgAddData_ISR(msg_index, Messages[msg].MidiParam[i]);
+        MidiIo_msgAddData_ISR(msg_index, Messages[msg].MidiParam[i]);
     }
 
     // Finish so it will be sent
-    midiio_MsgFinish_ISR(msg_index, 0);
+    MidiIo_msgFinish_ISR(msg_index, 0);
 }
 
 

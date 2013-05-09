@@ -44,13 +44,13 @@ static uint16_t tickCount;
 /////////////////////////   Prototypes   /////////////////////////
 
 
-static void hal_MidiIoSetup(void);
-static void hal_TickIsrSetup(void);
+static void midiIoSetup(void);
+static void tickIsrSetup(void);
 
 
 ///////////////////////// Implementation /////////////////////////
 
-void hal_Initialize(void)
+void Hal_initialize(void)
 {
     // Status led
     PORTB |= (1u << 4);
@@ -79,11 +79,11 @@ void hal_Initialize(void)
     BUTTONS_DDR &= ~(HAL_BUTTON_PUSH | HAL_BUTTON_SEL | HAL_BUTTON_BACK);
 
     // Init other stuff
-    hal_MidiIoSetup();
-    hal_TickIsrSetup();
+    midiIoSetup();
+    tickIsrSetup();
 }
 
-void hal_StatusLedSet(bool_t on)
+void Hal_statusLedSet(bool_t on)
 {
     if (on)
     {
@@ -96,7 +96,7 @@ void hal_StatusLedSet(bool_t on)
 
 }
 
-void hal_LcdBacklightSet(bool_t on)
+void Hal_lcdBacklightSet(bool_t on)
 {
     if (on)
     {
@@ -110,7 +110,7 @@ void hal_LcdBacklightSet(bool_t on)
 }
 
 
-uint8_t hal_EncoderQuadGet(void)
+uint8_t Hal_encoderQuadGet(void)
 {
     uint8_t ret;
 
@@ -134,7 +134,7 @@ ISR(PCINT0_vect)
 
 
 
-uint8_t hal_ButtonStatesGet(void)
+uint8_t Hal_buttonStatesGet(void)
 {
     uint8_t ret;
 
@@ -144,12 +144,12 @@ uint8_t hal_ButtonStatesGet(void)
     return ret;
 }
 
-void hal_InterruptsDisable(void)
+void Hal_interruptsDisable(void)
 {
     cli();
 }
 
-void hal_InterruptsEnable(void)
+void Hal_interruptsEnable(void)
 {
     sei();
 }
@@ -158,7 +158,7 @@ void hal_InterruptsEnable(void)
 // MIDI Input1 / Input2 / Output UARTs
 
 
-static void hal_MidiIoSetup(void)
+static void midiIoSetup(void)
 {
     // Setup USART0. This is used for Input1 and Output
     ///////
@@ -197,45 +197,45 @@ ISR(USART0_RX_vect)
 {
     uint8_t x;
 
-    hal_StatusLedSet(TRUE);
+    Hal_statusLedSet(TRUE);
     x = UDR0;
     mparser_handleInput1Rx_Isr(x);
-    hal_StatusLedSet(FALSE);
+    Hal_statusLedSet(FALSE);
 }
 
 ISR(USART1_RX_vect)
 {
     uint8_t x;
 
-    hal_StatusLedSet(TRUE);
+    Hal_statusLedSet(TRUE);
     x = UDR1;
     mparser_handleInput2Rx_Isr(x);
-    hal_StatusLedSet(FALSE);
+    Hal_statusLedSet(FALSE);
 }
 
 
 // Midi out transmission on UART0, data register empty interrupt
 ISR(USART0_UDRE_vect)
 {
-    hal_StatusLedSet(TRUE);
-    midiio_OutputTxComplete_ISR();
-    hal_StatusLedSet(FALSE);
+    Hal_statusLedSet(TRUE);
+    MidiIo_outputTxComplete_ISR();
+    Hal_statusLedSet(FALSE);
 }
 
 
 // Return true if Uart Data Register Empty bit is not set
-bool_t hal_MidiTxActiveGet_ISR(void)
+bool_t Hal_midiTxGetActive_ISR(void)
 {
     return ((UCSR0A & (1u << UDRE0)) == 0u);
 }
 
 
-void hal_MidiTxSend_ISR(uint8_t x)
+void Hal_midiTxSend_ISR(uint8_t x)
 {
     UDR0 = x;
 }
 
-void hal_MidiTxIsrEnable_ISR(bool_t en)
+void Hal_midiTxEnableIsr_ISR(bool_t en)
 {
 
     if (en)
@@ -252,7 +252,7 @@ void hal_MidiTxIsrEnable_ISR(bool_t en)
 
 // 100 HZ tick implementation
 
-static void hal_TickIsrSetup(void)
+static void tickIsrSetup(void)
 {
     // We want to generate a 100 Hz TICK interrupt based on the 20 MHz MCU clock.
     // The prescaler configuration of AVR does not allow this to be done accurately
@@ -279,19 +279,19 @@ ISR(TIMER1_COMPA_vect)
     COMP_TICK_ISR_HOOKS();
 }
 
-uint16_t hal_TickCountGet_ISR(void)
+uint16_t Hal_tickCountGet_ISR(void)
 {
     return tickCount;
 }
 
 
-uint16_t hal_TickCountGet(void)
+uint16_t Hal_tickCountGet_MAIN(void)
 {
     uint16_t tc;
 
-    hal_InterruptsDisable(); // TODO check if this inlines
+    Hal_interruptsDisable(); // TODO check if this inlines
     tc = tickCount;
-    hal_InterruptsEnable();
+    Hal_interruptsEnable();
 
     return tc;
 }

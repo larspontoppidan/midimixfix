@@ -89,7 +89,7 @@ void presets_CalculateRecordSize(void)
 
     for (i = 0; i < MENUE_ENTITY_COUNT; i++)
     {
-        size = menue_ConfigGetSize(i);
+        size = MenuEnts_configGetSize(i);
 
         if (size > PRESETS_BUFFER_SIZE)
         {
@@ -115,7 +115,7 @@ void presets_FillEepromHeader(eeprom_header_t *header)
 
     for (i = 0; i < MENUE_ENTITY_COUNT; i++)
     {
-        header->EntitySizes[i] = menue_ConfigGetSize(i);
+        header->EntitySizes[i] = MenuEnts_configGetSize(i);
     }
 }
 
@@ -173,8 +173,8 @@ void presets_Save(uint8_t slot)
     for (i = 0; i < MENUE_ENTITY_COUNT; i++)
     {
         // Let entity write its data into our buffer
-        menue_ConfigSave(i, PresetsBuffer);
-        size = menue_ConfigGetSize(i);
+        MenuEnts_configSave(i, PresetsBuffer);
+        size = MenuEnts_configGetSize(i);
 
         for (j = 0; j < size; j++)
         {
@@ -212,7 +212,7 @@ void presets_Load(uint8_t slot)
 
     for (i = 0; i < MENUE_ENTITY_COUNT; i++)
     {
-        size = menue_ConfigGetSize(i);
+        size = MenuEnts_configGetSize(i);
 
         for (j = 0; j < size; j++)
         {
@@ -230,7 +230,7 @@ void presets_Load(uint8_t slot)
 
         for (i = 0; i < MENUE_ENTITY_COUNT; i++)
         {
-            size = menue_ConfigGetSize(i);
+            size = MenuEnts_configGetSize(i);
 
             for (j = 0; j < size; j++)
             {
@@ -238,7 +238,7 @@ void presets_Load(uint8_t slot)
                 addr++;
             }
 
-            menue_ConfigLoad(i, PresetsBuffer);
+            MenuEnts_configLoad(i, PresetsBuffer);
         }
 
         // Thats it!
@@ -273,8 +273,8 @@ bool_t presets_CheckForChanges(uint8_t slot)
     for (i = 0; (i < MENUE_ENTITY_COUNT) && (changes == FALSE); i++)
     {
         // Let entity write its data into our buffer
-        menue_ConfigSave(i, PresetsBuffer);
-        size = menue_ConfigGetSize(i);
+        MenuEnts_configSave(i, PresetsBuffer);
+        size = MenuEnts_configGetSize(i);
 
         for (j = 0; (j < size) && (changes == FALSE); j++)
         {
@@ -377,11 +377,11 @@ void presets_menuGetText(char *dest, uint8_t item)
 
         if (MenuVisible)
         {
-            dest = util_strCpy_P(dest + 16, pstr_MinusParentheses);
+            dest = util_strCpy_P(dest + 16, PStr_MinusParentheses);
         }
         else
         {
-            dest = util_strCpy_P(dest + 16, pstr_PlusParentheses);
+            dest = util_strCpy_P(dest + 16, PStr_PlusParentheses);
         }
         break;
 

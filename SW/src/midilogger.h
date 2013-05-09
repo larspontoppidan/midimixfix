@@ -11,16 +11,16 @@
 #include "common.h"
 #include "midimessage.h"
 
-void mlog_Initialize(void);
+void MidiLog_initialize(void);
 
-void mlog_handleMidiMsgIn_ISR(midiMsg_t *msg);
-void mlog_handleMidiMsgOut_ISR(midiMsg_t *msg);
-void mlog_handleTick_ISR(void);
-void mlog_handleMainLoop(void);
+void MidiLog_handleMidiMsgIn_ISR(midiMsg_t *msg);
+void MidiLog_handleMidiMsgOut_ISR(midiMsg_t *msg);
+void MidiLog_handleTick_ISR(void);
+void MidiLog_handleMainLoop(void);
 
-uint8_t mlog_menuGetSubCount(void);
-void    mlog_menuGetText(char *dest, uint8_t item);
-uint8_t mlog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
+uint8_t MidiLog_menuGetSubCount(void);
+void    MidiLog_menuGetText(char *dest, uint8_t item);
+uint8_t MidiLog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
 
 
 #endif /* MIDILOGGER_H_ */

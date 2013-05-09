@@ -65,19 +65,19 @@ bool_t LogInNotOut; // If true, input is logged, false then output is logged
 
 uint8_t LogIndexMain; // The latest log index seen from main thread's perspective
 bool_t NeedRefresh;
-int8_t rowOffset;
-int8_t colOffset;
+int8_t RowOffset;
+int8_t ColOffset;
 
 // Window buffer
 
 #define BUFFER_MAX 32
 
-uint8_t windowBuffer[LCD_ROWS][BUFFER_MAX];
+uint8_t WindowBuffer[LCD_ROWS][BUFFER_MAX];
 
 
 // Strings
 
-char mlogTitle[] PROGMEM =  "Show midi log (...)";
+static char PStrTitle[] PROGMEM =  "Show midi log (...)";
 
 // The user can toggle the different modes with the select button
 //   "*Log. In *"
@@ -85,13 +85,13 @@ char mlogTitle[] PROGMEM =  "Show midi log (...)";
 //   "*Stop In *"
 //   "*Stop Out*"
 
-char mlogOFF[] PROGMEM = "OFF";
-char mlogIN[]  PROGMEM = "In";
-char mlogOUT[] PROGMEM = "Ou";
+static char PStrOFF[] PROGMEM = "OFF";
+static char PStrIn[]  PROGMEM = "In";
+static char PStrOut[] PROGMEM = "Ou";
 
 ///////////
 
-static void mlog_WriteWindowBuffer(void)
+static void writeWindowBuffer(void)
 {
     uint8_t row;
     uint8_t index;
@@ -100,10 +100,10 @@ static void mlog_WriteWindowBuffer(void)
 
     for (row = 0; row < LCD_ROWS; row++)
     {
-        ptr = (char*)(windowBuffer[row]);
+        ptr = (char*)(WindowBuffer[row]);
 
         // Calculate location in log ring buffer
-        index = LogIndexMain - (LCD_ROWS - 1) + row - rowOffset;
+        index = LogIndexMain - (LCD_ROWS - 1) + row - RowOffset;
 
         // Loop around if we got below 0
         if (((int8_t)index) < 0)
@@ -118,20 +118,20 @@ static void mlog_WriteWindowBuffer(void)
         do
         {
             (*ptr++) = ' ';
-        } while (ptr < (char*)&(windowBuffer[row][8]));
+        } while (ptr < (char*)&(WindowBuffer[row][8]));
 
         // Write parsed message
         ptr = MidiMsg_writeParsed(ptr, &(Log[index]));
 
         // Write spaces for the rest of this row
-        while (ptr < (char*)&(windowBuffer[row][BUFFER_MAX]))
+        while (ptr < (char*)&(WindowBuffer[row][BUFFER_MAX]))
         {
             (*ptr++) = ' ';
         }
     }
 }
 
-void mlog_ResetLog(void)
+static void resetLog(void)
 {
     LogEnabled = FALSE;
 
@@ -142,14 +142,14 @@ void mlog_ResetLog(void)
 }
 
 
-void mlog_ResetPan(void)
+static void resetPan(void)
 {
-    rowOffset = 0;
-    colOffset = 8;
+    RowOffset = 0;
+    ColOffset = 8;
 }
 
 
-bool_t mlog_CheckForNewMsg(void)
+static bool_t checkForNewMsg(void)
 {
     bool_t ret;
     uint8_t i;
@@ -181,7 +181,7 @@ bool_t mlog_CheckForNewMsg(void)
     return ret;
 }
 
-void mlog_WriteDisplay(void)
+static void writeDisplay(void)
 {
     uint8_t row;
     uint8_t col;
@@ -189,58 +189,58 @@ void mlog_WriteDisplay(void)
 
     for (row = 0; row < LCD_ROWS; row++)
     {
-        lcd_CursorSet(row, 0);
+        Lcd_setCursor(row, 0);
 
         // Blit data from window buffer to lcd
         for (col = 0; col < LCD_COLUMNS; col++)
         {
             // Inside buffer?
-            i = col + colOffset;
+            i = col + ColOffset;
             if ((i >= 0) && (i < BUFFER_MAX))
             {
-                lcd_Write(windowBuffer[row][i]);
+                Lcd_write(WindowBuffer[row][i]);
             }
             else
             {
-                lcd_Write(' ');
+                Lcd_write(' ');
             }
         }
     }
 
-    lcd_CursorSet(0,LCD_COLUMNS - 2);
+    Lcd_setCursor(0,LCD_COLUMNS - 2);
 
     if (LogMode == LOG_MODE_ACTIVE)
     {
         // We are enabled, write arrow
-        lcd_Write(LCD_CHAR_RIGHTARROW);
+        Lcd_write(LCD_CHAR_RIGHTARROW);
     }
     else
     {
         // First pause mode, write || symbol
-        lcd_Write('"');
+        Lcd_write('"');
     }
 
     if (LogInNotOut)
     {
-        lcd_Write('I');
+        Lcd_write('I');
     }
     else
     {
-        lcd_Write('O');
+        Lcd_write('O');
     }
 
     // Set cursor depending on mode
     if (LogMode == LOG_MODE_PAUSED2)
     {
-        lcd_CursorSet(0, LCD_COLUMNS-1);
+        Lcd_setCursor(0, LCD_COLUMNS-1);
     }
     else
     {
-        lcd_CursorSet(LCD_ROWS-1, LCD_COLUMNS-1);
+        Lcd_setCursor(LCD_ROWS-1, LCD_COLUMNS-1);
     }
 }
 
-void mlog_UserEvent(uint8_t user_event, int8_t knob_delta)
+static void handleUserEvent(uint8_t user_event, int8_t knob_delta)
 {
     if (user_event == MENU_EVENT_BACK)
     {
@@ -253,7 +253,7 @@ void mlog_UserEvent(uint8_t user_event, int8_t knob_delta)
         if ((LogMode == LOG_MODE_ACTIVE) || (LogMode == LOG_MODE_PAUSED1))
         {
             // Move row
-            rowOffset = util_boundedAddInt8(rowOffset, 0, LOG_SIZE - LCD_ROWS, -knob_delta);
+            RowOffset = util_boundedAddInt8(RowOffset, 0, LOG_SIZE - LCD_ROWS, -knob_delta);
         }
         else if (LogMode == LOG_MODE_PAUSED2)
         {
@@ -275,7 +275,7 @@ void mlog_UserEvent(uint8_t user_event, int8_t knob_delta)
         if ((LogMode == LOG_MODE_ACTIVE) || (LogMode == LOG_MODE_PAUSED1))
         {
             // Move col
-            colOffset = util_boundedAddInt8(colOffset, -10, 10, knob_delta);
+            ColOffset = util_boundedAddInt8(ColOffset, -10, 10, knob_delta);
         }
     }
     else if (user_event == MENU_EVENT_SELECT)
@@ -303,9 +303,9 @@ void mlog_UserEvent(uint8_t user_event, int8_t knob_delta)
 ////// Function hooks
 
 
-void mlog_Initialize(void)
+void MidiLog_initialize(void)
 {
-    mlog_ResetPan();
+    resetPan();
 
     LogMode = LOG_MODE_OFF;
     LogEnabled = FALSE;
@@ -315,7 +315,7 @@ void mlog_Initialize(void)
 }
 
 
-void mlog_handleMidiMsgIn_ISR(midiMsg_t *msg)
+void MidiLog_handleMidiMsgIn_ISR(midiMsg_t *msg)
 {
     // Grab incoming message if enabled
 
@@ -341,7 +341,7 @@ void mlog_handleMidiMsgIn_ISR(midiMsg_t *msg)
 }
 
 
-void mlog_handleMidiMsgOut_ISR(midiMsg_t *msg)
+void MidiLog_handleMidiMsgOut_ISR(midiMsg_t *msg)
 {
     // Grab outgoing message if enabled
 
@@ -365,24 +365,24 @@ void mlog_handleMidiMsgOut_ISR(midiMsg_t *msg)
     }
 }
 
-void mlog_handleTick_ISR(void)
+void MidiLog_handleTick_ISR(void)
 {
 
 }
 
-void mlog_handleMainLoop(void)
+void MidiLog_handleMainLoop(void)
 {
     if (LogMode != LOG_MODE_OFF)
     {
         if (LogMode == LOG_MODE_ACTIVE)
         {
             // We are live
-            if (mlog_CheckForNewMsg())
+            if (checkForNewMsg())
             {
                 NeedRefresh = TRUE;
 
                 // Move to last row when there are new messages
-                rowOffset = 0u;
+                RowOffset = 0u;
             }
         }
 
@@ -390,8 +390,8 @@ void mlog_handleMainLoop(void)
         {
             // Better update log then
             NeedRefresh = FALSE;
-            mlog_WriteWindowBuffer();
-            mlog_WriteDisplay();
+            writeWindowBuffer();
+            writeDisplay();
         }
     }
 
@@ -399,20 +399,20 @@ void mlog_handleMainLoop(void)
 
 /// Menu implementation
 
-uint8_t mlog_menuGetSubCount(void)
+uint8_t MidiLog_menuGetSubCount(void)
 {
     return 0u;
 }
 
-void mlog_menuGetText(char *dest, uint8_t item)
+void MidiLog_menuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        util_strCpy_P(dest, mlogTitle);
+        util_strCpy_P(dest, PStrTitle);
     }
 }
 
-uint8_t mlog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t MidiLog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 
@@ -424,7 +424,7 @@ uint8_t mlog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event
             ret = MENU_RESERVE_DISPLAY;
 
             // Enter midi logger mode
-            mlog_ResetLog();
+            resetLog();
             LogInNotOut = TRUE;
             LogEnabled = TRUE;
             NeedRefresh = TRUE;
@@ -432,7 +432,7 @@ uint8_t mlog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event
         }
         else if (edit_mode == 1)
         {
-            mlog_UserEvent(user_event, knob_delta);
+            handleUserEvent(user_event, knob_delta);
         }
     }
 
