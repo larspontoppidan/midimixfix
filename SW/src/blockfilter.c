@@ -12,6 +12,7 @@
 #include "common.h"
 #include "blockfilter.h"
 #include "midimessage.h"
+#include "midigenerics.h"
 #include "util.h"
 #include "menu.h"
 #include "pgmstrings.h"
@@ -289,13 +290,13 @@ static char *writeTargetName(char *dest, uint8_t target)
     else if (target < TARGET_FIRST_CC)
     {
         // A midi message type
-        dest = MidiMsg_writeStatusName(dest, pgm_read_byte( & (targetStatusMap[target - 17])) );
+        dest = Midi_writeStatusName(dest, pgm_read_byte( & (targetStatusMap[target - 17])) );
     }
     else if (target <= TARGET_LAST_CC)
     {
         // A controller
         dest = util_strCpy_P(dest, PSTR("CC: "));
-        dest = MidiMsg_writeControllerName(dest, target - TARGET_FIRST_CC);
+        dest = Midi_writeControllerName(dest, target - TARGET_FIRST_CC);
     }
 
     return dest;
@@ -321,7 +322,7 @@ void BlockFlt_initialize(void)
 
 void BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg)
 {
-    uint8_t midistatus = msg->midi_status;
+    uint8_t midistatus = msg->MidiStatus;
 
     // TODO check if message is valid
 
@@ -336,7 +337,7 @@ void BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg)
         {
             // Always check source
 
-            if ((msg->flags & Rules[i].FilterInput) != 0)
+            if ((msg->Flags & Rules[i].FilterInput) != 0)
             {
                 uint8_t mode = Rules[i].Mode;
                 bool_t selected;
@@ -359,7 +360,7 @@ void BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg)
                     if (mode & MODE_FILTER_DATA)
                     {
                         // We want first data byte to match
-                        selected = selected && (msg->midi_data[0] == Rules[i].FilterData2);
+                        selected = selected && (msg->Data[0] == Rules[i].FilterData2);
                     }
                 }
 
@@ -377,29 +378,29 @@ void BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg)
                     case MODE_ACTION_SET_CHAN:
                         //
                         midistatus = (midistatus & ~MIDI_CHANNEL_MASK) | Rules[i].ActionData;
-                        msg->midi_status = midistatus;
+                        msg->MidiStatus = midistatus;
                         break;
 
                     case MODE_ACTION_SET_CC:
                         // Change continuous controller type
-                        msg->midi_data[0] = Rules[i].ActionData;
+                        msg->Data[0] = Rules[i].ActionData;
                         break;
 
                     case MODE_ACTION_1_TO_CC:
                         // Convert message to continuous controller
                         midistatus = (midistatus & ~MIDI_STATUS_MASK) | MIDI_STATUS_CTRL_CHANGE;
-                        msg->midi_status = midistatus;
-                        msg->midi_data[1] = msg->midi_data[0];
-                        msg->midi_data[0] = Rules[i].ActionData;
-                        msg->midi_data_len = 2;
+                        msg->MidiStatus = midistatus;
+                        msg->Data[1] = msg->Data[0];
+                        msg->Data[0] = Rules[i].ActionData;
+                        msg->DataLen = 2;
                         break;
 
                     case MODE_ACTION_2_TO_CAT:
                         // Convert message to channel after touch
                         midistatus = (midistatus & ~MIDI_STATUS_MASK) | MIDI_STATUS_CHAN_ATOUCH;
-                        msg->midi_status = midistatus;
-                        msg->midi_data[0] = msg->midi_data[1];
-                        msg->midi_data_len = 1;
+                        msg->MidiStatus = midistatus;
+                        msg->Data[0] = msg->Data[1];
+                        msg->DataLen = 1;
                         break;
                     }
                 }
@@ -407,7 +408,7 @@ void BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg)
 
             if (discard)
             {
-                msg->flags |= MMSG_FLAG_DISCARD;
+                msg->Flags |= MMSG_FLAG_DISCARD;
                 break;
             }
 

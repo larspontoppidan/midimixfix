@@ -9,6 +9,7 @@
 #include "util.h"
 #include "pgmstrings.h"
 #include "midimessage.h"
+#include "midigenerics.h"
 
 int16_t sutil_TenthsTab[5] = {10000, 1000, 100, 10, 1};
 
@@ -437,11 +438,11 @@ char *util_strWriteFormat_P(char *dest, PGM_P src, uint8_t data)
                 }
                 else
                 {
-                    dest = MidiMsg_writeControllerName(dest, data);
+                    dest = Midi_writeControllerName(dest, data);
                 }
                 break;
             case 'n':
-                dest = MidiMsg_writeNoteName(dest, data);
+                dest = Midi_writeNoteName(dest, data);
                 break;
             case 'O':
                 dest = util_strCpy_P(dest, data ? pstr_OnParentheses : pstr_OffParentheses);

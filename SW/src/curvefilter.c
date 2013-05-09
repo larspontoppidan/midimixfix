@@ -11,6 +11,7 @@
 #include "common.h"
 #include "curvefilter.h"
 #include "midimessage.h"
+#include "midigenerics.h"
 #include "util.h"
 #include "menu.h"
 #include "pgmstrings.h"
@@ -137,17 +138,17 @@ void CurveFlt_hookMidiMsg_ISR(midiMsg_t *msg)
     if (FilterCount != 0)
     {
         // Check that OK flag is on, DISCARD flag is off, RAW flag is off
-        if ((msg->flags & (MMSG_FLAG_MSG_OK | MMSG_FLAG_DISCARD | MMSG_FLAG_RAW)) == MMSG_FLAG_MSG_OK)
+        if ((msg->Flags & (MMSG_FLAG_MSG_OK | MMSG_FLAG_DISCARD | MMSG_FLAG_RAW)) == MMSG_FLAG_MSG_OK)
         {
             uint8_t i;
 
             for (i = 0; i < FilterCount; i++)
             {
                 // Check source is what we want
-                if ((msg->flags & Filters[i].Source) != 0)
+                if ((msg->Flags & Filters[i].Source) != 0)
                 {
                     // Does this curve apply to message?
-                    if ((msg->midi_status & MIDI_STATUS_MASK) == FilterMidiStatus[i])
+                    if ((msg->MidiStatus & MIDI_STATUS_MASK) == FilterMidiStatus[i])
                     {
                         // Apparently! Look into the finer details and set
                         // what byte of message to process
@@ -165,7 +166,7 @@ void CurveFlt_hookMidiMsg_ISR(midiMsg_t *msg)
 
                         case FILTER_NOTE_ON_BLACK:
                             // This curve is only for black keys
-                            if (MidiMsg_isKeyBlack(msg->midi_data[0]))
+                            if (Midi_isKeyBlack(msg->Data[0]))
                             {
                                 apply_curve = 2;
                             }
@@ -173,7 +174,7 @@ void CurveFlt_hookMidiMsg_ISR(midiMsg_t *msg)
 
                         case FILTER_NOTE_ON_WHITE:
                             // This curve is only for white keys
-                            if (MidiMsg_isKeyBlack(msg->midi_data[0]) == FALSE)
+                            if (Midi_isKeyBlack(msg->Data[0]) == FALSE)
                             {
                                 apply_curve = 2;
                             }
@@ -186,7 +187,7 @@ void CurveFlt_hookMidiMsg_ISR(midiMsg_t *msg)
 
                         case FILTER_CTRL:
                             // This curve is for a certain controller
-                            if (msg->midi_data[0] == Filters[i].CtrlNo)
+                            if (msg->Data[0] == Filters[i].CtrlNo)
                             {
                                 // And it is correct
                                 apply_curve = 2;
@@ -197,8 +198,8 @@ void CurveFlt_hookMidiMsg_ISR(midiMsg_t *msg)
                         if (apply_curve != 0)
                         {
                             // We are still happy about this, then do it
-                            msg->midi_data[apply_curve - 1] = CurveMath_apply(
-                                    msg->midi_data[apply_curve - 1],
+                            msg->Data[apply_curve - 1] = CurveMath_apply(
+                                    msg->Data[apply_curve - 1],
                                     &(Filters[i].Curve));
                         }
                     }
@@ -241,7 +242,7 @@ void CurveFlt_menuGetText(char *dest, uint8_t item)
             // If this is a controller, also write name of controller
             if (Filters[c].Mode == FILTER_CTRL)
             {
-                dest = MidiMsg_writeControllerName(dest, Filters[c].CtrlNo);
+                dest = Midi_writeControllerName(dest, Filters[c].CtrlNo);
             }
         }
         else

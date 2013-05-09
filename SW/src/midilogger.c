@@ -10,6 +10,7 @@
 #include "common.h"
 #include "midilogger.h"
 #include "midimessage.h"
+#include "midigenerics.h"
 #include "midiio.h"
 #include "errors.h"
 #include "lcd.h"

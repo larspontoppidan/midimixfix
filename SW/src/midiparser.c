@@ -8,6 +8,7 @@
 #include "common.h"
 #include "midiparser.h"
 #include "midimessage.h"
+#include "midigenerics.h"
 #include "midiio.h"
 
 // The job of the parser is to "tokenize" data from the midi data stream
@@ -70,7 +71,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
 {
     uint8_t type;
 
-    type = MidiMsg_getDataType(x);
+    type = Midi_getDataType(x);
 
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
@@ -98,7 +99,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                     x_used = TRUE;
 
                     // Predict expected length
-                    Input1State.expected_data_count = MidiMsg_predictDataCount(x);
+                    Input1State.expected_data_count = Midi_getDataCount(x);
 
                     // Can we use this for running status?
                     if ((type == MIDI_TYPE_CHAN_VOICE) ||
@@ -122,7 +123,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                                 Input1State.midi_status);
 
                         // Predict expected length
-                        Input1State.expected_data_count = MidiMsg_predictDataCount(Input1State.midi_status);
+                        Input1State.expected_data_count = Midi_getDataCount(Input1State.midi_status);
                     }
                     else
                     {
@@ -195,7 +196,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
 {
     uint8_t type;
 
-    type = MidiMsg_getDataType(x);
+    type = Midi_getDataType(x);
 
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
@@ -223,7 +224,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                     x_used = TRUE;
 
                     // Predict expected length
-                    Input2State.expected_data_count = MidiMsg_predictDataCount(x);
+                    Input2State.expected_data_count = Midi_getDataCount(x);
 
                     // Can we use this for running status?
                     if ((type == MIDI_TYPE_CHAN_VOICE) ||
@@ -247,7 +248,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                                 Input2State.midi_status);
 
                         // Predict expected length
-                        Input2State.expected_data_count = MidiMsg_predictDataCount(Input2State.midi_status);
+                        Input2State.expected_data_count = Midi_getDataCount(Input2State.midi_status);
                     }
                     else
                     {

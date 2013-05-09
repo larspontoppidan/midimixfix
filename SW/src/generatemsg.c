@@ -64,6 +64,7 @@
 #include "util.h"
 #include "pgmstrings.h"
 #include "midimessage.h"
+#include "midigenerics.h"
 #include "midiio.h"
 #include "menu.h"
 #include "generatemsg.h"
@@ -210,7 +211,7 @@ static void SendMessage(uint8_t msg)
     msg_index = midiio_MsgNew_Main(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK, Messages[msg].MidiStatus);
 
     // Ensure we use the correct length
-    len = MidiMsg_predictDataCount(Messages[msg].MidiStatus);
+    len = Midi_getDataCount(Messages[msg].MidiStatus);
 
     // Put in the data
     for (i = 0; i < len; i++)
@@ -262,12 +263,12 @@ void genmsg_menuGetText(char *dest, uint8_t item)
     {
         // Write the decoded message. Move from message to mmsg_t
         midiMsg_t msg;
-        msg.flags = MMSG_FLAG_MSG_OK;
-        msg.midi_status = Messages[item-1].MidiStatus;
-        msg.midi_data[0] = Messages[item-1].MidiParam[0];
-        msg.midi_data[1] = Messages[item-1].MidiParam[1];
-        msg.midi_data[2] = Messages[item-1].MidiParam[2];
-        msg.midi_data_len = MidiMsg_predictDataCount(msg.midi_status);
+        msg.Flags = MMSG_FLAG_MSG_OK;
+        msg.MidiStatus = Messages[item-1].MidiStatus;
+        msg.Data[0] = Messages[item-1].MidiParam[0];
+        msg.Data[1] = Messages[item-1].MidiParam[1];
+        msg.Data[2] = Messages[item-1].MidiParam[2];
+        msg.DataLen = Midi_getDataCount(msg.MidiStatus);
 
         MidiMsg_writeParsed(dest, &msg);
     }

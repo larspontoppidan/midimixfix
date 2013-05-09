@@ -77,6 +77,7 @@
 #include "common.h"
 #include "superdelay.h"
 #include "midimessage.h"
+#include "midigenerics.h"
 #include "hal.h"
 #include "midiio.h"
 #include "util.h"
@@ -515,11 +516,11 @@ static void SetupNextDelayCycle(uint8_t index)
 // Sets up delay voice according to note message
 static void HandleNoteOn(uint8_t index, midiMsg_t *msg)
 {
-    DelayVoices[index].key = msg->midi_data[0];
-    DelayVoices[index].keyOnDuration = msg->receive_tick;
-    DelayVoices[index].nextNoteOnTime = msg->receive_tick;
+    DelayVoices[index].key = msg->Data[0];
+    DelayVoices[index].keyOnDuration = msg->ReceivedTick;
+    DelayVoices[index].nextNoteOnTime = msg->ReceivedTick;
     DelayVoices[index].repeats = 0;
-    DelayVoices[index].velocity = msg->midi_data[1];
+    DelayVoices[index].velocity = msg->Data[1];
 
     if (dynamicEnable)
     {
@@ -543,21 +544,21 @@ static void HandleNoteOff(uint8_t index, midiMsg_t *msg)
         DelayVoices[index].status |= STATUS_GOT_NOTE_OFF;
 
         // We can now calculate key duration
-        DelayVoices[index].keyOnDuration = (msg->receive_tick) - (DelayVoices[index].keyOnDuration);
+        DelayVoices[index].keyOnDuration = (msg->ReceivedTick) - (DelayVoices[index].keyOnDuration);
 
         // If delay voice has already stopped sounding, we need to take care of the note off event here
         if (DelayVoices[index].status & STATUS_DELAY_DONE)
         {
-            DelayVoices[index].nextNoteOffTime = (msg->receive_tick) + (uint16_t)(DelaySetup.speed);
+            DelayVoices[index].nextNoteOffTime = (msg->ReceivedTick) + (uint16_t)(DelaySetup.speed);
             DelayVoices[index].status |= STATUS_ARM_NOTE_OFF;
         }
     }
 
     // Do we let this note off survive?
-    if (CheckNoteActiveState(msg->midi_data[0]) == TRUE)
+    if (CheckNoteActiveState(msg->Data[0]) == TRUE)
     {
         // Something is keeping this note active, don't send note off
-        msg->flags |= MMSG_FLAG_DISCARD;
+        msg->Flags |= MMSG_FLAG_DISCARD;
     }
 }
 
@@ -762,11 +763,11 @@ void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
 {
     if (filterEnabled)
     {
-        if ((msg->flags & DelaySetup.Source) != 0)
+        if ((msg->Flags & DelaySetup.Source) != 0)
         {
             // TODO also check if message is OK
 
-            uint8_t x = msg->midi_status;
+            uint8_t x = msg->MidiStatus;
 
             // Do we listen to this channel
             if ((x & MIDI_CHANNEL_MASK) == DelaySetup.chan)
@@ -775,7 +776,7 @@ void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
                 bool_t done_with_msg = FALSE;
 
                 // Maybe this is tap speed?
-                if (msg->midi_data[0] == DelaySetup.tapKey)
+                if (msg->Data[0] == DelaySetup.tapKey)
                 {
                     switch (x & MIDI_STATUS_MASK)
                     {
@@ -783,14 +784,14 @@ void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
                         // TODO GENERAL BUG ! this will not work with NOTE_OFF's using NOTE_ON at velocity 0
                         // This should be fixed on a general level, affects all filters
 
-                        HandleTapSpeedEvent(msg->receive_tick);
+                        HandleTapSpeedEvent(msg->ReceivedTick);
 
                     case MIDI_STATUS_NOTE_OFF:   // NOTE: Intentional fall through
 
                     case MIDI_STATUS_KEY_ATOUCH: // NOTE: Intentional fall through
 
                         // Discard all NoteOn/Off/Aftertouch messages regarding this key
-                        msg->flags |= MMSG_FLAG_DISCARD;
+                        msg->Flags |= MMSG_FLAG_DISCARD;
                         done_with_msg = TRUE;
                     }
                 }
@@ -804,24 +805,24 @@ void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
                         // Find a delayvoice for this note on
                         voice = FindQuietestVoice();
                         // Make sure to generate note-off for the voice if required
-                        KillVoice(voice, msg->midi_data[0]);
+                        KillVoice(voice, msg->Data[0]);
                         // Setup voice according to this note on
                         HandleNoteOn(voice, msg);
                         break;
 
                     case MIDI_STATUS_NOTE_OFF:
                         // Find the delayvoice that needs to get this note off
-                        voice = FindActiveVoice(msg->midi_data[0]);
+                        voice = FindActiveVoice(msg->Data[0]);
                         HandleNoteOff(voice, msg);
                         break;
 
                     case MIDI_STATUS_CTRL_CHANGE:
 
                         // Are we listening to this controller?
-                        if (msg->midi_data[0] == DelaySetup.enableCc)
+                        if (msg->Data[0] == DelaySetup.enableCc)
                         {
-                            dynamicEnable = (msg->midi_data[1] > 0x40);
-                            msg->flags |= MMSG_FLAG_DISCARD;
+                            dynamicEnable = (msg->Data[1] > 0x40);
+                            msg->Flags |= MMSG_FLAG_DISCARD;
                         }
                         break;
 

@@ -225,10 +225,10 @@ uint8_t midiio_MsgNew_ISR(uint8_t flags, uint8_t midi_status)
     statusBuffer[msg_index] = STATUS_RECEIVING;
 
     // Initialize msg
-    MsgBuffer[msg_index].receive_tick = hal_TickCountGet_ISR();
-    MsgBuffer[msg_index].flags = flags;
-    MsgBuffer[msg_index].midi_status = midi_status;
-    MsgBuffer[msg_index].midi_data_len = 0;
+    MsgBuffer[msg_index].ReceivedTick = hal_TickCountGet_ISR();
+    MsgBuffer[msg_index].Flags = flags;
+    MsgBuffer[msg_index].MidiStatus = midi_status;
+    MsgBuffer[msg_index].DataLen = 0;
 
     return msg_index;
 }
@@ -287,10 +287,10 @@ uint8_t midiio_MsgNew_Main(uint8_t flags, uint8_t midi_status)
     // reserved for whoever is going to put data into it.
 
     // Initialize msg
-    MsgBuffer[msg_index].receive_tick = hal_TickCountGet();
-    MsgBuffer[msg_index].flags = flags;
-    MsgBuffer[msg_index].midi_status = midi_status;
-    MsgBuffer[msg_index].midi_data_len = 0;
+    MsgBuffer[msg_index].ReceivedTick = hal_TickCountGet();
+    MsgBuffer[msg_index].Flags = flags;
+    MsgBuffer[msg_index].MidiStatus = midi_status;
+    MsgBuffer[msg_index].DataLen = 0;
 
     return msg_index;
 }
@@ -300,12 +300,12 @@ void midiio_MsgAddData_ISR(uint8_t msg_index, uint8_t midi_data)
 {
     uint8_t l;
 
-    l = MsgBuffer[msg_index].midi_data_len;
+    l = MsgBuffer[msg_index].DataLen;
 
     if (l < MMSG_DATA_MAX)
     {
-        MsgBuffer[msg_index].midi_data[l] = midi_data;
-        MsgBuffer[msg_index].midi_data_len = l+1;
+        MsgBuffer[msg_index].Data[l] = midi_data;
+        MsgBuffer[msg_index].DataLen = l+1;
     }
     else
     {
@@ -322,9 +322,9 @@ void midiio_MsgFinish_ISR(uint8_t msg_index, uint8_t flags)
     midiMsg_t *msg = &(MsgBuffer[msg_index]);
 
     // Or the last flags into message
-    msg->flags |= flags;
+    msg->Flags |= flags;
 
-    if ((msg->flags) & ConfigDiscardFlags)
+    if ((msg->Flags) & ConfigDiscardFlags)
     {
         // OK, we discard the message directly
         statusBuffer[msg_index] = STATUS_DISCARD;
@@ -332,14 +332,14 @@ void midiio_MsgFinish_ISR(uint8_t msg_index, uint8_t flags)
     else
     {
         // Message survives so far
-        if ((msg->flags) & ConfigProcessFlags)
+        if ((msg->Flags) & ConfigProcessFlags)
         {
             // Let components deal with message
             COMP_MESSAGE_ISR_HOOKS(msg);
         }
 
         // Do we still want to send the message
-        if ((msg->flags) & MMSG_FLAG_DISCARD)
+        if ((msg->Flags) & MMSG_FLAG_DISCARD)
         {
             statusBuffer[msg_index] = STATUS_DISCARD;
         }
@@ -374,7 +374,7 @@ void midiio_RealtimeMsgAdd_ISR(uint8_t flags, uint8_t midi_status)
         }
 
         // Do we still want to send the message
-        if (MsgBuffer[msg_index].flags & MMSG_FLAG_DISCARD)
+        if (MsgBuffer[msg_index].Flags & MMSG_FLAG_DISCARD)
         {
             statusBuffer[msg_index] = STATUS_DISCARD;
         }
