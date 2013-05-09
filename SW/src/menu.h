@@ -14,6 +14,7 @@
 
 void Menu_initialize(void);
 
+void Menu_handleMainLoop(void);
 
 // User interface:
 
@@ -24,7 +25,6 @@ void Menu_handleUserBacks(void);
 
 void Menu_notifyRefresh_SAFE(void);
 
-void Menu_handleMainLoopHook(void);
 
 ///////// Defines
 

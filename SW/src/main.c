@@ -24,29 +24,29 @@
 
 /// VARIABLES
 
-bool_t uiSelectPushed = FALSE;
-bool_t uiBackPushed = FALSE;
+static bool_t UiSelectPushed = FALSE;
+static bool_t UiBackPushed = FALSE;
 
 
 /// PROTOTYPES
 
-static void HandleUi(void);
+static void handleUi(void);
 
 
 /// IMPLEMENTATION
 
-static void HandleUi(void)
+static void handleUi(void)
 {
     int8_t i;
 
-    i = qd_getDelta();
+    i = QuadDecode_getDelta_MAIN();
 
     if (i != 0u)
     {
         Menu_handleUserTurns(i, FALSE);
     }
 
-    i = qd_getPushedDelta();
+    i = QuadDecode_getPushedDelta_MAIN();
 
     if (i != 0u)
     {
@@ -55,28 +55,28 @@ static void HandleUi(void)
 
     if (Hal_buttonStatesGet() & HAL_BUTTON_SEL)
     {
-        if (!uiSelectPushed)
+        if (!UiSelectPushed)
         {
             Menu_handleUserSelects();
-            uiSelectPushed = TRUE;
+            UiSelectPushed = TRUE;
         }
     }
     else
     {
-        uiSelectPushed = FALSE;
+        UiSelectPushed = FALSE;
     }
 
     if (Hal_buttonStatesGet() & HAL_BUTTON_BACK)
     {
-        if (!uiBackPushed)
+        if (!UiBackPushed)
         {
             Menu_handleUserBacks();
-            uiBackPushed = TRUE;
+            UiBackPushed = TRUE;
         }
     }
     else
     {
-        uiBackPushed = FALSE;
+        UiBackPushed = FALSE;
     }
 
     // TODO could use some better debounce filtering than just delaying here...
@@ -86,15 +86,15 @@ static void HandleUi(void)
 int main(void)
 {
     // Initialize basic modules
-    err_Initialize();
+    Err_initialize();
     Hal_initialize();
     Lcd_initialize();
-    qd_initialize();
+    QuadDecode_initialize();
     MidiIo_initialize();
-    mparser_initialize();
+    MidiParser_initialize();
 
     // Initialize components
-    COMP_INITIALIZE_HOOKS();
+    COMP_HOOKS_INITIALIZE();
 
     // Interrupts can start firing now
     Hal_interruptsEnable();
@@ -108,13 +108,13 @@ int main(void)
     while(TRUE)
     {
         // Component hooks for main loop
-        COMP_MAIN_LOOP_HOOKS();
+        COMP_HOOKS_MAIN_LOOP();
 
-        // We are handling menu aspectes here. Call the menu hook
-        Menu_handleMainLoopHook();
+        // We are handling menu aspects here. Call the menu hook
+        Menu_handleMainLoop();
 
         // Check if user did something on the controls
-        HandleUi();
+        handleUi();
     }
 
     return 0;

@@ -133,7 +133,7 @@ void CurveFlt_initialize(void)
 
 }
 
-void CurveFlt_hookMidiMsg_ISR(midiMsg_t *msg)
+void CurveFlt_handleMidiMsg_ISR(midiMsg_t *msg)
 {
     if (FilterCount != 0)
     {
@@ -210,7 +210,7 @@ void CurveFlt_hookMidiMsg_ISR(midiMsg_t *msg)
 
 }
 
-void CurveFlt_hookMainLoop(void)
+void CurveFlt_handleMainLoop(void)
 {
 
 }
@@ -224,8 +224,8 @@ void CurveFlt_menuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        util_strCpy_P(dest, TitleString);
-        util_strWriteNumberParentheses(dest + 14, FilterCount);
+        Util_copyString_P(dest, TitleString);
+        Util_writeNumberParentheses(dest + 14, FilterCount);
     }
     else
     {
@@ -237,7 +237,7 @@ void CurveFlt_menuGetText(char *dest, uint8_t item)
             dest = PStr_writeInX(dest, Filters[c].Source);
             (*dest++) = ' ';
 
-            dest = util_strCpy_P(dest, FilterModeNames[Filters[c].Mode]);
+            dest = Util_copyString_P(dest, FilterModeNames[Filters[c].Mode]);
 
             // If this is a controller, also write name of controller
             if (Filters[c].Mode == FILTER_CTRL)
@@ -287,7 +287,7 @@ uint8_t CurveFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
             if (user_event == MENU_EVENT_TURN)
             {
                 // Modify filter count
-                FilterCount = util_boundedAddInt8(FilterCount, 0, FILTER_COUNT_MAX, knob_delta);
+                FilterCount = Util_boundedAddInt8(FilterCount, 0, FILTER_COUNT_MAX, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
                 ret = 17 | MENU_UPDATE_ALL;
@@ -328,13 +328,13 @@ uint8_t CurveFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
                 {
                     ret = 0;
                     Filters[c].Source =
-                            util_boundedAddInt8(Filters[c].Source, 1, 3, knob_delta);
+                            Util_boundedAddInt8(Filters[c].Source, 1, 3, knob_delta);
                 }
                 else if (edit_mode == 2)
                 {
                     ret = 4;
                     Filters[c].Mode =
-                        util_boundedAddInt8(Filters[c].Mode, 0, (FILTER_MODES-1), knob_delta);
+                        Util_boundedAddInt8(Filters[c].Mode, 0, (FILTER_MODES-1), knob_delta);
                     FilterMidiStatus[c] = pgm_read_byte(&(FilterModeStatusses[Filters[c].Mode]));
                 }
                 else if (edit_mode == 3)
@@ -375,7 +375,7 @@ uint8_t CurveFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
                 {
                     ret = 5;
                     Filters[c].Curve.Type =
-                        util_boundedAddInt8(Filters[c].Curve.Type, 0, CURVEMATH_TYPES-1, knob_delta);
+                        Util_boundedAddInt8(Filters[c].Curve.Type, 0, CURVEMATH_TYPES-1, knob_delta);
                 }
                 else if (edit_mode == 3)
                 {

@@ -36,22 +36,22 @@ static char StrBackAborts[]  PROGMEM = "back aborts";
 #define PRESET_SLOTS_COUNT  12
 
 // Current state of loaded preset
-uint8_t CurrentPreset;
+static uint8_t CurrentPreset;
 
-bool_t  ConfigModified;
-bool_t  ConfigMustBeChecked;
+static bool_t  ConfigModified;
+static bool_t  ConfigMustBeChecked;
 
 
 // State of menu
-bool_t  MenuVisible = FALSE;
-uint8_t MenuSelected;
+static bool_t  MenuVisible = FALSE;
+static uint8_t MenuSelected;
 
 
 // Buffer for saving / loading config
 #define PRESETS_BUFFER_SIZE 70
-uint8_t PresetsBuffer[PRESETS_BUFFER_SIZE];
+static uint8_t PresetsBuffer[PRESETS_BUFFER_SIZE];
 
-uint16_t PresetRecordSize;
+static uint16_t PresetRecordSize;
 
 
 // EEPROM Layout
@@ -80,7 +80,7 @@ typedef struct
 // Directly after the header comes the preset slots
 // Each preset slot takes RecordSize bytes + one byte checksum
 
-void presets_CalculateRecordSize(void)
+static void calculateRecordSize(void)
 {
     uint8_t i;
     uint8_t size;
@@ -93,14 +93,14 @@ void presets_CalculateRecordSize(void)
 
         if (size > PRESETS_BUFFER_SIZE)
         {
-            err_Raise(ERR_MODULE_PRESETS, __LINE__); // Whoops, presets buffer too small!!
+            Err_raise(ERR_MODULE_PRESETS, __LINE__); // Whoops, presets buffer too small!!
         }
 
         PresetRecordSize += size;
     }
 }
 
-void presets_FillEepromHeader(eeprom_header_t *header)
+static void fillEepromHeader(eeprom_header_t *header)
 {
     uint8_t i;
 
@@ -120,13 +120,13 @@ void presets_FillEepromHeader(eeprom_header_t *header)
 }
 
 // Check if we can accept eeprom header.
-bool_t presets_CheckEepromHeader(void)
+static bool_t checkEepromHeader(void)
 {
     bool_t match = TRUE;
     uint16_t i;
 
     // Start by filling out expected values in buffer
-    presets_FillEepromHeader((eeprom_header_t *)PresetsBuffer);
+    fillEepromHeader((eeprom_header_t *)PresetsBuffer);
 
     // It must match exactly what we got in eeprom
     for (i = 0; i < sizeof(eeprom_header_t); i++)
@@ -140,12 +140,12 @@ bool_t presets_CheckEepromHeader(void)
     return match;
 }
 
-void presets_WriteEepromHeader(void)
+static void writeEepromHeader(void)
 {
     uint16_t i;
 
     // Start by filling out header data in buffer
-    presets_FillEepromHeader((eeprom_header_t *)PresetsBuffer);
+    fillEepromHeader((eeprom_header_t *)PresetsBuffer);
 
     // Write to eeprom
     for (i = 0; i < sizeof(eeprom_header_t); i++)
@@ -156,7 +156,7 @@ void presets_WriteEepromHeader(void)
 
 
 // 1 based. Slot 1 is first preset
-void presets_Save(uint8_t slot)
+static void savePreset(uint8_t slot)
 {
     uint16_t addr;
     uint8_t chksum;
@@ -194,7 +194,7 @@ void presets_Save(uint8_t slot)
 }
 
 // 1 based. Slot 1 is first preset
-void presets_Load(uint8_t slot)
+static void loadPreset(uint8_t slot)
 {
     uint16_t addr;
     uint8_t chksum;
@@ -248,14 +248,14 @@ void presets_Load(uint8_t slot)
     }
     else
     {
-        err_Raise(ERR_MODULE_PRESETS, __LINE__); // Unexpected checksum error in EEPROM!
+        Err_raise(ERR_MODULE_PRESETS, __LINE__); // Unexpected checksum error in EEPROM!
     }
 }
 
 
 // 1 based. Slot 1 is first preset
 // Compares preset slot with current setup and returns true if there are differences
-bool_t presets_CheckForChanges(uint8_t slot)
+static bool_t checkForChanges(uint8_t slot)
 {
     uint16_t addr;
     uint8_t chksum;
@@ -301,7 +301,7 @@ bool_t presets_CheckForChanges(uint8_t slot)
 // initialization procedure. During initialization, a preset may be loaded into
 // the components. If a component is initialized later, it may overwrite with
 // default values.
-void presets_initialize(void)
+void Presets_initialize(void)
 {
     CurrentPreset = 1; // TODO implement having no preset loaded / saved, and implement a load defaults!
     ConfigModified = FALSE;
@@ -309,12 +309,12 @@ void presets_initialize(void)
 
     MenuVisible = FALSE;
 
-    presets_CalculateRecordSize();
+    calculateRecordSize();
 
-    if (presets_CheckEepromHeader())
+    if (checkEepromHeader())
     {
         // EEPROM is accepted, Load preset 1
-        presets_Load(CurrentPreset);
+        loadPreset(CurrentPreset);
     }
     else
     {
@@ -326,19 +326,19 @@ void presets_initialize(void)
 
         for (i = 1; i <= PRESET_SLOTS_COUNT; i++)
         {
-            presets_Save(i);
+            savePreset(i);
         }
 
         CurrentPreset = 1;
 
         // Write in the header now that we should be in a consistent state again
-        presets_WriteEepromHeader();
+        writeEepromHeader();
     }
 
 }
 
 
-void presets_configMayChangeNotify(uint8_t entity_index)
+void Presets_notifyConfigMayChange(uint8_t entity_index)
 {
     UNUSED(entity_index);
 
@@ -349,58 +349,58 @@ void presets_configMayChangeNotify(uint8_t entity_index)
 // MENU implementation
 
 
-uint8_t presets_menuGetSubCount(void)
+uint8_t Presets_menuGetSubCount(void)
 {
     return MenuVisible ? 2 : 0;
 }
 
-void presets_menuGetText(char *dest, uint8_t item)
+void Presets_menuGetText(char *dest, uint8_t item)
 {
     switch (item)
     {
     case 0:
         // Write ex.: "Preset 10 (mod) (+)"
-        util_strCpy_P(dest, StrTitle);
-        util_strWriteInt8LA(dest + 7, CurrentPreset);
+        Util_copyString_P(dest, StrTitle);
+        Util_writeInt8LA(dest + 7, CurrentPreset);
 
         // Check if any of the menu entities config has changed
         if (ConfigMustBeChecked)
         {
             ConfigMustBeChecked = FALSE;
-            ConfigModified = presets_CheckForChanges(CurrentPreset);
+            ConfigModified = checkForChanges(CurrentPreset);
         }
 
         if (ConfigModified)
         {
-            util_strCpy_P(dest + ((CurrentPreset > 9) ? 10 : 9), StrMod);
+            Util_copyString_P(dest + ((CurrentPreset > 9) ? 10 : 9), StrMod);
         }
 
         if (MenuVisible)
         {
-            dest = util_strCpy_P(dest + 16, PStr_MinusParentheses);
+            dest = Util_copyString_P(dest + 16, PStr_MinusParentheses);
         }
         else
         {
-            dest = util_strCpy_P(dest + 16, PStr_PlusParentheses);
+            dest = Util_copyString_P(dest + 16, PStr_PlusParentheses);
         }
         break;
 
     case 1: // Load
-        dest = util_strCpy_P(dest, StrLoad);
+        dest = Util_copyString_P(dest, StrLoad);
 
         if (MenuSelected != 0)
         {
-            util_strWriteInt8LA(dest, MenuSelected);
+            Util_writeInt8LA(dest, MenuSelected);
             //util_strCpy_P(dest + 2, presets_StrBackAborts);
         }
         break;
 
     case 2: // Save
-        dest = util_strCpy_P(dest, StrSave);
+        dest = Util_copyString_P(dest, StrSave);
 
         if (MenuSelected != 0)
         {
-            util_strWriteInt8LA(dest, MenuSelected);
+            Util_writeInt8LA(dest, MenuSelected);
             //util_strCpy_P(dest + 2, presets_StrBackAborts);
         }
         break;
@@ -408,7 +408,7 @@ void presets_menuGetText(char *dest, uint8_t item)
 
 }
 
-uint8_t presets_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t Presets_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 
@@ -434,12 +434,12 @@ uint8_t presets_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_ev
                 if (item == 1)
                 {
                     // LOAD the preset!
-                    presets_Load(MenuSelected);
+                    loadPreset(MenuSelected);
                 }
                 else if (item == 2)
                 {
                     // SAVE the preset!
-                    presets_Save(MenuSelected);
+                    savePreset(MenuSelected);
                 }
 
                 // Step out of menu, and inform menu to update all
@@ -457,7 +457,7 @@ uint8_t presets_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_ev
     {
         if (edit_mode == 1)
         {
-            MenuSelected = util_boundedAddInt8(MenuSelected, 1, PRESET_SLOTS_COUNT, knob_delta);
+            MenuSelected = Util_boundedAddInt8(MenuSelected, 1, PRESET_SLOTS_COUNT, knob_delta);
             ret = 5;
         }
     }

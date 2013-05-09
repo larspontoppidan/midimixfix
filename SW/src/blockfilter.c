@@ -280,12 +280,12 @@ static char *writeTargetName(char *dest, uint8_t target)
 {
     if (target == TARGET_DISCARD)
     {
-        dest = util_strCpy_P(dest, PSTR("discard"));
+        dest = Util_copyString_P(dest, PSTR("discard"));
     }
     else if (target < 17)
     {
         // A channel
-        dest = util_strWriteFormat_P(dest, PSTR("Chan %i"), target);
+        dest = Util_writeFormat_P(dest, PSTR("Chan %i"), target);
     }
     else if (target < TARGET_FIRST_CC)
     {
@@ -295,7 +295,7 @@ static char *writeTargetName(char *dest, uint8_t target)
     else if (target <= TARGET_LAST_CC)
     {
         // A controller
-        dest = util_strCpy_P(dest, PSTR("CC: "));
+        dest = Util_copyString_P(dest, PSTR("CC: "));
         dest = Midi_writeControllerName(dest, target - TARGET_FIRST_CC);
     }
 
@@ -320,7 +320,7 @@ void BlockFlt_initialize(void)
 
 }
 
-void BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg)
+void BlockFlt_handleMidiMsg_ISR(midiMsg_t *msg)
 {
     uint8_t midistatus = msg->MidiStatus;
 
@@ -416,12 +416,12 @@ void BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg)
     }
 }
 
-void BlockFlt_hookTick_ISR(void)
+void BlockFlt_handleTick_ISR(void)
 {
     // TODO remove
 }
 
-void BlockFlt_hookMainLoop(void)
+void BlockFlt_handleMainLoop(void)
 {
     // TODO remove
 }
@@ -436,8 +436,8 @@ void BlockFlt_menuGetText(char *dest, uint8_t item)
     if (item == 0)
     {
         // Write first menu line
-        util_strCpy_P(dest, TitleString);
-        util_strWriteNumberParentheses(dest + 14, RuleCount);
+        Util_copyString_P(dest, TitleString);
+        Util_writeNumberParentheses(dest + 14, RuleCount);
     }
     else
     {
@@ -455,7 +455,7 @@ void BlockFlt_menuGetText(char *dest, uint8_t item)
         else
         {
             // Second line of a block filter, write " to "
-            dest = util_strCpy_P(dest, PSTR(" to "));
+            dest = Util_copyString_P(dest, PSTR(" to "));
 
             // Write output target
             dest = writeTargetName(dest, RuleConfigs[c].TargetOut);
@@ -463,7 +463,7 @@ void BlockFlt_menuGetText(char *dest, uint8_t item)
             // Notify user if this config is invalid
             if (Rules[c].Mode == MODE_OFF)
             {
-                dest = util_strCpy_P(dest, PSTR(" ERR!"));
+                dest = Util_copyString_P(dest, PSTR(" ERR!"));
             }
         }
 
@@ -498,7 +498,7 @@ uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
             if ((user_event == MENU_EVENT_TURN) || (user_event == MENU_EVENT_TURN_PUSH))
             {
                 // Modify filter count
-                RuleCount = util_boundedAddInt8(RuleCount, 0, RULE_MAX, knob_delta);
+                RuleCount = Util_boundedAddInt8(RuleCount, 0, RULE_MAX, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
                 ret = 17 | MENU_UPDATE_ALL;
@@ -531,14 +531,14 @@ uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
                 {
                     ret = 0;
                     RuleConfigs[c].Input =
-                            util_boundedAddInt8(RuleConfigs[c].Input, 1, 3, knob_delta);
+                            Util_boundedAddInt8(RuleConfigs[c].Input, 1, 3, knob_delta);
                 }
                 else if (edit_mode == 2)
                 {
                     ret = 4 | MENU_UPDATE_ALL;
 
                     RuleConfigs[c].TargetIn =
-                            util_boundedAddInt8(RuleConfigs[c].TargetIn, 1, TARGET_MAX, knob_delta);
+                            Util_boundedAddInt8(RuleConfigs[c].TargetIn, 1, TARGET_MAX, knob_delta);
 
                 }
 
@@ -563,7 +563,7 @@ uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
                     ret = 5;
 
                     RuleConfigs[c].TargetOut =
-                            util_boundedAddInt8(RuleConfigs[c].TargetOut, 0, TARGET_MAX, knob_delta);
+                            Util_boundedAddInt8(RuleConfigs[c].TargetOut, 0, TARGET_MAX, knob_delta);
 
                     processRuleConfig(c);
                 }

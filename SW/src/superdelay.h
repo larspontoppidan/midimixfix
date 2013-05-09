@@ -11,19 +11,19 @@
 #include "common.h"
 #include "midimessage.h"
 
-void    sdelay_Initialize(void);
+void    SuperDly_initialize(void);
 
-void    sdelay_HookMidiMsg_ISR(midiMsg_t *msg);
-void    sdelay_HookTick_ISR(void);
-void    sdelay_HookMainLoop(void);
+void    SuperDly_handleMidiMsg_ISR(midiMsg_t *msg);
+void    SuperDly_handleTick_ISR(void);
+void    SuperDly_handleMainLoop(void);
 
-uint8_t sdelay_MenuGetSubCount(void);
-void    sdelay_MenuGetText(char *dest, uint8_t item);
-uint8_t sdelay_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
+uint8_t SuperDly_MenuGetSubCount(void);
+void    SuperDly_menuGetText(char *dest, uint8_t item);
+uint8_t SuperDly_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
 
-uint8_t sdelay_ConfigGetSize(void);
-void    sdelay_ConfigSave(uint8_t *dest);
-void    sdelay_ConfigLoad(uint8_t *dest);
+uint8_t SuperDly_configGetSize(void);
+void    SuperDly_configSave(uint8_t *dest);
+void    SuperDly_configLoad(uint8_t *dest);
 
 
 #endif /* SUPERDELAY_H_ */

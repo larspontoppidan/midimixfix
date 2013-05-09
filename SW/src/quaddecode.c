@@ -47,21 +47,21 @@
 //
 
 
-uint8_t current_state;
+static uint8_t CurrentState;
 
-int8_t volatile knobDelta;
-int8_t volatile knobPushedDelta;
+static int8_t volatile KnobDelta;
+static int8_t volatile KnobPushedDelta;
 
 
-int8_t UpdateState(uint8_t new_state)
+static int8_t UpdateState(uint8_t new_state)
 {
     int8_t delta;
 
-    if ((new_state == 2) && (current_state == 1))
+    if ((new_state == 2) && (CurrentState == 1))
     {
         delta = -1;
     }
-    else if ((new_state == 1) && (current_state == 2))
+    else if ((new_state == 1) && (CurrentState == 2))
     {
         delta = 1;
     }
@@ -70,20 +70,20 @@ int8_t UpdateState(uint8_t new_state)
         delta = 0;
     }
 
-    current_state = new_state;
+    CurrentState = new_state;
 
     return delta;
 }
 
-void qd_initialize(void)
+void QuadDecode_initialize(void)
 {
-    current_state = 0;
-    knobDelta = 0;
-    knobPushedDelta = 0;
+    CurrentState = 0;
+    KnobDelta = 0;
+    KnobPushedDelta = 0;
 }
 
 
-void qd_handleAchange_isr(bool_t b_value, bool_t pushed)
+void QuadDecode_handleAChange_ISR(bool_t b_value, bool_t pushed)
 {
     uint8_t new_state;
 
@@ -91,15 +91,15 @@ void qd_handleAchange_isr(bool_t b_value, bool_t pushed)
 
     if (pushed)
     {
-        knobPushedDelta += UpdateState(new_state);
+        KnobPushedDelta += UpdateState(new_state);
     }
     else
     {
-        knobDelta += UpdateState(new_state);
+        KnobDelta += UpdateState(new_state);
     }
 }
 
-void qd_handleBchange_isr(bool_t a_value, bool_t pushed)
+void QuadDecode_handleBChange_ISR(bool_t a_value, bool_t pushed)
 {
     uint8_t new_state;
 
@@ -107,29 +107,29 @@ void qd_handleBchange_isr(bool_t a_value, bool_t pushed)
 
     if (pushed)
     {
-        knobPushedDelta += UpdateState(new_state);
+        KnobPushedDelta += UpdateState(new_state);
     }
     else
     {
-        knobDelta += UpdateState(new_state);
+        KnobDelta += UpdateState(new_state);
     }
 }
 
 
-int8_t qd_getPushedDelta(void)
+int8_t QuadDecode_getPushedDelta_MAIN(void)
 {
     int8_t delta = 0;
 
     // Only go in an disable interrupts if necessary
-    if (knobPushedDelta != 0)
+    if (KnobPushedDelta != 0)
     {
         // Read out the delta value and reset it in one
         // atomic operation:
 
         Hal_interruptsDisable();
 
-        delta = knobPushedDelta;
-        knobPushedDelta = 0u;
+        delta = KnobPushedDelta;
+        KnobPushedDelta = 0u;
 
         Hal_interruptsEnable();
     }
@@ -137,20 +137,20 @@ int8_t qd_getPushedDelta(void)
     return delta;
 }
 
-int8_t qd_getDelta(void)
+int8_t QuadDecode_getDelta_MAIN(void)
 {
     int8_t delta = 0;
 
     // Only go in an disable interrupts if necessary
-    if (knobDelta != 0)
+    if (KnobDelta != 0)
     {
         // Read out the delta value and reset it in one
         // atomic operation:
 
         Hal_interruptsDisable();
 
-        delta = knobDelta;
-        knobDelta = 0u;
+        delta = KnobDelta;
+        KnobDelta = 0u;
 
         Hal_interruptsEnable();
     }

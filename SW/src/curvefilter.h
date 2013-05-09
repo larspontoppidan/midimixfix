@@ -13,8 +13,8 @@
 
 void CurveFlt_initialize(void);
 
-void CurveFlt_hookMidiMsg_ISR(midiMsg_t *msg);
-void CurveFlt_hookMainLoop(void);
+void CurveFlt_handleMidiMsg_ISR(midiMsg_t *msg);
+void CurveFlt_handleMainLoop(void);
 
 uint8_t CurveFlt_menuGetSubCount(void);
 void    CurveFlt_menuGetText(char *dest, uint8_t item);

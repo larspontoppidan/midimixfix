@@ -13,7 +13,7 @@
 
 // Curve type names
 
-static char curveNames[CURVEMATH_TYPES][4] PROGMEM =
+static char CurveNames[CURVEMATH_TYPES][4] PROGMEM =
 {
     {"Lin"},  // 0
     {"0.6"},  // 1
@@ -45,7 +45,7 @@ static char curveNames[CURVEMATH_TYPES][4] PROGMEM =
 // array(a).reshape(-1,8)
 
 
-static uint8_t curveTables[CURVEMATH_TYPES][128] PROGMEM =
+static uint8_t CurveTables[CURVEMATH_TYPES][128] PROGMEM =
 {
     // Linear
     {   0,   2,   4,   6,   8,  10,  12,  14,
@@ -228,19 +228,19 @@ void CurveMath_reset(curveMath_t *curve)
 // Functions for displaying the curve spec
 char *CurveMath_writeLow(char *dest, curveMath_t *curve)
 {
-    return util_strWriteInt8LA(dest, curve->Offset);
+    return Util_writeInt8LA(dest, curve->Offset);
 }
 
 char *CurveMath_writeType(char *dest, curveMath_t *curve)
 {
-    return util_strCpy_P(dest, curveNames[curve->Type]);
+    return Util_copyString_P(dest, CurveNames[curve->Type]);
 }
 
 char *CurveMath_writeHigh(char *dest, curveMath_t *curve)
 {
     int16_t high = curvem_CalculateHigh(curve->Gain, curve->Offset);
 
-    return util_strWriteInt16LA(dest, high);
+    return Util_writeInt16LA(dest, high);
 }
 
 // Applying curve on a value
@@ -250,7 +250,7 @@ uint8_t CurveMath_apply(uint8_t x, curveMath_t *curve)
     int16_t w;
 
     // Non-linear curve look up
-    x = pgm_read_byte(&(curveTables[curve->Type][x]));
+    x = pgm_read_byte(&(CurveTables[curve->Type][x]));
 
     // Apply gain on x
     w = ((int16_t)x) * (curve->Gain);

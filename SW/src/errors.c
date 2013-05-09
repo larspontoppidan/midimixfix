@@ -20,19 +20,19 @@ typedef struct
 
 #define ERROR_BUFFER_SIZE 10
 
-uint8_t ErrorCount;
-error_t ErrorBuffer[ERROR_BUFFER_SIZE];
+static uint8_t ErrorCount;
+static error_t ErrorBuffer[ERROR_BUFFER_SIZE];
 
-uint8_t DebugCursor;
+static uint8_t DebugCursor;
 
-void err_Initialize(void)
+void Err_initialize(void)
 {
     ErrorCount = 0;
     DebugCursor = 0;
 }
 
 
-void err_Raise(uint8_t module, uint16_t line_number)
+void Err_raise(uint8_t module, uint16_t line_number)
 {
     //hal_InterruptsDisable();  TODO critical section
 
@@ -50,7 +50,7 @@ void err_Raise(uint8_t module, uint16_t line_number)
     }
 }
 
-void err_DebugPrint(uint8_t x)
+void Err_debugPrint(uint8_t x)
 {
 
     // TODO this better
@@ -58,7 +58,7 @@ void err_DebugPrint(uint8_t x)
 
     Lcd_setCursor(0, DebugCursor);
 
-    util_strWriteHex(buffer, x);
+    Util_writeHex(buffer, x);
 
     Lcd_write(buffer[0]);
     Lcd_write(buffer[1]);
@@ -72,34 +72,34 @@ void err_DebugPrint(uint8_t x)
     }
 }
 
-void err_DebugPrintBlock(const void *src, uint8_t size)
+void Err_debugPrintBlock(const void *src, uint8_t size)
 {
     uint8_t i;
 
     for (i = 0; i < size; i++)
     {
-        err_DebugPrint(((uint8_t*)src)[i]);
+        Err_debugPrint(((uint8_t*)src)[i]);
     }
 }
 
-void err_Reset(void)
+void Err_reset(void)
 {
     ErrorCount = 0;
 }
 
-char * err_Print(char *dest, uint8_t number)
+char * Err_print(char *dest, uint8_t number)
 {
     if (number < ErrorCount)
     {
-        dest = util_strWriteInt8LA(dest, ErrorBuffer[number].Module);
+        dest = Util_writeInt8LA(dest, ErrorBuffer[number].Module);
         *(dest++) = '-';
-        dest = util_strWriteInt16LA(dest, ErrorBuffer[number].LineNumber);
+        dest = Util_writeInt16LA(dest, ErrorBuffer[number].LineNumber);
     }
 
     return dest;
 }
 
-uint8_t err_GetCount(void)
+uint8_t Err_getCount(void)
 {
     return ErrorCount;
 }

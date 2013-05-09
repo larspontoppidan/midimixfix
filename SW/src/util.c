@@ -11,9 +11,9 @@
 #include "midimessage.h"
 #include "midigenerics.h"
 
-int16_t sutil_TenthsTab[5] = {10000, 1000, 100, 10, 1};
+int16_t TenthsTab[5] = {10000, 1000, 100, 10, 1};
 
-char *util_strWriteInt16(char *dest, int16_t value)
+char *Util_writeInt16(char *dest, int16_t value)
 {
     uint8_t p;
     uint8_t c;
@@ -32,7 +32,7 @@ char *util_strWriteInt16(char *dest, int16_t value)
 
     for (p = 0; p < 5; p++)
     {
-        if (value < sutil_TenthsTab[p])
+        if (value < TenthsTab[p])
         {
             if (numbernow || (p == 4))
             {
@@ -47,10 +47,10 @@ char *util_strWriteInt16(char *dest, int16_t value)
         {
             c = '0';
 
-            while (value >= sutil_TenthsTab[p])
+            while (value >= TenthsTab[p])
             {
                 c++;
-                value -= sutil_TenthsTab[p];
+                value -= TenthsTab[p];
             }
 
             *(dest++) = c;
@@ -63,7 +63,7 @@ char *util_strWriteInt16(char *dest, int16_t value)
 }
 
 
-char *util_strWriteInt16LA(char *dest, int16_t value)
+char *Util_writeInt16LA(char *dest, int16_t value)
 {
     uint8_t p;
     uint8_t c;
@@ -78,7 +78,7 @@ char *util_strWriteInt16LA(char *dest, int16_t value)
 
     for (p = 0; p < 5; p++)
     {
-        if (value < sutil_TenthsTab[p])
+        if (value < TenthsTab[p])
         {
             if (numbernow || (p == 4))
             {
@@ -89,10 +89,10 @@ char *util_strWriteInt16LA(char *dest, int16_t value)
         {
             c = '0';
 
-            while (value >= sutil_TenthsTab[p])
+            while (value >= TenthsTab[p])
             {
                 c++;
-                value -= sutil_TenthsTab[p];
+                value -= TenthsTab[p];
             }
 
             *(dest++) = c;
@@ -105,7 +105,7 @@ char *util_strWriteInt16LA(char *dest, int16_t value)
 }
 
 
-char * util_strWriteUint8(char *dest, uint8_t value)
+char * Util_writeUint8(char *dest, uint8_t value)
 {
     uint8_t c;
     bool_t numbernow = FALSE;
@@ -149,7 +149,7 @@ char * util_strWriteUint8(char *dest, uint8_t value)
 }
 
 
-char *util_strWriteInt8LA(char *dest, int8_t x)
+char *Util_writeInt8LA(char *dest, int8_t x)
 {
     uint8_t value;
     uint8_t c;
@@ -196,7 +196,7 @@ char *util_strWriteInt8LA(char *dest, int8_t x)
     return dest;
 }
 
-char *util_strWriteInt8(char *dest, int8_t x)
+char *Util_writeInt8(char *dest, int8_t x)
 {
     uint8_t value;
     uint8_t c;
@@ -253,7 +253,7 @@ char *util_strWriteInt8(char *dest, int8_t x)
 }
 
 
-char *util_strWriteHex(char *dest, uint8_t x)
+char *Util_writeHex(char *dest, uint8_t x)
 {
     uint8_t c;
 
@@ -283,7 +283,7 @@ char *util_strWriteHex(char *dest, uint8_t x)
 }
 
 
-char *util_strCpy_P(char *dest, PGM_P src)
+char *Util_copyString_P(char *dest, PGM_P src)
 {
     char c;
 
@@ -301,7 +301,7 @@ char *util_strCpy_P(char *dest, PGM_P src)
     return dest;
 }
 
-int8_t util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
+int8_t Util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
 {
     // Work in 16 bit signed space to avoid rollover
     int16_t x;
@@ -320,7 +320,7 @@ int8_t util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
     return (int8_t)x;
 }
 
-uint8_t util_boundedAddUint8(uint8_t value, uint8_t min, uint8_t max, int8_t add)
+uint8_t Util_boundedAddUint8(uint8_t value, uint8_t min, uint8_t max, int8_t add)
 {
     // Work in 16 bit signed space to avoid rollover
     int16_t x;
@@ -349,11 +349,11 @@ uint8_t util_boundedAddUint8(uint8_t value, uint8_t min, uint8_t max, int8_t add
 // " (10)"   value = 10
 // "(200)"   value = 200
 
-void util_strWriteNumberParentheses(char *dest, uint8_t value)
+void Util_writeNumberParentheses(char *dest, uint8_t value)
 {
     if (value == 0)
     {
-        util_strCpy_P(dest, PStr_OffParentheses);
+        Util_copyString_P(dest, PStr_OffParentheses);
     }
     else
     {
@@ -370,13 +370,13 @@ void util_strWriteNumberParentheses(char *dest, uint8_t value)
             // Two digits
             dest[0] = ' ';
             dest[1] = '(';
-            util_strWriteInt8LA(&(dest[2]), value);
+            Util_writeInt8LA(&(dest[2]), value);
         }
         else
         {
             // Three digits
             dest[0] = '(';
-            util_strWriteInt16LA(&(dest[1]), (int16_t)value);
+            Util_writeInt16LA(&(dest[1]), (int16_t)value);
         }
 
         dest[4] = ')';
@@ -398,7 +398,7 @@ void util_strWriteNumberParentheses(char *dest, uint8_t value)
 //   %c    Write data as midi controller
 //   %n    Write data as note name "C#-4" for example
 //
-char *util_strWriteFormat_P(char *dest, PGM_P src, uint8_t data)
+char *Util_writeFormat_P(char *dest, PGM_P src, uint8_t data)
 {
     bool_t finished = FALSE;
     char c;
@@ -420,21 +420,21 @@ char *util_strWriteFormat_P(char *dest, PGM_P src, uint8_t data)
             switch (c)
             {
             case 'U':
-                dest = util_strWriteUint8(dest, data);
+                dest = Util_writeUint8(dest, data);
                 break;
             case 'I':
-                dest = util_strWriteInt8(dest, data);
+                dest = Util_writeInt8(dest, data);
                 break;
             case 'i':
-                dest = util_strWriteInt8LA(dest, data);
+                dest = Util_writeInt8LA(dest, data);
                 break;
             case 'x':
-                dest = util_strWriteHex(dest, data);
+                dest = Util_writeHex(dest, data);
                 break;
             case 'c':
                 if (data == 0xFF)
                 {
-                    dest = util_strCpy_P(dest, PStr_Off);
+                    dest = Util_copyString_P(dest, PStr_Off);
                 }
                 else
                 {
@@ -445,7 +445,7 @@ char *util_strWriteFormat_P(char *dest, PGM_P src, uint8_t data)
                 dest = Midi_writeNoteName(dest, data);
                 break;
             case 'O':
-                dest = util_strCpy_P(dest, data ? PStr_OnParentheses : PStr_OffParentheses);
+                dest = Util_copyString_P(dest, data ? PStr_OnParentheses : PStr_OffParentheses);
                 break;
             case 0:
                 finished = TRUE;

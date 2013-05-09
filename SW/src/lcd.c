@@ -250,7 +250,7 @@ void Lcd_setCursor(uint8_t row, uint8_t column)
 
     if ((row >= 4u) || (column >= 20u))
     {
-        err_Raise(ERR_MODULE_LCD, __LINE__);
+        Err_raise(ERR_MODULE_LCD, __LINE__);
     }
     else
     {

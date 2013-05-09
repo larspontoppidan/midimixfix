@@ -218,7 +218,7 @@ uint8_t MidiIo_msgNew_ISR(uint8_t flags, uint8_t midi_status)
     if (BufferHead == BufferTail)
     {
         // Buffer overflow... Undefined behavior will follow...
-        err_Raise(ERR_MODULE_MIDIIO, __LINE__);
+        Err_raise(ERR_MODULE_MIDIIO, __LINE__);
     }
 
     // Set status
@@ -335,7 +335,7 @@ void MidiIo_msgFinish_ISR(uint8_t msg_index, uint8_t flags)
         if ((msg->Flags) & ConfigProcessFlags)
         {
             // Let components deal with message
-            COMP_MESSAGE_ISR_HOOKS(msg);
+            COMP_HOOKS_MIDI_MSG_IN_ISR(msg);
         }
 
         // Do we still want to send the message
@@ -370,7 +370,7 @@ void MidiIo_realtimeMsg_ISR(uint8_t flags, uint8_t midi_status)
         if (flags & ConfigRtProcessFlags)
         {
             // Let components deal with it
-            COMP_RT_MESSAGE_ISR_HOOKS(&(MsgBuffer[msg_index]));
+            COMP_HOOKS_RT_MIDI_MSG_ISR(&(MsgBuffer[msg_index]));
         }
 
         // Do we still want to send the message
@@ -433,7 +433,7 @@ void MidiIo_outputTxComplete_ISR(void)
                     OutputTransmitIndex = 1;
 
                     // Let output loggers peek at the message
-                    COMP_OUT_MESSAGE_ISR_HOOKS(OutputMessage);
+                    COMP_HOOKS_MIDI_MSG_OUT_ISR(OutputMessage);
 
                     // More bytes left of this message?
                     if (OutputTransmitIndex >= MidiMsg_getLength(OutputMessage))

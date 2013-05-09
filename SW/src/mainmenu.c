@@ -17,31 +17,31 @@
 
 #include "midiio.h"
 
-static char titleString0[] PROGMEM = "- MIDIMIXFIX ";
-static char titleString1[] PROGMEM = __DATE__;
-static char titleString2[] PROGMEM = "Error: ";
+static char TitleString0[] PROGMEM = "- MIDIMIXFIX ";
+static char TitleString1[] PROGMEM = __DATE__;
+static char TitleString2[] PROGMEM = "Error: ";
 
-static char setupString0[]  PROGMEM = "IO setup ";
-static char setupString1[] PROGMEM = "In1       :";
-static char setupString2[] PROGMEM = "In1 rt.msg:";
-static char setupString3[] PROGMEM = "In2       :";
-static char setupString4[] PROGMEM = "In2 rt.msg:";
-static char setupString5[] PROGMEM = "Send runn.st.:";
+static char SetupString0[] PROGMEM = "IO setup ";
+static char SetupString1[] PROGMEM = "In1       :";
+static char SetupString2[] PROGMEM = "In1 rt.msg:";
+static char SetupString3[] PROGMEM = "In2       :";
+static char SetupString4[] PROGMEM = "In2 rt.msg:";
+static char SetupString5[] PROGMEM = "Send runn.st.:";
 
-static uint8_t cursorPositions[6] = {0, 11, 11, 11, 11, 14};
+static uint8_t CursorPositions[6] = {0, 11, 11, 11, 11, 14};
 
 
-static char *modeStrings[3] = {PStr_Discard, PStr_Through, PStr_Use};
+static char *ModeStrings[3] = {PStr_Discard, PStr_Through, PStr_Use};
 
-static bool_t setupMenuVisible = FALSE;
+static bool_t SetupMenuVisible = FALSE;
 
-static bool_t titleMenuVisible = FALSE;
+static bool_t TitleMenuVisible = FALSE;
 
 uint8_t MainMenu_titleGetSubCount(void)
 {
-    if (titleMenuVisible)
+    if (TitleMenuVisible)
     {
-        return err_GetCount() + 1;
+        return Err_getCount() + 1;
     }
     else
     {
@@ -53,23 +53,23 @@ void MainMenu_titleGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        dest = util_strCpy_P(dest, titleString0);
+        dest = Util_copyString_P(dest, TitleString0);
 
-        dest = util_strWriteInt8LA(dest, BUILD_VERSION_MAJOR);
+        dest = Util_writeInt8LA(dest, BUILD_VERSION_MAJOR);
         (*dest++) = '.';
-        dest = util_strWriteInt8LA(dest, BUILD_VERSION_MINOR);
+        dest = Util_writeInt8LA(dest, BUILD_VERSION_MINOR);
         (*dest++) = ' ';
         (*dest++) = '-';
     }
     else if (item == 1)
     {
         // Build date
-        util_strCpy_P(dest, titleString1);
+        Util_copyString_P(dest, TitleString1);
     }
     else
     {
         // Errors
-        err_Print(dest, item - 2);
+        Err_print(dest, item - 2);
     }
 }
 
@@ -84,12 +84,12 @@ uint8_t MainMenu_titleHandleEvent(uint8_t item, uint8_t edit_mode,
 
     if (user_event == MENU_EVENT_SELECT)
     {
-        titleMenuVisible = !titleMenuVisible;
+        TitleMenuVisible = !TitleMenuVisible;
         ret = MENU_UPDATE_ALL | MENU_EDIT_MODE_UNAVAIL;
     }
     else if (user_event == MENU_EVENT_BACK)
     {
-        titleMenuVisible = FALSE;
+        TitleMenuVisible = FALSE;
         ret = MENU_UPDATE_ALL | MENU_EDIT_MODE_UNAVAIL;
     }
 
@@ -101,7 +101,7 @@ uint8_t MainMenu_titleHandleEvent(uint8_t item, uint8_t edit_mode,
 
 uint8_t MainMenu_setupGetSubCount(void)
 {
-    return setupMenuVisible ? 5 : 0;
+    return SetupMenuVisible ? 5 : 0;
 }
 
 void MainMenu_setupGetText(char *dest, uint8_t item)
@@ -111,59 +111,59 @@ void MainMenu_setupGetText(char *dest, uint8_t item)
     switch (item)
     {
     case 0: // General setup
-        util_strCpy_P(dest, setupString0);
-        if (setupMenuVisible)
+        Util_copyString_P(dest, SetupString0);
+        if (SetupMenuVisible)
         {
-            dest = util_strCpy_P(dest + 16, PStr_MinusParentheses);
+            dest = Util_copyString_P(dest + 16, PStr_MinusParentheses);
         }
         else
         {
-            dest = util_strCpy_P(dest + 16, PStr_PlusParentheses);
+            dest = Util_copyString_P(dest + 16, PStr_PlusParentheses);
         }
         break;
 
     case 1: // In1
-        dest = util_strCpy_P(dest, setupString1);
+        dest = Util_copyString_P(dest, SetupString1);
 
         i = MidiIo_getMode(MMSG_SOURCE_INPUT1, FALSE);
-        dest = util_strCpy_P(dest, modeStrings[i]);
+        dest = Util_copyString_P(dest, ModeStrings[i]);
 
         break;
 
     case 2: // In1 realtime:
-        dest = util_strCpy_P(dest, setupString2);
+        dest = Util_copyString_P(dest, SetupString2);
 
         i = MidiIo_getMode(MMSG_SOURCE_INPUT1, TRUE);
-        dest = util_strCpy_P(dest, modeStrings[i]);
+        dest = Util_copyString_P(dest, ModeStrings[i]);
 
         break;
 
     case 3: // In2
-        dest = util_strCpy_P(dest, setupString3);
+        dest = Util_copyString_P(dest, SetupString3);
 
         i = MidiIo_getMode(MMSG_SOURCE_INPUT2, FALSE);
-        dest = util_strCpy_P(dest, modeStrings[i]);
+        dest = Util_copyString_P(dest, ModeStrings[i]);
 
         break;
 
     case 4: // In2 realtime:
-        dest = util_strCpy_P(dest, setupString4);
+        dest = Util_copyString_P(dest, SetupString4);
 
         i = MidiIo_getMode(MMSG_SOURCE_INPUT2, TRUE);
-        dest = util_strCpy_P(dest, modeStrings[i]);
+        dest = Util_copyString_P(dest, ModeStrings[i]);
 
         break;
 
     case 5: // Send runn. status
-        dest = util_strCpy_P(dest, setupString5);
+        dest = Util_copyString_P(dest, SetupString5);
 
         if (MidiIo_getRunStatusMode())
         {
-            dest = util_strCpy_P(dest, PStr_On);
+            dest = Util_copyString_P(dest, PStr_On);
         }
         else
         {
-            dest = util_strCpy_P(dest, PStr_Off);
+            dest = Util_copyString_P(dest, PStr_Off);
         }
         break;
     }
@@ -183,13 +183,13 @@ uint8_t MainMenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
             if (item == 0)
             {
                 // This toggles showing sub items
-                setupMenuVisible = !setupMenuVisible;
+                SetupMenuVisible = !SetupMenuVisible;
                 ret = MENU_UPDATE_ALL | MENU_EDIT_MODE_UNAVAIL;
             }
             else
             {
                 // Report back desired cursor position
-                ret = cursorPositions[item];
+                ret = CursorPositions[item];
             }
         }
     }
@@ -198,7 +198,7 @@ uint8_t MainMenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
         int8_t i;
 
         // Report back desired cursor position
-        ret = cursorPositions[item];
+        ret = CursorPositions[item];
 
         switch (item)
         {
@@ -206,26 +206,26 @@ uint8_t MainMenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
             // Get current mode
             i = MidiIo_getMode(MMSG_SOURCE_INPUT1, FALSE);
             // The available modes are 0, 1, 2. Add the knob delta with bounds
-            i = util_boundedAddInt8(i, 0, 2, knob_delta);
+            i = Util_boundedAddInt8(i, 0, 2, knob_delta);
             // Set new mode
             MidiIo_setMode(i, MMSG_SOURCE_INPUT1, FALSE);
             break;
 
         case 2: // In1 realtime
             i = MidiIo_getMode(MMSG_SOURCE_INPUT1, TRUE);
-            i = util_boundedAddInt8(i, 0, 2, knob_delta);
+            i = Util_boundedAddInt8(i, 0, 2, knob_delta);
             MidiIo_setMode(i, MMSG_SOURCE_INPUT1, TRUE);
             break;
 
         case 3: // In2
             i = MidiIo_getMode(MMSG_SOURCE_INPUT2, FALSE);
-            i = util_boundedAddInt8(i, 0, 2, knob_delta);
+            i = Util_boundedAddInt8(i, 0, 2, knob_delta);
             MidiIo_setMode(i, MMSG_SOURCE_INPUT2, FALSE);
             break;
 
         case 4: // In2 realtime
             i = MidiIo_getMode(MMSG_SOURCE_INPUT2, TRUE);
-            i = util_boundedAddInt8(i, 0, 2, knob_delta);
+            i = Util_boundedAddInt8(i, 0, 2, knob_delta);
             MidiIo_setMode(i, MMSG_SOURCE_INPUT2, TRUE);
             break;
 

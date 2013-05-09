@@ -275,7 +275,7 @@ void Menu_notifyRefresh_SAFE(void)
     RefreshRequested = TRUE;
 }
 
-void Menu_handleMainLoopHook(void)
+void Menu_handleMainLoop(void)
 {
     if (RefreshRequested == TRUE)
     {
@@ -348,7 +348,7 @@ void Menu_handleUserTurns(int8_t delta, bool_t pushed)
             ret = MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode, event, delta);
 
             // Notify presets module that component may have changed its configuration
-            presets_configMayChangeNotify(CurrentComponent);
+            Presets_notifyConfigMayChange(CurrentComponent);
 
             // Update this line or all
             render(ret & MENU_UPDATE_ALL);

@@ -253,7 +253,7 @@ static void handleUserEvent(uint8_t user_event, int8_t knob_delta)
         if ((LogMode == LOG_MODE_ACTIVE) || (LogMode == LOG_MODE_PAUSED1))
         {
             // Move row
-            RowOffset = util_boundedAddInt8(RowOffset, 0, LOG_SIZE - LCD_ROWS, -knob_delta);
+            RowOffset = Util_boundedAddInt8(RowOffset, 0, LOG_SIZE - LCD_ROWS, -knob_delta);
         }
         else if (LogMode == LOG_MODE_PAUSED2)
         {
@@ -275,7 +275,7 @@ static void handleUserEvent(uint8_t user_event, int8_t knob_delta)
         if ((LogMode == LOG_MODE_ACTIVE) || (LogMode == LOG_MODE_PAUSED1))
         {
             // Move col
-            ColOffset = util_boundedAddInt8(ColOffset, -10, 10, knob_delta);
+            ColOffset = Util_boundedAddInt8(ColOffset, -10, 10, knob_delta);
         }
     }
     else if (user_event == MENU_EVENT_SELECT)
@@ -328,7 +328,7 @@ void MidiLog_handleMidiMsgIn_ISR(midiMsg_t *msg)
         }
         else
         {
-            err_Raise(ERR_MODULE_MLOG, __LINE__);
+            Err_raise(ERR_MODULE_MLOG, __LINE__);
         }
 
         LogIndexIsr++;
@@ -353,7 +353,7 @@ void MidiLog_handleMidiMsgOut_ISR(midiMsg_t *msg)
         }
         else
         {
-            err_Raise(ERR_MODULE_MLOG, __LINE__);
+            Err_raise(ERR_MODULE_MLOG, __LINE__);
         }
 
         LogIndexIsr++;
@@ -408,7 +408,7 @@ void MidiLog_menuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        util_strCpy_P(dest, PStrTitle);
+        Util_copyString_P(dest, PStrTitle);
     }
 }
 

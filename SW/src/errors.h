@@ -35,15 +35,15 @@ enum
     ERR_MODULE_SDELAY   // 19
 };
 
-void err_Initialize(void);
-void err_Raise(uint8_t module, uint16_t line_number);
+void Err_initialize(void);
+void Err_raise(uint8_t module, uint16_t line_number);
 
-void err_DebugPrint(uint8_t x);
-void err_DebugPrintBlock(const void *src, uint8_t size);
+void Err_debugPrint(uint8_t x);
+void Err_debugPrintBlock(const void *src, uint8_t size);
 
-void err_Reset(void);
-char * err_Print(char *dest, uint8_t number);
-uint8_t err_GetCount(void);
+void Err_reset(void);
+char * Err_print(char *dest, uint8_t number);
+uint8_t Err_getCount(void);
 
 
 #endif /* ERRORS_H_ */

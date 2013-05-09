@@ -11,15 +11,15 @@
 
 #include "common.h"
 
-void    genmsg_initialize(void);
+void    GenMsg_initialize(void);
 
-uint8_t genmsg_menuGetSubCount(void);
-void    genmsg_menuGetText(char *dest, uint8_t item);
-uint8_t genmsg_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
+uint8_t GenMsg_menuGetSubCount(void);
+void    GenMsg_menuGetText(char *dest, uint8_t item);
+uint8_t GenMsg_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
 
-uint8_t genmsg_configGetSize(void);
-void    genmsg_configSave(uint8_t *dest);
-void    genmsg_configLoad(uint8_t *dest);
+uint8_t GenMsg_configGetSize(void);
+void    GenMsg_configSave(uint8_t *dest);
+void    GenMsg_configLoad(uint8_t *dest);
 
 
 #endif /* GENERATEMSG_H_ */

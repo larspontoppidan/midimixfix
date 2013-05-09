@@ -13,9 +13,9 @@
 
 void    BlockFlt_initialize(void);
 
-void    BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg);
-void    BlockFlt_hookTick_ISR(void);
-void    BlockFlt_hookMainLoop(void);
+void    BlockFlt_handleMidiMsg_ISR(midiMsg_t *msg);
+void    BlockFlt_handleTick_ISR(void);
+void    BlockFlt_handleMainLoop(void);
 
 uint8_t BlockFlt_menuGetSubCount(void);
 void    BlockFlt_menuGetText(char *dest, uint8_t item);

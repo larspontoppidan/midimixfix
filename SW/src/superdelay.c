@@ -106,14 +106,14 @@
 typedef struct
 {
     uint8_t Source;
-    uint8_t chan;
-    uint8_t tapKey;        // TODO Tapping this key will set speed
-    uint8_t speed;         // Delay speed in tick count
-    int8_t  swing_amount;  // Added to speed of 1 3 5... beats, subtracted from 2 4 6... beats
-    uint8_t feedback;      // 128 is 100%, 64 is 50%, 255 is 200%
-    uint8_t stopVelocity;  // Velocity to stop repeating at
-    uint8_t stopRepeat;    // 0 means unlimited. Repeat count limit
-    uint8_t enableCc;      // Midi controller to enable / disable new delay voices
+    uint8_t Chan;
+    uint8_t TapKey;        // TODO Tapping this key will set speed
+    uint8_t Speed;         // Delay speed in tick count
+    int8_t  SwingAmount;  // Added to speed of 1 3 5... beats, subtracted from 2 4 6... beats
+    uint8_t Feedback;      // 128 is 100%, 64 is 50%, 255 is 200%
+    uint8_t StopVelocity;  // Velocity to stop repeating at
+    uint8_t StopRepeat;    // 0 means unlimited. Repeat count limit
+    uint8_t EnableCc;      // Midi controller to enable / disable new delay voices
 } delaySetup_t;
 
 
@@ -130,13 +130,13 @@ typedef struct
 
 typedef struct
 {
-    uint8_t  status;
-    uint8_t  key;
-    uint16_t keyOnDuration;   // If STATUS_GOT_NOTE_OFF key duration in ticks, otherwise time of note on
-    uint16_t nextNoteOnTime;  // When to send next NoteOn
-    uint16_t nextNoteOffTime; // When to send next NoteOff
-    uint8_t  velocity;
-    uint8_t  repeats;
+    uint8_t  Status;
+    uint8_t  Key;
+    uint16_t KeyOnDuration;   // If STATUS_GOT_NOTE_OFF key duration in ticks, otherwise time of note on
+    uint16_t NextNoteOnTime;  // When to send next NoteOn
+    uint16_t NextNoteOffTime; // When to send next NoteOff
+    uint8_t  Velocity;
+    uint8_t  Repeats;
 } delayVoice_t;
 
 #define DELAY_VOICES_MAX 20
@@ -159,9 +159,9 @@ typedef struct
 
 typedef struct
 {
-    char text[19];
-    uint8_t cursor;
-    void *data;
+    char Text[19];
+    uint8_t Cursor;
+    void *Data;
 } menuItem_t;
 
 #define MENU_ITEMS 10
@@ -173,26 +173,26 @@ typedef struct
 static delayVoice_t DelayVoices[DELAY_VOICES_MAX];
 static delaySetup_t DelaySetup;
 
-static bool_t filterEnabled;
+static bool_t FilterEnabled;
 
 static uint16_t TapSpeedTick;
 static bool_t TapSpeedValid;
 
-static bool_t dynamicEnable;
+static bool_t DynamicEnable;
 
 
-menuItem_t MenuItems[MENU_ITEMS] PROGMEM =
+static menuItem_t MenuItems[MENU_ITEMS] PROGMEM =
 {
-    {"Midi delay    %O",  17, &(filterEnabled) },
+    {"Midi delay    %O",  17, &(FilterEnabled) },
     {"Input: %i",          7, &(DelaySetup.Source) },
-    {"Del.Time: %U0 ms",  13, &(DelaySetup.speed) },
-    {"Swing   :%I",       13, &(DelaySetup.swing_amount) },
-    {"Feedback:  %U",     13, &(DelaySetup.feedback) },
-    {"Stop Vel:  %U",     13, &(DelaySetup.stopVelocity) },
-    {"Stop Rep:  %U",     13, &(DelaySetup.stopRepeat) },
-    {"EnableCC:%c",        9, &(DelaySetup.enableCc) },
-    {"TapSpeed: %n",      10, &(DelaySetup.tapKey) },
-    {" Chan: %i",         15, &(DelaySetup.chan) },
+    {"Del.Time: %U0 ms",  13, &(DelaySetup.Speed) },
+    {"Swing   :%I",       13, &(DelaySetup.SwingAmount) },
+    {"Feedback:  %U",     13, &(DelaySetup.Feedback) },
+    {"Stop Vel:  %U",     13, &(DelaySetup.StopVelocity) },
+    {"Stop Rep:  %U",     13, &(DelaySetup.StopRepeat) },
+    {"EnableCC:%c",        9, &(DelaySetup.EnableCc) },
+    {"TapSpeed: %n",      10, &(DelaySetup.TapKey) },
+    {" Chan: %i",         15, &(DelaySetup.Chan) },
 };
 
 
@@ -202,47 +202,47 @@ menuItem_t MenuItems[MENU_ITEMS] PROGMEM =
 // ---- DelayVoice Management ----
 
 // Set all voices to reset state
-static void InitVoices(void);
+static void initVoices(void);
 
-static void SetFilterEnabled(bool_t enable);  // TODO mark as main thread!
+static void setFilterEnabled(bool_t enable);  // TODO mark as main thread!
 
-static bool_t CheckIfMasked(uint8_t voice);
+static bool_t checkIfMasked(uint8_t voice);
 
 // Go through the delay voices and return the one which is the least active
-static uint8_t FindQuietestVoice(void);
+static uint8_t findQuietestVoice(void);
 
 // Go through delay voices and check if any of them is holding key
-static uint8_t CheckNoteActiveState(uint8_t key);
+static uint8_t checkNoteActiveState(uint8_t key);
 
 // ---- DelayVoice Events ----
 
-static void SetupNextDelayCycle(uint8_t voice); // Private
+static void setupNextDelayCycle(uint8_t voice); // Private
 
 // Sets up delay voice according to note message
-static void HandleNoteOn(uint8_t voice, midiMsg_t *msg);
+static void handleNoteOn(uint8_t voice, midiMsg_t *msg);
 
 // Does what have to be done at this tick
-static void HandleTick(uint8_t voice, uint16_t tick);
+static void handleTick(uint8_t voice, uint16_t tick);
 
 // Registers note off event
-static void HandleNoteOff(uint8_t voice, midiMsg_t *msg);
+static void handleNoteOff(uint8_t voice, midiMsg_t *msg);
 
 // May generate NoteOff
-static void KillVoice(uint8_t voice, uint8_t dont_touch_this_key);
+static void killVoice(uint8_t voice, uint8_t dont_touch_this_key);
 
 // ---- TapSpeed functionality
 
-static void HandleTapSpeedEvent(uint16_t tick);
-static void HandleTapSpeedTick(uint16_t tick);
+static void handleTapSpeedEvent(uint16_t tick);
+static void handleTapSpeedTick(uint16_t tick);
 
 // ---- MidiMessage sending ----
 
-static void SendNoteOn(uint8_t key, uint8_t velocity);
-static void SendNoteOff(uint8_t key);
+static void sendNoteOn(uint8_t key, uint8_t velocity);
+static void sendNoteOff(uint8_t key);
 
 // ---- MENU implementation ----
 
-static char *WriteMenuLine(char *dest, uint8_t item);
+static char *writeMenuLine(char *dest, uint8_t item);
 
 ///////////////////////// Implementation /////////////////////////
 
@@ -251,28 +251,28 @@ static char *WriteMenuLine(char *dest, uint8_t item);
 // ---- DelayVoice Management ----
 
 // Set all voices to reset state
-static void InitVoices(void)
+static void initVoices(void)
 {
     uint8_t i;
 
     for (i = 0; i < DELAY_VOICES_MAX; i++)
     {
-        DelayVoices[i].status = STATUS_FREE;
+        DelayVoices[i].Status = STATUS_FREE;
     }
 }
 
 // Main thread function
-static void SetFilterEnabled(bool_t enable)
+static void setFilterEnabled(bool_t enable)
 {
     if (enable)
     {
-        InitVoices();
+        initVoices();
         TapSpeedValid = FALSE;
-        dynamicEnable = (DelaySetup.enableCc == INVALID_NUMBER);
+        DynamicEnable = (DelaySetup.EnableCc == INVALID_NUMBER);
     }
     else
     {
-        if (filterEnabled)
+        if (FilterEnabled)
         {
             uint8_t i;
 
@@ -281,9 +281,9 @@ static void SetFilterEnabled(bool_t enable)
 
             for (i = 0; i < DELAY_VOICES_MAX; i++)
             {
-                if (DelayVoices[i].status != STATUS_FREE)
+                if (DelayVoices[i].Status != STATUS_FREE)
                 {
-                    DelayVoices[i].status |= STATUS_DELAY_DONE;
+                    DelayVoices[i].Status |= STATUS_DELAY_DONE;
                 }
             }
 
@@ -292,12 +292,12 @@ static void SetFilterEnabled(bool_t enable)
     }
 
 
-    filterEnabled = enable;
+    FilterEnabled = enable;
 }
 
 // Voice is about to sound. Check if some other delay voice actually masks the contribution
 // of this voice
-static bool_t CheckIfMasked(uint8_t voice)
+static bool_t checkIfMasked(uint8_t voice)
 {
     uint8_t i;
     uint8_t masked = FALSE;
@@ -306,25 +306,25 @@ static bool_t CheckIfMasked(uint8_t voice)
     {
         if (i != voice)
         {
-            if (DelayVoices[i].status != STATUS_FREE)
+            if (DelayVoices[i].Status != STATUS_FREE)
             {
-                if ((DelayVoices[i].key == DelayVoices[voice].key) &&
-                      (DelayVoices[i].velocity > DelayVoices[voice].velocity))
+                if ((DelayVoices[i].Key == DelayVoices[voice].Key) &&
+                      (DelayVoices[i].Velocity > DelayVoices[voice].Velocity))
                 {
                     // Okay, we have a voice with same key and higher velocity. What about timing?
                     uint16_t time_diff;
 
-                    time_diff = (int16_t)(DelayVoices[i].nextNoteOnTime - DelayVoices[voice].nextNoteOnTime);
+                    time_diff = (int16_t)(DelayVoices[i].NextNoteOnTime - DelayVoices[voice].NextNoteOnTime);
 
                     // The result of this subtraction can be:
 
                     // If [i] is later than [voice]:     0 to (delay speed / 2)
                     // If [voice] is later than [i]:     (delayspeed/2 to delayspeed)
 
-                    if (DelayVoices[i].status & STATUS_PROLONGED)
+                    if (DelayVoices[i].Status & STATUS_PROLONGED)
                     {
                         if ((time_diff < OVERLAP_TIME_DIFF) ||
-                             (((uint16_t)(DelaySetup.speed + DelaySetup.swing_amount) - time_diff) < OVERLAP_TIME_DIFF) )
+                             (((uint16_t)(DelaySetup.Speed + DelaySetup.SwingAmount) - time_diff) < OVERLAP_TIME_DIFF) )
                         {
                             masked = TRUE;
                         }
@@ -332,7 +332,7 @@ static bool_t CheckIfMasked(uint8_t voice)
                     else
                     {
                         if ((time_diff < OVERLAP_TIME_DIFF) ||
-                             (((uint16_t)(DelaySetup.speed - DelaySetup.swing_amount) - time_diff) < OVERLAP_TIME_DIFF) )
+                             (((uint16_t)(DelaySetup.Speed - DelaySetup.SwingAmount) - time_diff) < OVERLAP_TIME_DIFF) )
                         {
                             masked = TRUE;
                         }
@@ -351,7 +351,7 @@ static bool_t CheckIfMasked(uint8_t voice)
 }
 
 // Go through the delay voices and return the one which is the least active
-static uint8_t FindQuietestVoice(void)
+static uint8_t findQuietestVoice(void)
 {
     uint8_t best;
     uint8_t best_vel;
@@ -363,7 +363,7 @@ static uint8_t FindQuietestVoice(void)
 
     for (i = 0; i < DELAY_VOICES_MAX; i++)
     {
-        if (DelayVoices[i].status == STATUS_FREE)
+        if (DelayVoices[i].Status == STATUS_FREE)
         {
             // A completely free voice, use it, we are done
             best = i;
@@ -372,9 +372,9 @@ static uint8_t FindQuietestVoice(void)
         else
         {
             // Check if this voice velocity is better than current best
-            if (DelayVoices[i].velocity < best_vel)
+            if (DelayVoices[i].Velocity < best_vel)
             {
-                best_vel = DelayVoices[i].velocity;
+                best_vel = DelayVoices[i].Velocity;
                 best = i;
             }
         }
@@ -390,9 +390,9 @@ static uint8_t FindActiveVoice(uint8_t key)
 
     for (i = 0; i < DELAY_VOICES_MAX; i++)
     {
-        if (DelayVoices[i].key == key)
+        if (DelayVoices[i].Key == key)
         {
-            if ((DelayVoices[i].status & (STATUS_GOT_NOTE_ON | STATUS_GOT_NOTE_OFF))
+            if ((DelayVoices[i].Status & (STATUS_GOT_NOTE_ON | STATUS_GOT_NOTE_OFF))
                     == STATUS_GOT_NOTE_ON)
             // This is it, the voice has got note on, but not note off for this key
             return i;
@@ -406,25 +406,25 @@ static uint8_t FindActiveVoice(uint8_t key)
 
 
 // Go through delay voices and check if any of them is holding key
-static uint8_t CheckNoteActiveState(uint8_t key)
+static uint8_t checkNoteActiveState(uint8_t key)
 {
     uint8_t key_active = 0;
     uint8_t i;
 
     for (i = 0; i < DELAY_VOICES_MAX; i++)
     {
-        if (DelayVoices[i].key == key)
+        if (DelayVoices[i].Key == key)
         {
-            if (DelayVoices[i].status & STATUS_IS_NOTE_ON)
+            if (DelayVoices[i].Status & STATUS_IS_NOTE_ON)
             {
                 // A delay voice is generating a note
-                key_active = DelayVoices[i].velocity;
+                key_active = DelayVoices[i].Velocity;
             }
-            else if ((DelayVoices[i].status & (STATUS_GOT_NOTE_ON | STATUS_GOT_NOTE_OFF))
+            else if ((DelayVoices[i].Status & (STATUS_GOT_NOTE_ON | STATUS_GOT_NOTE_OFF))
                     == STATUS_GOT_NOTE_ON)
             {
                 // We have got note on, but not note off. It means user is holding key.
-                key_active = DelayVoices[i].velocity;
+                key_active = DelayVoices[i].Velocity;
             }
         }
 
@@ -441,121 +441,121 @@ static uint8_t CheckNoteActiveState(uint8_t key)
 
 
 // Updates state of delay and sets up next NoteOff and NoteOn events
-static void SetupNextDelayCycle(uint8_t index)
+static void setupNextDelayCycle(uint8_t index)
 {
     uint16_t w;
 
     // Step forward in delay state variables:
 
     // Reduce velocity according to feedback
-    w = DelayVoices[index].velocity;
-    w = (w * (uint16_t)(DelaySetup.feedback)) >> 7u;
+    w = DelayVoices[index].Velocity;
+    w = (w * (uint16_t)(DelaySetup.Feedback)) >> 7u;
     if (w > 127)
     {
         w = 127;
     }
 
-    DelayVoices[index].velocity = w;
+    DelayVoices[index].Velocity = w;
 
     // Increment repeat counter
-    DelayVoices[index].repeats++;
+    DelayVoices[index].Repeats++;
 
     // Store time of the current event we just had
-    uint16_t this_event_time = DelayVoices[index].nextNoteOnTime;
+    uint16_t this_event_time = DelayVoices[index].NextNoteOnTime;
 
     // Toggle prolonged state
-    DelayVoices[index].status ^= STATUS_PROLONGED;
+    DelayVoices[index].Status ^= STATUS_PROLONGED;
 
     // Have we reached end of delaying?
-    if ((DelayVoices[index].velocity <= DelaySetup.stopVelocity) ||
-            ((DelaySetup.stopRepeat != 0) && (DelayVoices[index].repeats >= DelaySetup.stopRepeat)))
+    if ((DelayVoices[index].Velocity <= DelaySetup.StopVelocity) ||
+            ((DelaySetup.StopRepeat != 0) && (DelayVoices[index].Repeats >= DelaySetup.StopRepeat)))
     {
         // Yes. Set DONE status
-        DelayVoices[index].status |= STATUS_DELAY_DONE;
+        DelayVoices[index].Status |= STATUS_DELAY_DONE;
 
         // Disarm generating Note On
-        DelayVoices[index].status &= ~STATUS_ARM_NOTE_ON;
+        DelayVoices[index].Status &= ~STATUS_ARM_NOTE_ON;
     }
     else
     {
         // Prepare next Note On event
         uint8_t speed;
 
-        if (DelayVoices[index].status & STATUS_PROLONGED)
+        if (DelayVoices[index].Status & STATUS_PROLONGED)
         {
-            speed = DelaySetup.speed + DelaySetup.swing_amount;
+            speed = DelaySetup.Speed + DelaySetup.SwingAmount;
         }
         else
         {
-            speed = DelaySetup.speed - DelaySetup.swing_amount;
+            speed = DelaySetup.Speed - DelaySetup.SwingAmount;
         }
 
-        DelayVoices[index].nextNoteOnTime = this_event_time + (uint16_t)(speed);
+        DelayVoices[index].NextNoteOnTime = this_event_time + (uint16_t)(speed);
 
-        DelayVoices[index].status |= STATUS_ARM_NOTE_ON;
+        DelayVoices[index].Status |= STATUS_ARM_NOTE_ON;
     }
 
-    if ((DelayVoices[index].status & STATUS_MUTED) == 0)
+    if ((DelayVoices[index].Status & STATUS_MUTED) == 0)
     {
         // Have user released key?
-        if (DelayVoices[index].status & STATUS_GOT_NOTE_OFF)
+        if (DelayVoices[index].Status & STATUS_GOT_NOTE_OFF)
         {
             // Yes. Then we know key duration, configure note off:
-            DelayVoices[index].nextNoteOffTime = this_event_time + DelayVoices[index].keyOnDuration;
-            DelayVoices[index].status |= STATUS_ARM_NOTE_OFF;
+            DelayVoices[index].NextNoteOffTime = this_event_time + DelayVoices[index].KeyOnDuration;
+            DelayVoices[index].Status |= STATUS_ARM_NOTE_OFF;
         }
         else
         {
             // User is holding the key, don't generate note off
-            DelayVoices[index].status &= ~STATUS_ARM_NOTE_OFF;
+            DelayVoices[index].Status &= ~STATUS_ARM_NOTE_OFF;
         }
     }
 }
 
 
 // Sets up delay voice according to note message
-static void HandleNoteOn(uint8_t index, midiMsg_t *msg)
+static void handleNoteOn(uint8_t index, midiMsg_t *msg)
 {
-    DelayVoices[index].key = msg->Data[0];
-    DelayVoices[index].keyOnDuration = msg->ReceivedTick;
-    DelayVoices[index].nextNoteOnTime = msg->ReceivedTick;
-    DelayVoices[index].repeats = 0;
-    DelayVoices[index].velocity = msg->Data[1];
+    DelayVoices[index].Key = msg->Data[0];
+    DelayVoices[index].KeyOnDuration = msg->ReceivedTick;
+    DelayVoices[index].NextNoteOnTime = msg->ReceivedTick;
+    DelayVoices[index].Repeats = 0;
+    DelayVoices[index].Velocity = msg->Data[1];
 
-    if (dynamicEnable)
+    if (DynamicEnable)
     {
-        DelayVoices[index].status = STATUS_GOT_NOTE_ON;
+        DelayVoices[index].Status = STATUS_GOT_NOTE_ON;
     }
     else
     {
         // We are not enabled. Delay voice is status muted
-        DelayVoices[index].status = STATUS_GOT_NOTE_ON | STATUS_MUTED;
+        DelayVoices[index].Status = STATUS_GOT_NOTE_ON | STATUS_MUTED;
     }
 
-    SetupNextDelayCycle(index);
+    setupNextDelayCycle(index);
 }
 
 // User generated a note off
-static void HandleNoteOff(uint8_t index, midiMsg_t *msg)
+static void handleNoteOff(uint8_t index, midiMsg_t *msg)
 {
-    if ((DelayVoices[index].status & STATUS_GOT_NOTE_OFF) == 0)
+    if ((DelayVoices[index].Status & STATUS_GOT_NOTE_OFF) == 0)
     {
         // The delay hasn't got NoteOff before now.
-        DelayVoices[index].status |= STATUS_GOT_NOTE_OFF;
+        DelayVoices[index].Status |= STATUS_GOT_NOTE_OFF;
 
         // We can now calculate key duration
-        DelayVoices[index].keyOnDuration = (msg->ReceivedTick) - (DelayVoices[index].keyOnDuration);
+        DelayVoices[index].KeyOnDuration = (msg->ReceivedTick) - (DelayVoices[index].KeyOnDuration);
 
         // If delay voice has already stopped sounding, we need to take care of the note off event here
-        if (DelayVoices[index].status & STATUS_DELAY_DONE)
+        if (DelayVoices[index].Status & STATUS_DELAY_DONE)
         {
-            DelayVoices[index].nextNoteOffTime = (msg->ReceivedTick) + (uint16_t)(DelaySetup.speed);
-            DelayVoices[index].status |= STATUS_ARM_NOTE_OFF;
+            DelayVoices[index].NextNoteOffTime = (msg->ReceivedTick) + (uint16_t)(DelaySetup.Speed);
+            DelayVoices[index].Status |= STATUS_ARM_NOTE_OFF;
         }
     }
 
     // Do we let this note off survive?
-    if (CheckNoteActiveState(msg->Data[0]) == TRUE)
+    if (checkNoteActiveState(msg->Data[0]) == TRUE)
     {
         // Something is keeping this note active, don't send note off
         msg->Flags |= MMSG_FLAG_DISCARD;
@@ -564,24 +564,24 @@ static void HandleNoteOff(uint8_t index, midiMsg_t *msg)
 
 
 // Kill off a voice. If key of voice == dont_touch_this_key, no noteoff will be sent
-static void KillVoice(uint8_t voice, uint8_t dont_touch_this_key)
+static void killVoice(uint8_t voice, uint8_t dont_touch_this_key)
 {
     // Force the delay voice to status free.
 
     // Check if the note active state changed by doing that, in that case
     // send a note off
 
-    if (DelayVoices[voice].status != STATUS_FREE)
+    if (DelayVoices[voice].Status != STATUS_FREE)
     {
-        uint8_t key = DelayVoices[voice].key;
+        uint8_t key = DelayVoices[voice].Key;
 
-        DelayVoices[voice].status = STATUS_FREE;
+        DelayVoices[voice].Status = STATUS_FREE;
 
         if (key != dont_touch_this_key)
         {
-            if (CheckNoteActiveState(key) == FALSE)
+            if (checkNoteActiveState(key) == FALSE)
             {
-                SendNoteOff(key);
+                sendNoteOff(key);
             }
         }
 
@@ -590,25 +590,25 @@ static void KillVoice(uint8_t voice, uint8_t dont_touch_this_key)
 
 
 // Do what have to be done at this tick
-static void HandleTick(uint8_t voice, uint16_t tick)
+static void handleTick(uint8_t voice, uint16_t tick)
 {
-    uint8_t status = DelayVoices[voice].status;
+    uint8_t status = DelayVoices[voice].Status;
 
     if (status != STATUS_FREE)
     {
         if (status & STATUS_ARM_NOTE_OFF)
         {
-            if (DelayVoices[voice].nextNoteOffTime == tick)
+            if (DelayVoices[voice].NextNoteOffTime == tick)
             {
-                if (CheckNoteActiveState(DelayVoices[voice].key))
+                if (checkNoteActiveState(DelayVoices[voice].Key))
                 {
                     // We must generate a note off. Remove note on status
-                    DelayVoices[voice].status = status & ~STATUS_IS_NOTE_ON;
+                    DelayVoices[voice].Status = status & ~STATUS_IS_NOTE_ON;
 
                     // Send note off if nothing else holding this key active
-                    if (CheckNoteActiveState(DelayVoices[voice].key) == FALSE)
+                    if (checkNoteActiveState(DelayVoices[voice].Key) == FALSE)
                     {
-                        SendNoteOff(DelayVoices[voice].key);
+                        sendNoteOff(DelayVoices[voice].Key);
                     }
                 }
 
@@ -616,43 +616,43 @@ static void HandleTick(uint8_t voice, uint16_t tick)
                 if (status & STATUS_DELAY_DONE)
                 {
                     // Then set delay voice free
-                    DelayVoices[voice].status = STATUS_FREE;
+                    DelayVoices[voice].Status = STATUS_FREE;
                 }
             }
         }
 
         if (status & STATUS_ARM_NOTE_ON)
         {
-            if (DelayVoices[voice].nextNoteOnTime == tick)
+            if (DelayVoices[voice].NextNoteOnTime == tick)
             {
                 if ((status & STATUS_MUTED) == 0)
                 {
-                    if (CheckIfMasked(voice) == FALSE)
+                    if (checkIfMasked(voice) == FALSE)
                     {
                         uint8_t velocity;
 
                         // We must generate a note on
-                        velocity = CheckNoteActiveState(DelayVoices[voice].key);
+                        velocity = checkNoteActiveState(DelayVoices[voice].Key);
 
                         if (velocity != 0u)
                         {
-                            SendNoteOff(DelayVoices[voice].key);
+                            sendNoteOff(DelayVoices[voice].Key);
                         }
 
                         // Use the highest velocity of our delayvoice and the note
                         // we may just have silenced:
-                        if (DelayVoices[voice].velocity > velocity)
+                        if (DelayVoices[voice].Velocity > velocity)
                         {
-                            velocity = DelayVoices[voice].velocity;
+                            velocity = DelayVoices[voice].Velocity;
                         }
 
-                        DelayVoices[voice].status = status | STATUS_IS_NOTE_ON;
+                        DelayVoices[voice].Status = status | STATUS_IS_NOTE_ON;
 
-                        SendNoteOn(DelayVoices[voice].key, velocity);
+                        sendNoteOn(DelayVoices[voice].Key, velocity);
                     }
                 }
 
-                SetupNextDelayCycle(voice);
+                setupNextDelayCycle(voice);
             }
         }
     }
@@ -660,7 +660,7 @@ static void HandleTick(uint8_t voice, uint16_t tick)
 
 // ---- Tap Speed handling ----
 
-static void HandleTapSpeedEvent(uint16_t tick)
+static void handleTapSpeedEvent(uint16_t tick)
 {
     if (TapSpeedValid)
     {
@@ -668,7 +668,7 @@ static void HandleTapSpeedEvent(uint16_t tick)
         uint8_t swing;
 
         speedProposal = tick - TapSpeedTick;
-        swing = DelaySetup.swing_amount;
+        swing = DelaySetup.SwingAmount;
 
         if ((int8_t)swing < 0)
         {
@@ -686,7 +686,7 @@ static void HandleTapSpeedEvent(uint16_t tick)
             (speedProposal > (uint16_t)(MINIMUM_SPEED + swing)))
         {
             // Allright, we got a new delay speed:
-            DelaySetup.speed = (uint8_t)speedProposal;
+            DelaySetup.Speed = (uint8_t)speedProposal;
 
             Menu_notifyRefresh_SAFE();
         }
@@ -698,7 +698,7 @@ static void HandleTapSpeedEvent(uint16_t tick)
     TapSpeedValid = TRUE;
 }
 
-static void HandleTapSpeedTick(uint16_t tick)
+static void handleTapSpeedTick(uint16_t tick)
 {
     // Make sure we invalidate a speed tap, if we are above limit
 
@@ -716,19 +716,19 @@ static void HandleTapSpeedTick(uint16_t tick)
 
 // ---- MidiMessage sending ----
 
-static void SendNoteOn(uint8_t key, uint8_t velocity)
+static void sendNoteOn(uint8_t key, uint8_t velocity)
 {
     uint8_t msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK,
-            MIDI_STATUS_NOTE_ON | DelaySetup.chan);
+            MIDI_STATUS_NOTE_ON | DelaySetup.Chan);
     MidiIo_msgAddData_ISR(msg_index, key);
     MidiIo_msgAddData_ISR(msg_index, velocity);
     MidiIo_msgFinish_ISR(msg_index, 0);
 }
 
-static void SendNoteOff(uint8_t key)
+static void sendNoteOff(uint8_t key)
 {
     uint8_t msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK,
-            MIDI_STATUS_NOTE_OFF | DelaySetup.chan);
+            MIDI_STATUS_NOTE_OFF | DelaySetup.Chan);
     MidiIo_msgAddData_ISR(msg_index, key);
     MidiIo_msgAddData_ISR(msg_index, NOTE_OFF_VELOCITY);
     MidiIo_msgFinish_ISR(msg_index, 0);
@@ -738,30 +738,30 @@ static void SendNoteOff(uint8_t key)
 
 // ---- Public functions ----
 
-void sdelay_Initialize(void)
+void SuperDly_initialize(void)
 {
     // Set setup defaults
-    filterEnabled = FALSE;
-    dynamicEnable = TRUE;
+    FilterEnabled = FALSE;
+    DynamicEnable = TRUE;
     TapSpeedValid = FALSE;
 
-    DelaySetup.feedback = 110;
-    DelaySetup.stopRepeat = 0;
-    DelaySetup.stopVelocity = 4;
-    DelaySetup.speed = 50;
-    DelaySetup.swing_amount = 0;
-    DelaySetup.tapKey = 0x1C;
-    DelaySetup.chan = 0;
+    DelaySetup.Feedback = 110;
+    DelaySetup.StopRepeat = 0;
+    DelaySetup.StopVelocity = 4;
+    DelaySetup.Speed = 50;
+    DelaySetup.SwingAmount = 0;
+    DelaySetup.TapKey = 0x1C;
+    DelaySetup.Chan = 0;
     DelaySetup.Source = MMSG_SOURCE_INPUT1;
-    DelaySetup.enableCc = INVALID_NUMBER;
+    DelaySetup.EnableCc = INVALID_NUMBER;
 
     // Set delay state defaults
-    InitVoices();
+    initVoices();
 }
 
-void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
+void SuperDly_handleMidiMsg_ISR(midiMsg_t *msg)
 {
-    if (filterEnabled)
+    if (FilterEnabled)
     {
         if ((msg->Flags & DelaySetup.Source) != 0)
         {
@@ -770,13 +770,13 @@ void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
             uint8_t x = msg->MidiStatus;
 
             // Do we listen to this channel
-            if ((x & MIDI_CHANNEL_MASK) == DelaySetup.chan)
+            if ((x & MIDI_CHANNEL_MASK) == DelaySetup.Chan)
             {
                 uint8_t voice;
                 bool_t done_with_msg = FALSE;
 
                 // Maybe this is tap speed?
-                if (msg->Data[0] == DelaySetup.tapKey)
+                if (msg->Data[0] == DelaySetup.TapKey)
                 {
                     switch (x & MIDI_STATUS_MASK)
                     {
@@ -784,7 +784,7 @@ void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
                         // TODO GENERAL BUG ! this will not work with NOTE_OFF's using NOTE_ON at velocity 0
                         // This should be fixed on a general level, affects all filters
 
-                        HandleTapSpeedEvent(msg->ReceivedTick);
+                        handleTapSpeedEvent(msg->ReceivedTick);
 
                     case MIDI_STATUS_NOTE_OFF:   // NOTE: Intentional fall through
 
@@ -803,25 +803,25 @@ void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
                     {
                     case MIDI_STATUS_NOTE_ON:
                         // Find a delayvoice for this note on
-                        voice = FindQuietestVoice();
+                        voice = findQuietestVoice();
                         // Make sure to generate note-off for the voice if required
-                        KillVoice(voice, msg->Data[0]);
+                        killVoice(voice, msg->Data[0]);
                         // Setup voice according to this note on
-                        HandleNoteOn(voice, msg);
+                        handleNoteOn(voice, msg);
                         break;
 
                     case MIDI_STATUS_NOTE_OFF:
                         // Find the delayvoice that needs to get this note off
                         voice = FindActiveVoice(msg->Data[0]);
-                        HandleNoteOff(voice, msg);
+                        handleNoteOff(voice, msg);
                         break;
 
                     case MIDI_STATUS_CTRL_CHANGE:
 
                         // Are we listening to this controller?
-                        if (msg->Data[0] == DelaySetup.enableCc)
+                        if (msg->Data[0] == DelaySetup.EnableCc)
                         {
-                            dynamicEnable = (msg->Data[1] > 0x40);
+                            DynamicEnable = (msg->Data[1] > 0x40);
                             msg->Flags |= MMSG_FLAG_DISCARD;
                         }
                         break;
@@ -839,34 +839,34 @@ void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
 }
 
 
-void sdelay_HookTick_ISR(void)
+void SuperDly_handleTick_ISR(void)
 {
     // Go through the active delays and check if there are delay events to do
 
     uint8_t i;
-    uint16_t tickNow = Hal_tickCountGet_ISR();
+    uint16_t tick_now = Hal_tickCountGet_ISR();
 
-    HandleTapSpeedTick(tickNow);
+    handleTapSpeedTick(tick_now);
 
     for (i = 0; i < DELAY_VOICES_MAX; i++)
     {
-        HandleTick(i, tickNow);
+        handleTick(i, tick_now);
     }
 }
 
 
-void sdelay_HookMainLoop(void)
+void SuperDly_handleMainLoop(void)
 {
     // Maybe do maintenance to make sure we don't have stuck delays hanging around
 }
 
 
-uint8_t sdelay_MenuGetSubCount(void)
+uint8_t SuperDly_MenuGetSubCount(void)
 {
-    return filterEnabled ? MENU_SUB_ITEMS : 0;
+    return FilterEnabled ? MENU_SUB_ITEMS : 0;
 }
 
-static char *WriteMenuLine(char *dest, uint8_t item)
+static char *writeMenuLine(char *dest, uint8_t item)
 {
     uint8_t *p;
     uint8_t data;
@@ -874,7 +874,7 @@ static char *WriteMenuLine(char *dest, uint8_t item)
     // Write the menu line of text
 
     // First we must retrieve the data pointer from PROGMEM table:
-    p = (uint8_t*) pgm_read_word( &(MenuItems[item].data) );
+    p = (uint8_t*) pgm_read_word( &(MenuItems[item].Data) );
     data = *p;
 
     // Special processing necessary?
@@ -884,13 +884,13 @@ static char *WriteMenuLine(char *dest, uint8_t item)
     }
 
     // Write the formatted menu text
-    return util_strWriteFormat_P(dest, MenuItems[item].text, data);
+    return Util_writeFormat_P(dest, MenuItems[item].Text, data);
 }
 
-void sdelay_MenuGetText(char *dest, uint8_t item)
+void SuperDly_menuGetText(char *dest, uint8_t item)
 {
 
-    dest = WriteMenuLine(dest, item);
+    dest = writeMenuLine(dest, item);
 
     // Some items need special handling
 
@@ -898,25 +898,25 @@ void sdelay_MenuGetText(char *dest, uint8_t item)
     {
     case MENU_IN_CHAN:
         // We are not done yet, write channel also:
-        dest = WriteMenuLine(dest, MENU_SPECIAL_CHAN);
+        dest = writeMenuLine(dest, MENU_SPECIAL_CHAN);
         break;
 
     case MENU_SWING:
         // Only write 0 if swing is 0
-        if (DelaySetup.swing_amount == 0)
+        if (DelaySetup.SwingAmount == 0)
         {
-            dest = util_strCpy_P(dest - 2, PSTR("OFF"));
+            dest = Util_copyString_P(dest - 2, PSTR("OFF"));
         }
         else
         {
-            dest = util_strCpy_P(dest, PSTR("0 ms"));
+            dest = Util_copyString_P(dest, PSTR("0 ms"));
         }
         break;
     }
 
 }
 
-uint8_t sdelay_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t SuperDly_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret;
     uint8_t menu_item;
@@ -952,7 +952,7 @@ uint8_t sdelay_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
 
     if (menu_item != INVALID_NUMBER)
     {
-        ret = pgm_read_byte( &(MenuItems[menu_item].cursor) );
+        ret = pgm_read_byte( &(MenuItems[menu_item].Cursor) );
     }
     else
     {
@@ -971,37 +971,37 @@ uint8_t sdelay_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
         switch (menu_item)
         {
         case MENU_TITLE:
-            SetFilterEnabled(knob_delta > 0);
+            setFilterEnabled(knob_delta > 0);
             ret |= MENU_UPDATE_ALL;
             break;
         case MENU_IN_CHAN:
-            DelaySetup.Source = util_boundedAddInt8(DelaySetup.Source, 1, 2, knob_delta);
+            DelaySetup.Source = Util_boundedAddInt8(DelaySetup.Source, 1, 2, knob_delta);
             break;
         case MENU_SPEED:
-            DelaySetup.speed = util_boundedAddUint8(DelaySetup.speed, MINIMUM_SPEED, 255, knob_delta);
+            DelaySetup.Speed = Util_boundedAddUint8(DelaySetup.Speed, MINIMUM_SPEED, 255, knob_delta);
             break;
         case MENU_SWING:
-            DelaySetup.swing_amount = util_boundedAddInt8(DelaySetup.swing_amount, -100, 100, knob_delta);
+            DelaySetup.SwingAmount = Util_boundedAddInt8(DelaySetup.SwingAmount, -100, 100, knob_delta);
             break;
         case MENU_FEEDBACK:
-            DelaySetup.feedback = util_boundedAddUint8(DelaySetup.feedback, 1, 127, knob_delta);
+            DelaySetup.Feedback = Util_boundedAddUint8(DelaySetup.Feedback, 1, 127, knob_delta);
             break;
         case MENU_STOP_VEL:
-            DelaySetup.stopVelocity = util_boundedAddUint8(DelaySetup.stopVelocity, 1, 127, knob_delta);
+            DelaySetup.StopVelocity = Util_boundedAddUint8(DelaySetup.StopVelocity, 1, 127, knob_delta);
             break;
         case MENU_STOP_REP:
-            DelaySetup.stopRepeat = util_boundedAddUint8(DelaySetup.stopRepeat, 0, 100, knob_delta);
+            DelaySetup.StopRepeat = Util_boundedAddUint8(DelaySetup.StopRepeat, 0, 100, knob_delta);
             break;
         case MENU_ENABLE_CC:
-            DelaySetup.enableCc = util_boundedAddInt8(DelaySetup.enableCc, -1, 64, knob_delta);
+            DelaySetup.EnableCc = Util_boundedAddInt8(DelaySetup.EnableCc, -1, 64, knob_delta);
             // If we are changing how to use enable / disable, better make sure we are enabled actually
-            dynamicEnable = (DelaySetup.enableCc == INVALID_NUMBER);
+            DynamicEnable = (DelaySetup.EnableCc == INVALID_NUMBER);
             break;
         case MENU_TAP_SPEED:
-            DelaySetup.tapKey = util_boundedAddUint8(DelaySetup.tapKey, 0, 127, knob_delta);
+            DelaySetup.TapKey = Util_boundedAddUint8(DelaySetup.TapKey, 0, 127, knob_delta);
             break;
         case MENU_SPECIAL_CHAN:
-            DelaySetup.chan = util_boundedAddInt8(DelaySetup.chan, 0, 15, knob_delta);
+            DelaySetup.Chan = Util_boundedAddInt8(DelaySetup.Chan, 0, 15, knob_delta);
             break;
         }
     }
@@ -1010,19 +1010,19 @@ uint8_t sdelay_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
 }
 
 
-uint8_t sdelay_ConfigGetSize(void)
+uint8_t SuperDly_configGetSize(void)
 {
     return 1 + sizeof(delaySetup_t);
 }
 
-void sdelay_ConfigSave(uint8_t *dest)
+void SuperDly_configSave(uint8_t *dest)
 {
-    *(dest++) = filterEnabled;
+    *(dest++) = FilterEnabled;
 
     memcpy(dest, &(DelaySetup), sizeof(delaySetup_t));
 }
 
-void sdelay_ConfigLoad(uint8_t *dest)
+void SuperDly_configLoad(uint8_t *dest)
 {
     bool_t enable;
 
@@ -1032,7 +1032,7 @@ void sdelay_ConfigLoad(uint8_t *dest)
     memcpy(&(DelaySetup), dest, sizeof(delaySetup_t));
     Hal_interruptsEnable();
 
-    SetFilterEnabled(enable);
+    setFilterEnabled(enable);
 }
 
 

@@ -123,13 +123,13 @@ uint8_t Hal_encoderQuadGet(void)
 
 ISR(INT1_vect)
 {
-    qd_handleAchange_isr(QUADB_PIN & QUADB_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
+    QuadDecode_handleAChange_ISR(QUADB_PIN & QUADB_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
 }
 
 
 ISR(PCINT0_vect)
 {
-    qd_handleBchange_isr(QUADA_PIN & QUADA_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
+    QuadDecode_handleBChange_ISR(QUADA_PIN & QUADA_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
 }
 
 
@@ -199,7 +199,7 @@ ISR(USART0_RX_vect)
 
     Hal_statusLedSet(TRUE);
     x = UDR0;
-    mparser_handleInput1Rx_Isr(x);
+    MidiParser_handleInput1_ISR(x);
     Hal_statusLedSet(FALSE);
 }
 
@@ -209,7 +209,7 @@ ISR(USART1_RX_vect)
 
     Hal_statusLedSet(TRUE);
     x = UDR1;
-    mparser_handleInput2Rx_Isr(x);
+    MidiParser_handleInput2_ISR(x);
     Hal_statusLedSet(FALSE);
 }
 
@@ -276,7 +276,7 @@ static void tickIsrSetup(void)
 ISR(TIMER1_COMPA_vect)
 {
     tickCount++;
-    COMP_TICK_ISR_HOOKS();
+    COMP_HOOKS_TICK_ISR();
 }
 
 uint16_t Hal_tickCountGet_ISR(void)

@@ -20,52 +20,52 @@
 // Components can hook up functions to be called at different points in the program flow.
 // It is done by modifying the following defines:
 
-#define COMP_INITIALIZE_HOOKS()   \
-    do {                        \
-    MidiLog_initialize();          \
-    BlockFlt_initialize();        \
-    CurveFlt_initialize();        \
-    genmsg_initialize();        \
-    sdelay_Initialize();        \
-    presets_initialize();       \
+#define COMP_HOOKS_INITIALIZE()  \
+    do {                         \
+    MidiLog_initialize();        \
+    BlockFlt_initialize();       \
+    CurveFlt_initialize();       \
+    GenMsg_initialize();         \
+    SuperDly_initialize();       \
+    Presets_initialize();        \
     } while (0)
 
 // For processing normal incoming messages
-#define COMP_MESSAGE_ISR_HOOKS(x) \
-    do {                        \
+#define COMP_HOOKS_MIDI_MSG_IN_ISR(x) \
+    do {                              \
     MidiLog_handleMidiMsgIn_ISR(x);   \
-    BlockFlt_hookMidiMsg_ISR(x);   \
-    CurveFlt_hookMidiMsg_ISR(x);   \
-    sdelay_HookMidiMsg_ISR(x);   \
+    BlockFlt_handleMidiMsg_ISR(x);    \
+    CurveFlt_handleMidiMsg_ISR(x);    \
+    SuperDly_handleMidiMsg_ISR(x);    \
     } while (0)
 
 // For processing incoming realtime messages
-#define COMP_RT_MESSAGE_ISR_HOOKS(x) \
-    do {                             \
-    MidiLog_handleMidiMsgIn_ISR(x);        \
+#define COMP_HOOKS_RT_MIDI_MSG_ISR(x) \
+    do {                              \
+    MidiLog_handleMidiMsgIn_ISR(x);   \
     } while (0)
 
 // For logging outgoing messages (no processing should be done at this point)
-#define COMP_OUT_MESSAGE_ISR_HOOKS(x) \
-    do {                              \
-    MidiLog_handleMidiMsgOut_ISR(x);        \
+#define COMP_HOOKS_MIDI_MSG_OUT_ISR(x) \
+    do {                               \
+    MidiLog_handleMidiMsgOut_ISR(x);   \
     } while (0)
 
 // For hooking up to the tick interrupt
-#define COMP_TICK_ISR_HOOKS()   \
+#define COMP_HOOKS_TICK_ISR()   \
     do {                        \
-    MidiLog_handleTick_ISR();      \
-    BlockFlt_hookTick_ISR();      \
-    sdelay_HookTick_ISR();      \
+    MidiLog_handleTick_ISR();   \
+    BlockFlt_handleTick_ISR();  \
+    SuperDly_handleTick_ISR();  \
     } while (0)
 
 // For hooking up to the main loop idle loop
-#define COMP_MAIN_LOOP_HOOKS()    \
+#define COMP_HOOKS_MAIN_LOOP()  \
     do {                        \
-    MidiLog_handleMainLoop();        \
-    BlockFlt_hookMainLoop();      \
-    CurveFlt_hookMainLoop();      \
-    sdelay_HookMainLoop();      \
+    MidiLog_handleMainLoop();   \
+    BlockFlt_handleMainLoop();  \
+    CurveFlt_handleMainLoop();  \
+    SuperDly_handleMainLoop();  \
     } while (0)
 
 

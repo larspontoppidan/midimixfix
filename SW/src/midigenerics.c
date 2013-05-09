@@ -14,7 +14,7 @@
 
 // Strings for decoding midi messages
 
-char MidiCtrlNames1[32][10] PROGMEM =
+static char MidiCtrlNames1[32][10] PROGMEM =
 {
         {"Bank.Sel"},  // 0
         {"Modulat."},  // 1
@@ -51,7 +51,7 @@ char MidiCtrlNames1[32][10] PROGMEM =
 };
 
 
-char MidiCtrlNames2[64][10] PROGMEM =
+static char MidiCtrlNames2[64][10] PROGMEM =
 {
         {"SustainP"},  // 64
         {"Portam.P"},  // 65
@@ -119,7 +119,7 @@ char MidiCtrlNames2[64][10] PROGMEM =
         {"PolyOn"}     // 127
 };
 
-char MidiStatusNames[8][9] PROGMEM =
+static char MidiStatusNames[8][9] PROGMEM =
 {
         {"N.Off "},    // 0x80
         {"N.On  "},     // 0x90
@@ -131,7 +131,7 @@ char MidiStatusNames[8][9] PROGMEM =
         {"System "}    // 0xF0
 };
 
-char MidiSysStatusNames[16][13] PROGMEM =
+static char MidiSysStatusNames[16][13] PROGMEM =
 {
         {"SysexStart"},   //  0xF0
         {"Sys.TimeCode"}, //  0xF1
@@ -151,7 +151,7 @@ char MidiSysStatusNames[16][13] PROGMEM =
         {"Realt.Reset"}   //  0xFF
 };
 
-const char NoteNames[12][3] PROGMEM =
+static const char NoteNames[12][3] PROGMEM =
 {
         {"C"},   // Note number 0 = "C -5"
         {"C#"},
@@ -247,18 +247,18 @@ char *Midi_writeControllerName(char *dest, uint8_t ctrl)
     if (ctrl < 32)
     {
         // First range of controllers
-        dest = util_strCpy_P(dest, MidiCtrlNames1[ctrl]);
+        dest = Util_copyString_P(dest, MidiCtrlNames1[ctrl]);
     }
     else if (ctrl < 64)
     {
         // LSB of first range
-        dest = util_strCpy_P(dest, MidiCtrlNames1[ctrl - 32]);
-        dest = util_strCpy_P(dest, PSTR("LSB"));
+        dest = Util_copyString_P(dest, MidiCtrlNames1[ctrl - 32]);
+        dest = Util_copyString_P(dest, PSTR("LSB"));
     }
     else
     {
         // Second range
-        dest = util_strCpy_P(dest, MidiCtrlNames2[ctrl - 64]);
+        dest = Util_copyString_P(dest, MidiCtrlNames2[ctrl - 64]);
     }
 
     return dest;
@@ -268,8 +268,8 @@ char *Midi_writeControllerName(char *dest, uint8_t ctrl)
 
 char *Midi_writeNoteName(char *dest, uint8_t note_number)
 {
-    dest = util_strCpy_P(dest, NoteNames[(note_number % 12)]);
-    dest = util_strWriteInt8LA(dest, (int8_t)(note_number / 12) - (int8_t)5);
+    dest = Util_copyString_P(dest, NoteNames[(note_number % 12)]);
+    dest = Util_writeInt8LA(dest, (int8_t)(note_number / 12) - (int8_t)5);
     return dest;
 }
 
@@ -278,11 +278,11 @@ char *Midi_writeStatusName(char *dest, uint8_t status)
     if (status >= 0xF0)
     {
         // Its a system status
-        dest = util_strCpy_P(dest, MidiSysStatusNames[status - 0xF0]);
+        dest = Util_copyString_P(dest, MidiSysStatusNames[status - 0xF0]);
     }
     else
     {
-        dest = util_strCpy_P(dest, MidiStatusNames[(status >> 4u) - 8]);
+        dest = Util_copyString_P(dest, MidiStatusNames[(status >> 4u) - 8]);
     }
 
     return dest;
