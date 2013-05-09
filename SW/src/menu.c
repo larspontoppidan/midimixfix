@@ -131,7 +131,7 @@ static bool_t GetNextMenuItem(uint8_t *comp, uint8_t *subitem)
         (*subitem)++;
         success = TRUE;
     }
-    else if (((*comp) + 1) < MENUE_ENTITY_COUNT)
+    else if ((uint8_t)((*comp) + 1u) < MENUE_ENTITY_COUNT)
     {
         (*comp)++;
         (*subitem) = 0;

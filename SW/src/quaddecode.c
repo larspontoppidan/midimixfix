@@ -15,11 +15,11 @@
 // indicate separately when there are changes on two quadrature signals,
 // named A and B.
 //
-// The algorithm uses four states, which are somewhat unusual, as they are
+// The algorithm uses four states, which is somewhat unusual, as they are
 // defined on signal change events combined with the constant state of the
-// non changing signal. State 0 is when A signal change (we don't care what
-// value it changes from or to) and B is high. State 1 is when
-// the B signal changes and A is low, etc.
+// non changing signal. State 0 is when A changes (we don't care what value
+// it changes from or to) and B is high. State 1 is when the B changes
+// and A is low, etc.
 //
 // Defining the states on edges allows the algorithm to not care what way
 // the changing signal is changing, eliminating certain race conditions,

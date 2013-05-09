@@ -19,7 +19,7 @@ typedef uint8_t bool_t;
 
 #define NULL ((void *)0)
 
-
+#define UNUSED(x) (void)(x)
 
 
 // BUILD CONFIGURATION

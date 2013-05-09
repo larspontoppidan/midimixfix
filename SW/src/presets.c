@@ -340,6 +340,8 @@ void presets_initialize(void)
 
 void presets_configMayChangeNotify(uint8_t entity_index)
 {
+    UNUSED(entity_index);
+
     ConfigMustBeChecked = TRUE;
 }
 

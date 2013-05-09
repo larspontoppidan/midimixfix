@@ -78,6 +78,10 @@ uint8_t mmenu_TitleMenuHandleEvent(uint8_t item, uint8_t edit_mode,
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 
+    UNUSED(edit_mode);
+    UNUSED(item);
+    UNUSED(knob_delta);
+
     if (user_event == MENU_EVENT_SELECT)
     {
         titleMenuVisible = !titleMenuVisible;

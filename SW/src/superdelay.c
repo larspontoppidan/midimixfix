@@ -124,6 +124,7 @@ typedef struct
 #define STATUS_ARM_NOTE_OFF   0x10 // Next NoteOff event is armed
 #define STATUS_DELAY_DONE     0x20 // Next NoteOff event stops this delay voice
 #define STATUS_PROLONGED      0x40 // This delay cycle uses the speed + swing_amount (instead of - )
+#define STATUS_MUTED          0x80 // This delay cycle uses the speed + swing_amount (instead of - )
 
 
 typedef struct
@@ -266,7 +267,7 @@ static void SetFilterEnabled(bool_t enable)
     {
         InitVoices();
         TapSpeedValid = FALSE;
-        dynamicEnable = (DelaySetup.enableCc == -1);
+        dynamicEnable = (DelaySetup.enableCc == INVALID_NUMBER);
     }
     else
     {
@@ -493,17 +494,20 @@ static void SetupNextDelayCycle(uint8_t index)
         DelayVoices[index].status |= STATUS_ARM_NOTE_ON;
     }
 
-    // Have user released key?
-    if (DelayVoices[index].status & STATUS_GOT_NOTE_OFF)
+    if ((DelayVoices[index].status & STATUS_MUTED) == 0)
     {
-        // Yes. Then we know key duration, configure note off:
-        DelayVoices[index].nextNoteOffTime = this_event_time + DelayVoices[index].keyOnDuration;
-        DelayVoices[index].status |= STATUS_ARM_NOTE_OFF;
-    }
-    else
-    {
-        // User is holding the key, don't generate note off
-        DelayVoices[index].status &= ~STATUS_ARM_NOTE_OFF;
+        // Have user released key?
+        if (DelayVoices[index].status & STATUS_GOT_NOTE_OFF)
+        {
+            // Yes. Then we know key duration, configure note off:
+            DelayVoices[index].nextNoteOffTime = this_event_time + DelayVoices[index].keyOnDuration;
+            DelayVoices[index].status |= STATUS_ARM_NOTE_OFF;
+        }
+        else
+        {
+            // User is holding the key, don't generate note off
+            DelayVoices[index].status &= ~STATUS_ARM_NOTE_OFF;
+        }
     }
 }
 
@@ -516,7 +520,16 @@ static void HandleNoteOn(uint8_t index, mmsg_t *msg)
     DelayVoices[index].nextNoteOnTime = msg->receive_tick;
     DelayVoices[index].repeats = 0;
     DelayVoices[index].velocity = msg->midi_data[1];
-    DelayVoices[index].status = STATUS_GOT_NOTE_ON;
+
+    if (dynamicEnable)
+    {
+        DelayVoices[index].status = STATUS_GOT_NOTE_ON;
+    }
+    else
+    {
+        // We are not enabled. Delay voice is status muted
+        DelayVoices[index].status = STATUS_GOT_NOTE_ON | STATUS_MUTED;
+    }
 
     SetupNextDelayCycle(index);
 }
@@ -611,28 +624,31 @@ static void HandleTick(uint8_t voice, uint16_t tick)
         {
             if (DelayVoices[voice].nextNoteOnTime == tick)
             {
-                if (CheckIfMasked(voice) == FALSE)
+                if ((status & STATUS_MUTED) == 0)
                 {
-                    uint8_t velocity;
-
-                    // We must generate a note on
-                    velocity = CheckNoteActiveState(DelayVoices[voice].key);
-
-                    if (velocity != 0u)
+                    if (CheckIfMasked(voice) == FALSE)
                     {
-                        SendNoteOff(DelayVoices[voice].key);
+                        uint8_t velocity;
+
+                        // We must generate a note on
+                        velocity = CheckNoteActiveState(DelayVoices[voice].key);
+
+                        if (velocity != 0u)
+                        {
+                            SendNoteOff(DelayVoices[voice].key);
+                        }
+
+                        // Use the highest velocity of our delayvoice and the note
+                        // we may just have silenced:
+                        if (DelayVoices[voice].velocity > velocity)
+                        {
+                            velocity = DelayVoices[voice].velocity;
+                        }
+
+                        DelayVoices[voice].status = status | STATUS_IS_NOTE_ON;
+
+                        SendNoteOn(DelayVoices[voice].key, velocity);
                     }
-
-                    // Use the highest velocity of our delayvoice and the note
-                    // we may just have silenced:
-                    if (DelayVoices[voice].velocity > velocity)
-                    {
-                        velocity = DelayVoices[voice].velocity;
-                    }
-
-                    DelayVoices[voice].status = status | STATUS_IS_NOTE_ON;
-
-                    SendNoteOn(DelayVoices[voice].key, velocity);
                 }
 
                 SetupNextDelayCycle(voice);
@@ -736,7 +752,7 @@ void sdelay_Initialize(void)
     DelaySetup.tapKey = 0x1C;
     DelaySetup.chan = 0;
     DelaySetup.source = MMSG_SOURCE_INPUT1;
-    DelaySetup.enableCc = -1;
+    DelaySetup.enableCc = INVALID_NUMBER;
 
     // Set delay state defaults
     InitVoices();
@@ -785,15 +801,12 @@ void sdelay_HookMidiMsg_ISR(mmsg_t *msg)
                     switch (x & MIDI_STATUS_MASK)
                     {
                     case MIDI_STATUS_NOTE_ON:
-                        if (dynamicEnable)
-                        {
-                            // Find a delayvoice for this note on
-                            voice = FindQuietestVoice();
-                            // Make sure to generate note-off for the voice if required
-                            KillVoice(voice, msg->midi_data[0]);
-                            // Setup voice according to this note on
-                            HandleNoteOn(voice, msg);
-                        }
+                        // Find a delayvoice for this note on
+                        voice = FindQuietestVoice();
+                        // Make sure to generate note-off for the voice if required
+                        KillVoice(voice, msg->midi_data[0]);
+                        // Setup voice according to this note on
+                        HandleNoteOn(voice, msg);
                         break;
 
                     case MIDI_STATUS_NOTE_OFF:
@@ -981,7 +994,7 @@ uint8_t sdelay_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
         case MENU_ENABLE_CC:
             DelaySetup.enableCc = util_boundedAddInt8(DelaySetup.enableCc, -1, 64, knob_delta);
             // If we are changing how to use enable / disable, better make sure we are enabled actually
-            dynamicEnable = (DelaySetup.enableCc == -1);
+            dynamicEnable = (DelaySetup.enableCc == INVALID_NUMBER);
             break;
         case MENU_TAP_SPEED:
             DelaySetup.tapKey = util_boundedAddUint8(DelaySetup.tapKey, 0, 127, knob_delta);

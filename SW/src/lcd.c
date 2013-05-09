@@ -12,40 +12,39 @@
 #include <util/delay.h>
 #include <avr/pgmspace.h>
 
-#define CMD_INITIALIZE  0b00110000
+#define CMD_INITIALIZE        0x30 // 0b00110000
 
 // LCD command definitions
 
-#define CMD_CLEAR_DISP        0b00000001
+#define CMD_CLEAR_DISP        0x01 // 0b00000001
 
-#define CMD_RETURN_HOME       0b00000010
+#define CMD_RETURN_HOME       0x02 // 0b00000010
 
-#define CMD_ENTRY_MODE        0b00000100
-#define FLAG_ENTRY_MODE_INC   0b00000010
-#define FLAG_ENTRY_MODE_SHIFT 0b00000001
+#define CMD_ENTRY_MODE        0x04 // 0b00000100
+#define FLAG_ENTRY_MODE_INC   0x02 // 0b00000010
+#define FLAG_ENTRY_MODE_SHIFT 0x01 // 0b00000001
 
-#define CMD_DISP_CTRL         0b00001000
-#define FLAG_DISP_CTRL_ON     0b00000100
-#define FLAG_DISP_CTRL_CURSOR 0b00000010
-#define FLAG_DISP_CTRL_BLINK  0b00000001
+#define CMD_DISP_CTRL         0x08 // 0b00001000
+#define FLAG_DISP_CTRL_ON     0x04 // 0b00000100
+#define FLAG_DISP_CTRL_CURSOR 0x02 // 0b00000010
+#define FLAG_DISP_CTRL_BLINK  0x01 // 0b00000001
 
-#define CMD_SHIFT_CURSOR      0b00010000
-#define CMD_SHIFT_DISPLAY     0b00011000
-#define FLAG_SHIFT_RIGHT      0b00000100
-#define FLAG_SHIFT_LEFT       0b00000000
+#define CMD_SHIFT_CURSOR      0x10 // 0b00010000
+#define CMD_SHIFT_DISPLAY     0x18 // 0b00011000
+#define FLAG_SHIFT_RIGHT      0x04 // 0b00000100
+#define FLAG_SHIFT_LEFT       0x00 // 0b00000000
 
-#define CMD_FUNC_SET          0b00100000
-#define FLAG_FUNC_8BIT        0b00010000
-#define FLAG_FUNC_MULT_LINES  0b00001000
-#define FLAG_FUNC_5X8_FONT    0b00000100
+#define CMD_FUNC_SET          0x20 // 0b00100000
+#define FLAG_FUNC_8BIT        0x10 // 0b00010000
+#define FLAG_FUNC_MULT_LINES  0x08 // 0b00001000
+#define FLAG_FUNC_5X8_FONT    0x04 // 0b00000100
 
-#define CMD_SET_CGRAM_ADDR    0b01000000
-#define CMD_SET_DDRAM_ADDR    0b10000000
+#define CMD_SET_CGRAM_ADDR    0x40 // 0b01000000
+#define CMD_SET_DDRAM_ADDR    0x80 // 0b10000000
 
 
 // Busy status defines
-#define FLAG_BUSY             0b10000000
-
+#define FLAG_BUSY             0x80 // 0b10000000
 
 
 /////////////////////////   Variables    /////////////////////////

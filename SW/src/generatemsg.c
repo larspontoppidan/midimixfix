@@ -240,10 +240,16 @@ void genmsg_initialize(void)
     }
 }
 
+// =============================  PUBLIC FUNCTIONS  ===========================
+
+
 uint8_t genmsg_menuGetSubCount(void)
 {
     return MessageCount;
 }
+
+
+// -----------------------------  PUBLIC FUNCTIONS  ---------------------------
 
 void genmsg_menuGetText(char *dest, uint8_t item)
 {
