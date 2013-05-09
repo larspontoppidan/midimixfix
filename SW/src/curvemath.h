@@ -11,26 +11,26 @@
 #include "common.h"
 
 
-#define CURVEM_TYPES 7
+#define CURVEMATH_TYPES 7
 
 typedef struct
 {
     // The curve definition:
-    uint8_t type;
-    int16_t gain;
-    int8_t offset;
-} cmath_curve_t;
+    uint8_t Type;
+    int16_t Gain;
+    int8_t Offset;
+} curveMath_t;
 
 
-void cmath_CurveReset(cmath_curve_t *curve);
+void CurveMath_reset(curveMath_t *curve);
 
 // Functions for displaying the curve spec
-char *cmath_WriteLow(char *dest, cmath_curve_t *curve);
-char *cmath_WriteType(char *dest, cmath_curve_t *curve);
-char *cmath_WriteHigh(char *dest, cmath_curve_t *curve);
+char *CurveMath_writeLow(char *dest, curveMath_t *curve);
+char *CurveMath_writeType(char *dest, curveMath_t *curve);
+char *CurveMath_writeHigh(char *dest, curveMath_t *curve);
 
 // Applying curve on a value
-uint8_t cmath_CurveApply(uint8_t x, cmath_curve_t *curve);
+uint8_t CurveMath_apply(uint8_t x, curveMath_t *curve);
 
 
 

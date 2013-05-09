@@ -168,7 +168,7 @@ const char NoteNames[12][3] PROGMEM =
 };
 
 
-uint8_t mmsg_dataCountGet(uint8_t midi_status)
+uint8_t MidiMsg_predictDataCount(uint8_t midi_status)
 {
     uint8_t count = 0;
 
@@ -201,7 +201,7 @@ uint8_t mmsg_dataCountGet(uint8_t midi_status)
 }
 
 
-uint8_t mmsg_getDataType(uint8_t x)
+uint8_t MidiMsg_getDataType(uint8_t x)
 {
     uint8_t type;
 
@@ -241,7 +241,7 @@ uint8_t mmsg_getDataType(uint8_t x)
 
 
 
-uint8_t mmsg_GetMsgLength(mmsg_t *msg)
+uint8_t MidiMsg_getLength(midiMsg_t *msg)
 {
     uint8_t ret;
 
@@ -256,7 +256,7 @@ uint8_t mmsg_GetMsgLength(mmsg_t *msg)
 }
 
 
-uint8_t mmsg_GetMsgByte(mmsg_t *msg, uint8_t index)
+uint8_t MidiMsg_getByte(midiMsg_t *msg, uint8_t index)
 {
     uint8_t ret;
 
@@ -288,7 +288,7 @@ uint8_t mmsg_GetMsgByte(mmsg_t *msg, uint8_t index)
 }
 
 
-char *mmsg_WriteControllerName(char *dest, uint8_t ctrl)
+char *MidiMsg_writeControllerName(char *dest, uint8_t ctrl)
 {
     if (ctrl < 32)
     {
@@ -318,7 +318,7 @@ char *mmsg_WriteControllerName(char *dest, uint8_t ctrl)
 // "SS.AABB"    Two data bytes
 // "AABBCCDDEE" Raw message with 5 bytes
 
-char *mmsg_WriteMsgRaw(char *dest, mmsg_t *msg)
+char *MidiMsg_writeRaw(char *dest, midiMsg_t *msg)
 {
     if (msg->flags == 0u)
     {
@@ -356,21 +356,21 @@ char *mmsg_WriteMsgRaw(char *dest, mmsg_t *msg)
     return dest;
 }
 
-char *mmsg_WriteNoteName(char *dest, uint8_t note_number)
+char *MidiMsg_writeNoteName(char *dest, uint8_t note_number)
 {
     dest = util_strCpy_P(dest, NoteNames[(note_number % 12)]);
     dest = util_strWriteInt8LA(dest, (int8_t)(note_number / 12) - (int8_t)5);
     return dest;
 }
 
-char *mmsg_WriteStatusName(char *dest, uint8_t status)
+char *MidiMsg_writeStatusName(char *dest, uint8_t status)
 {
     dest = util_strCpy_P(dest, MidiStatusNames[(status >> 4u) - 8]);
     return dest;
 }
 
 
-char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
+char *MidiMsg_writeParsed(char *dest, midiMsg_t *msg)
 {
     if (msg->flags == 0u)
     {
@@ -428,7 +428,7 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
             case MIDI_STATUS_NOTE_OFF:
             case MIDI_STATUS_KEY_ATOUCH:
                 // Decode note number
-                dest = mmsg_WriteNoteName(dest, msg->midi_data[0]);
+                dest = MidiMsg_writeNoteName(dest, msg->midi_data[0]);
                 *(dest++) = ' ';
 
                 // Add velocity / pressure
@@ -437,7 +437,7 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
 
             case MIDI_STATUS_CTRL_CHANGE:
                 // Write controller name=value
-                dest = mmsg_WriteControllerName(dest, msg->midi_data[0]);
+                dest = MidiMsg_writeControllerName(dest, msg->midi_data[0]);
                 *(dest++) = '=';
                 dest = util_strWriteInt8LA(dest, msg->midi_data[1]);
                 break;
@@ -467,7 +467,7 @@ char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg)
     return dest;
 }
 
-bool_t mmsg_IsKeyBlack(uint8_t key)
+bool_t MidiMsg_isKeyBlack(uint8_t key)
 {
     bool_t ret = FALSE;
 

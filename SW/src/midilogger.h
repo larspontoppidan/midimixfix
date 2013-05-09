@@ -13,8 +13,8 @@
 
 void mlog_Initialize(void);
 
-void mlog_handleMidiMsgIn_ISR(mmsg_t *msg);
-void mlog_handleMidiMsgOut_ISR(mmsg_t *msg);
+void mlog_handleMidiMsgIn_ISR(midiMsg_t *msg);
+void mlog_handleMidiMsgOut_ISR(midiMsg_t *msg);
 void mlog_handleTick_ISR(void);
 void mlog_handleMainLoop(void);
 

@@ -30,27 +30,27 @@ typedef struct
     uint8_t midi_status;
     uint8_t midi_data_len; // 0 to data_max
     uint8_t midi_data[MMSG_DATA_MAX];
-} mmsg_t;
+} midiMsg_t;
 
 
 // Accessing the raw bytes of a message:
-uint8_t mmsg_GetMsgLength(mmsg_t *msg);
-uint8_t mmsg_GetMsgByte(mmsg_t *msg, uint8_t index);
+uint8_t MidiMsg_getLength(midiMsg_t *msg);
+uint8_t MidiMsg_getByte(midiMsg_t *msg, uint8_t index);
 
 // Converting message to text
-char *mmsg_WriteMsgRaw(char *dest, mmsg_t *msg);
-char *mmsg_WriteMsgParsed(char *dest, mmsg_t *msg);
+char *MidiMsg_writeRaw(char *dest, midiMsg_t *msg);
+char *MidiMsg_writeParsed(char *dest, midiMsg_t *msg);
 
 // Translating aspects of a message:
-uint8_t mmsg_getDataType(uint8_t x);
-char *mmsg_WriteNoteName(char *dest, uint8_t note_number);
-char *mmsg_WriteControllerName(char *dest, uint8_t ctrl);
-char *mmsg_WriteStatusName(char *dest, uint8_t status);
+uint8_t MidiMsg_getDataType(uint8_t x);
+char *MidiMsg_writeNoteName(char *dest, uint8_t note_number);
+char *MidiMsg_writeControllerName(char *dest, uint8_t ctrl);
+char *MidiMsg_writeStatusName(char *dest, uint8_t status);
 
-uint8_t mmsg_dataCountGet(uint8_t midi_status);
+uint8_t MidiMsg_predictDataCount(uint8_t midi_status);
 
 // Is a certain key white or black on the keyboard?
-bool_t mmsg_IsKeyBlack(uint8_t key);
+bool_t MidiMsg_isKeyBlack(uint8_t key);
 
 ////////////////////// Midi Message definitions ///////////////////////////
 

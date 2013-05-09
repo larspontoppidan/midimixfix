@@ -104,7 +104,7 @@
 
 typedef struct
 {
-    uint8_t source;
+    uint8_t Source;
     uint8_t chan;
     uint8_t tapKey;        // TODO Tapping this key will set speed
     uint8_t speed;         // Delay speed in tick count
@@ -183,7 +183,7 @@ static bool_t dynamicEnable;
 menuItem_t MenuItems[MENU_ITEMS] PROGMEM =
 {
     {"Midi delay    %O",  17, &(filterEnabled) },
-    {"Input: %i",          7, &(DelaySetup.source) },
+    {"Input: %i",          7, &(DelaySetup.Source) },
     {"Del.Time: %U0 ms",  13, &(DelaySetup.speed) },
     {"Swing   :%I",       13, &(DelaySetup.swing_amount) },
     {"Feedback:  %U",     13, &(DelaySetup.feedback) },
@@ -218,13 +218,13 @@ static uint8_t CheckNoteActiveState(uint8_t key);
 static void SetupNextDelayCycle(uint8_t voice); // Private
 
 // Sets up delay voice according to note message
-static void HandleNoteOn(uint8_t voice, mmsg_t *msg);
+static void HandleNoteOn(uint8_t voice, midiMsg_t *msg);
 
 // Does what have to be done at this tick
 static void HandleTick(uint8_t voice, uint16_t tick);
 
 // Registers note off event
-static void HandleNoteOff(uint8_t voice, mmsg_t *msg);
+static void HandleNoteOff(uint8_t voice, midiMsg_t *msg);
 
 // May generate NoteOff
 static void KillVoice(uint8_t voice, uint8_t dont_touch_this_key);
@@ -513,7 +513,7 @@ static void SetupNextDelayCycle(uint8_t index)
 
 
 // Sets up delay voice according to note message
-static void HandleNoteOn(uint8_t index, mmsg_t *msg)
+static void HandleNoteOn(uint8_t index, midiMsg_t *msg)
 {
     DelayVoices[index].key = msg->midi_data[0];
     DelayVoices[index].keyOnDuration = msg->receive_tick;
@@ -535,7 +535,7 @@ static void HandleNoteOn(uint8_t index, mmsg_t *msg)
 }
 
 // User generated a note off
-static void HandleNoteOff(uint8_t index, mmsg_t *msg)
+static void HandleNoteOff(uint8_t index, midiMsg_t *msg)
 {
     if ((DelayVoices[index].status & STATUS_GOT_NOTE_OFF) == 0)
     {
@@ -751,18 +751,18 @@ void sdelay_Initialize(void)
     DelaySetup.swing_amount = 0;
     DelaySetup.tapKey = 0x1C;
     DelaySetup.chan = 0;
-    DelaySetup.source = MMSG_SOURCE_INPUT1;
+    DelaySetup.Source = MMSG_SOURCE_INPUT1;
     DelaySetup.enableCc = INVALID_NUMBER;
 
     // Set delay state defaults
     InitVoices();
 }
 
-void sdelay_HookMidiMsg_ISR(mmsg_t *msg)
+void sdelay_HookMidiMsg_ISR(midiMsg_t *msg)
 {
     if (filterEnabled)
     {
-        if ((msg->flags & DelaySetup.source) != 0)
+        if ((msg->flags & DelaySetup.Source) != 0)
         {
             // TODO also check if message is OK
 
@@ -974,7 +974,7 @@ uint8_t sdelay_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
             ret |= MENU_UPDATE_ALL;
             break;
         case MENU_IN_CHAN:
-            DelaySetup.source = util_boundedAddInt8(DelaySetup.source, 1, 2, knob_delta);
+            DelaySetup.Source = util_boundedAddInt8(DelaySetup.Source, 1, 2, knob_delta);
             break;
         case MENU_SPEED:
             DelaySetup.speed = util_boundedAddUint8(DelaySetup.speed, MINIMUM_SPEED, 255, knob_delta);

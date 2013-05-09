@@ -52,10 +52,10 @@ uint8_t menue_GetSubCount(uint8_t entity)
         ret = mlog_menuGetSubCount();
         break;
     case ENTITY_BLOCKFILTER:
-        ret = blockf_MenuGetSubCount();
+        ret = BlockFlt_menuGetSubCount();
         break;
     case ENTITY_CURVEFILTER:
-        ret = curvef_MenuGetSubCount();
+        ret = CurveFlt_menuGetSubCount();
         break;
     case ENTITY_SUPERDELAY:
         ret = sdelay_MenuGetSubCount();
@@ -88,10 +88,10 @@ void menue_GetText(uint8_t entity, char *dest, uint8_t item)
         mlog_menuGetText(dest, item);
         break;
     case ENTITY_BLOCKFILTER:
-        blockf_MenuGetText(dest, item);
+        BlockFlt_menuGetText(dest, item);
         break;
     case ENTITY_CURVEFILTER:
-        curvef_MenuGetText(dest, item);
+        CurveFlt_menuGetText(dest, item);
         break;
     case ENTITY_SUPERDELAY:
         sdelay_MenuGetText(dest, item);
@@ -125,10 +125,10 @@ uint8_t menue_HandleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
         ret = mlog_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_BLOCKFILTER:
-        ret = blockf_MenuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = BlockFlt_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_CURVEFILTER:
-        ret = curvef_MenuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = CurveFlt_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_SUPERDELAY:
         ret = sdelay_MenuHandleEvent(item, edit_mode, user_event, knob_delta);
@@ -164,10 +164,10 @@ uint8_t menue_ConfigGetSize(uint8_t entity)
         ret = 0;
         break;
     case ENTITY_BLOCKFILTER:
-        ret = blockf_ConfigGetSize();
+        ret = BlockFlt_configGetSize();
         break;
     case ENTITY_CURVEFILTER:
-        ret = curvef_ConfigGetSize();
+        ret = CurveFlt_configGetSize();
         break;
     case ENTITY_SUPERDELAY:
         ret = sdelay_ConfigGetSize();
@@ -197,10 +197,10 @@ void menue_ConfigSave(uint8_t entity, uint8_t *dest)
     case ENTITY_MIDILOG:
         break;
     case ENTITY_BLOCKFILTER:
-        blockf_ConfigSave(dest);
+        BlockFlt_configSave(dest);
         break;
     case ENTITY_CURVEFILTER:
-        curvef_ConfigSave(dest);
+        CurveFlt_configSave(dest);
         break;
     case ENTITY_SUPERDELAY:
         sdelay_ConfigSave(dest);
@@ -228,10 +228,10 @@ void menue_ConfigLoad(uint8_t entity, uint8_t *dest)
     case ENTITY_MIDILOG:
         break;
     case ENTITY_BLOCKFILTER:
-        blockf_ConfigLoad(dest);
+        BlockFlt_configLoad(dest);
         break;
     case ENTITY_CURVEFILTER:
-        curvef_ConfigLoad(dest);
+        CurveFlt_configLoad(dest);
         break;
     case ENTITY_SUPERDELAY:
         sdelay_ConfigLoad(dest);

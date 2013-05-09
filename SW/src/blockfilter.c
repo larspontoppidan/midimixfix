@@ -73,13 +73,13 @@
 
 typedef struct
 {
-    uint8_t mode;
+    uint8_t Mode;
 
-    uint8_t filter_input;
-    uint8_t filter_data1;
-    uint8_t filter_data2;
+    uint8_t FilterInput;
+    uint8_t FilterData1;
+    uint8_t FilterData2;
 
-    uint8_t action_data;
+    uint8_t ActionData;
 } rule_t;
 
 #define RULE_MAX 10
@@ -123,47 +123,46 @@ static uint8_t targetStatusMap[4] PROGMEM =
 typedef struct
 {
     // The block filter is configured by these:
-    uint8_t input;
-    uint8_t target_in;
-    uint8_t target_out;
+    uint8_t Input;
+    uint8_t TargetIn;
+    uint8_t TargetOut;
 
 } ruleConfig_t;
 
 
-static char titleString[] PROGMEM = "Block and map";
+static char TitleString[] PROGMEM = "Block and map";
 
 
 
 /////////////////////////   Variables    /////////////////////////
 
 
-static uint8_t ruleCount;
+static uint8_t RuleCount;
 
-static ruleConfig_t ruleConfigs[RULE_MAX];
-static rule_t       rules[RULE_MAX];
-
+static ruleConfig_t RuleConfigs[RULE_MAX];
+static rule_t       Rules[RULE_MAX];
 
 
 /////////////////////////   Prototypes   /////////////////////////
 
-static bool_t ProcessRuleConfig(uint8_t index);
+static bool_t processRuleConfig(uint8_t index);
 
-static char *WriteTargetName(char *dest, uint8_t target);
+static char *writeTargetName(char *dest, uint8_t target);
 
 
 ///////////////////////// Implementation /////////////////////////
 
 // Process the input and output configured by user. A corresponding rule is set up
 // if possible and TRUE is returned. Otherwise FALSE is returned.
-static bool_t ProcessRuleConfig(uint8_t index)
+static bool_t processRuleConfig(uint8_t index)
 {
     uint8_t mode = 0;
-    uint8_t t_in = ruleConfigs[index].target_in;
-    uint8_t t_out = ruleConfigs[index].target_out;
+    uint8_t t_in = RuleConfigs[index].TargetIn;
+    uint8_t t_out = RuleConfigs[index].TargetOut;
     bool_t rule_accepted = FALSE;
 
-    rules[index].mode = MODE_OFF;
-    rules[index].filter_input = ruleConfigs[index].input;
+    Rules[index].Mode = MODE_OFF;
+    Rules[index].FilterInput = RuleConfigs[index].Input;
 
     if (t_in == TARGET_DISCARD)
     {
@@ -178,7 +177,7 @@ static bool_t ProcessRuleConfig(uint8_t index)
         // The input is a channel
 
         mode |= MODE_FILTER_CHAN;
-        rules[index].filter_data1 = t_in - 1;
+        Rules[index].FilterData1 = t_in - 1;
 
         // Output can be discard or another channel
 
@@ -190,7 +189,7 @@ static bool_t ProcessRuleConfig(uint8_t index)
         else if (t_out < 17)
         {
             mode |= MODE_ACTION_SET_CHAN;
-            rules[index].action_data = t_out - 1;
+            Rules[index].ActionData = t_out - 1;
             rule_accepted = TRUE;
         }
     }
@@ -200,8 +199,8 @@ static bool_t ProcessRuleConfig(uint8_t index)
         // Input is a continuous controller
 
         mode |= MODE_FILTER_TYPE | MODE_FILTER_DATA;
-        rules[index].filter_data1 = MIDI_STATUS_CTRL_CHANGE;
-        rules[index].filter_data2 = t_in - TARGET_FIRST_CC;
+        Rules[index].FilterData1 = MIDI_STATUS_CTRL_CHANGE;
+        Rules[index].FilterData2 = t_in - TARGET_FIRST_CC;
 
         // Output can be discard, another controller or chan.a.touch
 
@@ -214,7 +213,7 @@ static bool_t ProcessRuleConfig(uint8_t index)
                   (t_out <= TARGET_LAST_CC))
         {
             mode |= MODE_ACTION_SET_CC;
-            rules[index].action_data = t_out - TARGET_FIRST_CC;
+            Rules[index].ActionData = t_out - TARGET_FIRST_CC;
             rule_accepted = TRUE;
         }
         else if (t_out == TARGET_CHAN_A_TOUCH)
@@ -230,7 +229,7 @@ static bool_t ProcessRuleConfig(uint8_t index)
         // Input is channel after touch
 
         mode |= MODE_FILTER_TYPE;
-        rules[index].filter_data1 = MIDI_STATUS_CHAN_ATOUCH;
+        Rules[index].FilterData1 = MIDI_STATUS_CHAN_ATOUCH;
 
         // Output can be discard or another controller
 
@@ -245,14 +244,14 @@ static bool_t ProcessRuleConfig(uint8_t index)
             // Convert from chan aftertouch to continuous controller,
             // this means byte 1 of midi message must be passed on:
             mode |= MODE_ACTION_1_TO_CC;
-            rules[index].action_data = t_out - TARGET_FIRST_CC;
+            Rules[index].ActionData = t_out - TARGET_FIRST_CC;
             rule_accepted = TRUE;
         }
     }
     else
     {
         mode |= MODE_FILTER_TYPE;
-        rules[index].filter_data1 = pgm_read_byte( & (targetStatusMap[t_in - 17]));
+        Rules[index].FilterData1 = pgm_read_byte( & (targetStatusMap[t_in - 17]));
 
         // For these target types, we only allow discard as output
 
@@ -265,18 +264,18 @@ static bool_t ProcessRuleConfig(uint8_t index)
 
     if (rule_accepted)
     {
-        rules[index].mode = mode;
+        Rules[index].Mode = mode;
     }
     else
     {
-        rules[index].mode = MODE_OFF;
+        Rules[index].Mode = MODE_OFF;
     }
 
     return rule_accepted;
 }
 
 
-static char *WriteTargetName(char *dest, uint8_t target)
+static char *writeTargetName(char *dest, uint8_t target)
 {
     if (target == TARGET_DISCARD)
     {
@@ -290,37 +289,37 @@ static char *WriteTargetName(char *dest, uint8_t target)
     else if (target < TARGET_FIRST_CC)
     {
         // A midi message type
-        dest = mmsg_WriteStatusName(dest, pgm_read_byte( & (targetStatusMap[target - 17])) );
+        dest = MidiMsg_writeStatusName(dest, pgm_read_byte( & (targetStatusMap[target - 17])) );
     }
     else if (target <= TARGET_LAST_CC)
     {
         // A controller
         dest = util_strCpy_P(dest, PSTR("CC: "));
-        dest = mmsg_WriteControllerName(dest, target - TARGET_FIRST_CC);
+        dest = MidiMsg_writeControllerName(dest, target - TARGET_FIRST_CC);
     }
 
     return dest;
 }
 
 
-void blockf_Initialize(void)
+void BlockFlt_initialize(void)
 {
     uint8_t i;
 
-    ruleCount = 0;
+    RuleCount = 0;
 
     // Set default setup in all slots
     for (i = 0; i < RULE_MAX; i++)
     {
-        ruleConfigs[i].input = 1;
-        ruleConfigs[i].target_in = 1;
-        ruleConfigs[i].target_out = 0;
-        ProcessRuleConfig(i);
+        RuleConfigs[i].Input = 1;
+        RuleConfigs[i].TargetIn = 1;
+        RuleConfigs[i].TargetOut = 0;
+        processRuleConfig(i);
     }
 
 }
 
-void blockf_HookMidiMsg_ISR(mmsg_t *msg)
+void BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg)
 {
     uint8_t midistatus = msg->midi_status;
 
@@ -333,19 +332,19 @@ void blockf_HookMidiMsg_ISR(mmsg_t *msg)
         uint8_t i;
         bool_t discard = FALSE;
 
-        for (i = 0; i < ruleCount; i++)
+        for (i = 0; i < RuleCount; i++)
         {
             // Always check source
 
-            if ((msg->flags & rules[i].filter_input) != 0)
+            if ((msg->flags & Rules[i].FilterInput) != 0)
             {
-                uint8_t mode = rules[i].mode;
+                uint8_t mode = Rules[i].Mode;
                 bool_t selected;
 
                 if (mode & MODE_FILTER_CHAN)
                 {
                     // We want a certain channel
-                    selected = (midistatus & MIDI_CHANNEL_MASK) == rules[i].filter_data1;
+                    selected = (midistatus & MIDI_CHANNEL_MASK) == Rules[i].FilterData1;
                 }
                 else
                 {
@@ -354,13 +353,13 @@ void blockf_HookMidiMsg_ISR(mmsg_t *msg)
                     if (mode & MODE_FILTER_TYPE)
                     {
                         // We want a certain status type
-                        selected = selected && ((midistatus & MIDI_STATUS_MASK) == rules[i].filter_data1);
+                        selected = selected && ((midistatus & MIDI_STATUS_MASK) == Rules[i].FilterData1);
                     }
 
                     if (mode & MODE_FILTER_DATA)
                     {
                         // We want first data byte to match
-                        selected = selected && (msg->midi_data[0] == rules[i].filter_data2);
+                        selected = selected && (msg->midi_data[0] == Rules[i].FilterData2);
                     }
                 }
 
@@ -377,13 +376,13 @@ void blockf_HookMidiMsg_ISR(mmsg_t *msg)
 
                     case MODE_ACTION_SET_CHAN:
                         //
-                        midistatus = (midistatus & ~MIDI_CHANNEL_MASK) | rules[i].action_data;
+                        midistatus = (midistatus & ~MIDI_CHANNEL_MASK) | Rules[i].ActionData;
                         msg->midi_status = midistatus;
                         break;
 
                     case MODE_ACTION_SET_CC:
                         // Change continuous controller type
-                        msg->midi_data[0] = rules[i].action_data;
+                        msg->midi_data[0] = Rules[i].ActionData;
                         break;
 
                     case MODE_ACTION_1_TO_CC:
@@ -391,7 +390,7 @@ void blockf_HookMidiMsg_ISR(mmsg_t *msg)
                         midistatus = (midistatus & ~MIDI_STATUS_MASK) | MIDI_STATUS_CTRL_CHANGE;
                         msg->midi_status = midistatus;
                         msg->midi_data[1] = msg->midi_data[0];
-                        msg->midi_data[0] = rules[i].action_data;
+                        msg->midi_data[0] = Rules[i].ActionData;
                         msg->midi_data_len = 2;
                         break;
 
@@ -416,28 +415,28 @@ void blockf_HookMidiMsg_ISR(mmsg_t *msg)
     }
 }
 
-void blockf_HookTick_ISR(void)
+void BlockFlt_hookTick_ISR(void)
 {
     // TODO remove
 }
 
-void blockf_HookMainLoop(void)
+void BlockFlt_hookMainLoop(void)
 {
     // TODO remove
 }
 
-uint8_t blockf_MenuGetSubCount(void)
+uint8_t BlockFlt_menuGetSubCount(void)
 {
-    return ruleCount * 2;
+    return RuleCount * 2;
 }
 
-void blockf_MenuGetText(char *dest, uint8_t item)
+void BlockFlt_menuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
         // Write first menu line
-        util_strCpy_P(dest, titleString);
-        util_strWriteNumberParentheses(dest + 14, ruleCount);
+        util_strCpy_P(dest, TitleString);
+        util_strWriteNumberParentheses(dest + 14, RuleCount);
     }
     else
     {
@@ -446,11 +445,11 @@ void blockf_MenuGetText(char *dest, uint8_t item)
         if ((item & 1) == 1)
         {
             // First line of a block filter, write: "InX ..."
-            dest = pstr_writeInX(dest, ruleConfigs[c].input);
+            dest = pstr_writeInX(dest, RuleConfigs[c].Input);
             (*dest++) = ' ';
 
             // Write input target
-            dest = WriteTargetName(dest, ruleConfigs[c].target_in);
+            dest = writeTargetName(dest, RuleConfigs[c].TargetIn);
         }
         else
         {
@@ -458,10 +457,10 @@ void blockf_MenuGetText(char *dest, uint8_t item)
             dest = util_strCpy_P(dest, PSTR(" to "));
 
             // Write output target
-            dest = WriteTargetName(dest, ruleConfigs[c].target_out);
+            dest = writeTargetName(dest, RuleConfigs[c].TargetOut);
 
             // Notify user if this config is invalid
-            if (rules[c].mode == MODE_OFF)
+            if (Rules[c].Mode == MODE_OFF)
             {
                 dest = util_strCpy_P(dest, PSTR(" ERR!"));
             }
@@ -470,7 +469,7 @@ void blockf_MenuGetText(char *dest, uint8_t item)
     }
 }
 
-uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 
@@ -498,7 +497,7 @@ uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
             if ((user_event == MENU_EVENT_TURN) || (user_event == MENU_EVENT_TURN_PUSH))
             {
                 // Modify filter count
-                ruleCount = util_boundedAddInt8(ruleCount, 0, RULE_MAX, knob_delta);
+                RuleCount = util_boundedAddInt8(RuleCount, 0, RULE_MAX, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
                 ret = 17 | MENU_UPDATE_ALL;
@@ -530,19 +529,19 @@ uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
                 if (edit_mode == 1)
                 {
                     ret = 0;
-                    ruleConfigs[c].input =
-                            util_boundedAddInt8(ruleConfigs[c].input, 1, 3, knob_delta);
+                    RuleConfigs[c].Input =
+                            util_boundedAddInt8(RuleConfigs[c].Input, 1, 3, knob_delta);
                 }
                 else if (edit_mode == 2)
                 {
                     ret = 4 | MENU_UPDATE_ALL;
 
-                    ruleConfigs[c].target_in =
-                            util_boundedAddInt8(ruleConfigs[c].target_in, 1, TARGET_MAX, knob_delta);
+                    RuleConfigs[c].TargetIn =
+                            util_boundedAddInt8(RuleConfigs[c].TargetIn, 1, TARGET_MAX, knob_delta);
 
                 }
 
-                ProcessRuleConfig(c);
+                processRuleConfig(c);
             }
         }
         else
@@ -562,10 +561,10 @@ uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
                 {
                     ret = 5;
 
-                    ruleConfigs[c].target_out =
-                            util_boundedAddInt8(ruleConfigs[c].target_out, 0, TARGET_MAX, knob_delta);
+                    RuleConfigs[c].TargetOut =
+                            util_boundedAddInt8(RuleConfigs[c].TargetOut, 0, TARGET_MAX, knob_delta);
 
-                    ProcessRuleConfig(c);
+                    processRuleConfig(c);
                 }
             }
         }
@@ -576,35 +575,35 @@ uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
 
 // Configuration store and load implementation
 
-uint8_t blockf_ConfigGetSize(void)
+uint8_t BlockFlt_configGetSize(void)
 {
     return 1 + RULE_MAX * sizeof(ruleConfig_t);
 }
 
-void blockf_ConfigSave(uint8_t *dest)
+void BlockFlt_configSave(uint8_t *dest)
 {
-    *(dest++) = ruleCount;
+    *(dest++) = RuleCount;
 
-    memcpy(dest, &(ruleConfigs[0]), RULE_MAX * sizeof(ruleConfig_t));
+    memcpy(dest, &(RuleConfigs[0]), RULE_MAX * sizeof(ruleConfig_t));
 }
 
-void blockf_ConfigLoad(uint8_t *dest)
+void BlockFlt_configLoad(uint8_t *dest)
 {
     uint8_t new_count;
     uint8_t i;
 
-    ruleCount = 0;
+    RuleCount = 0;
 
     new_count = *(dest++);
 
-    memcpy(&(ruleConfigs[0]), dest, RULE_MAX * sizeof(ruleConfig_t));
+    memcpy(&(RuleConfigs[0]), dest, RULE_MAX * sizeof(ruleConfig_t));
 
     for (i = 0; i < new_count; i++)
     {
-        ProcessRuleConfig(i);
+        processRuleConfig(i);
     }
 
-    ruleCount = new_count;
+    RuleCount = new_count;
 
 }
 

@@ -50,7 +50,7 @@
 #define STATUS_DISCARD    3u
 
 uint8_t statusBuffer[MIDIIO_BUFFER_SIZE];
-mmsg_t  MsgBuffer[MIDIIO_BUFFER_SIZE];
+midiMsg_t  MsgBuffer[MIDIIO_BUFFER_SIZE];
 
 uint8_t BufferHead;
 uint8_t BufferTail;
@@ -102,7 +102,7 @@ uint8_t BufferTail;
 
 // Currently transmitting status
 
-mmsg_t  *OutputMessage;
+midiMsg_t  *OutputMessage;
 uint8_t OutputTransmitIndex;
 
 
@@ -319,7 +319,7 @@ void midiio_MsgAddData_ISR(uint8_t msg_index, uint8_t midi_data)
 // This function is called when message is complete and should be processed
 void midiio_MsgFinish_ISR(uint8_t msg_index, uint8_t flags)
 {
-    mmsg_t *msg = &(MsgBuffer[msg_index]);
+    midiMsg_t *msg = &(MsgBuffer[msg_index]);
 
     // Or the last flags into message
     msg->flags |= flags;
@@ -401,11 +401,11 @@ void midiio_OutputTxComplete_ISR(void)
         {
             // Yes, send next byte
             // TODO implement running status if configured to do such
-            hal_MidiTxSend_ISR(mmsg_GetMsgByte(OutputMessage, OutputTransmitIndex));
+            hal_MidiTxSend_ISR(MidiMsg_getByte(OutputMessage, OutputTransmitIndex));
             OutputTransmitIndex++;
 
             // More bytes left of this message?
-            if (OutputTransmitIndex >= mmsg_GetMsgLength(OutputMessage))
+            if (OutputTransmitIndex >= MidiMsg_getLength(OutputMessage))
             {
                 // No, clear message pointer
                 OutputMessage = NULL;
@@ -429,14 +429,14 @@ void midiio_OutputTxComplete_ISR(void)
                 {
                     // We found a message to transmit
                     OutputMessage = &(MsgBuffer[BufferTail]);
-                    hal_MidiTxSend_ISR(mmsg_GetMsgByte(OutputMessage, 0));
+                    hal_MidiTxSend_ISR(MidiMsg_getByte(OutputMessage, 0));
                     OutputTransmitIndex = 1;
 
                     // Let output loggers peek at the message
                     COMP_OUT_MESSAGE_ISR_HOOKS(OutputMessage);
 
                     // More bytes left of this message?
-                    if (OutputTransmitIndex >= mmsg_GetMsgLength(OutputMessage))
+                    if (OutputTransmitIndex >= MidiMsg_getLength(OutputMessage))
                     {
                         // No, clear message pointer
                         OutputMessage = NULL;

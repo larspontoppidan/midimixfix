@@ -210,7 +210,7 @@ static void SendMessage(uint8_t msg)
     msg_index = midiio_MsgNew_Main(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK, Messages[msg].MidiStatus);
 
     // Ensure we use the correct length
-    len = mmsg_dataCountGet(Messages[msg].MidiStatus);
+    len = MidiMsg_predictDataCount(Messages[msg].MidiStatus);
 
     // Put in the data
     for (i = 0; i < len; i++)
@@ -261,15 +261,15 @@ void genmsg_menuGetText(char *dest, uint8_t item)
     else
     {
         // Write the decoded message. Move from message to mmsg_t
-        mmsg_t msg;
+        midiMsg_t msg;
         msg.flags = MMSG_FLAG_MSG_OK;
         msg.midi_status = Messages[item-1].MidiStatus;
         msg.midi_data[0] = Messages[item-1].MidiParam[0];
         msg.midi_data[1] = Messages[item-1].MidiParam[1];
         msg.midi_data[2] = Messages[item-1].MidiParam[2];
-        msg.midi_data_len = mmsg_dataCountGet(msg.midi_status);
+        msg.midi_data_len = MidiMsg_predictDataCount(msg.midi_status);
 
-        mmsg_WriteMsgParsed(dest, &msg);
+        MidiMsg_writeParsed(dest, &msg);
     }
 }
 

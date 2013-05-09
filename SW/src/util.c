@@ -437,11 +437,11 @@ char *util_strWriteFormat_P(char *dest, PGM_P src, uint8_t data)
                 }
                 else
                 {
-                    dest = mmsg_WriteControllerName(dest, data);
+                    dest = MidiMsg_writeControllerName(dest, data);
                 }
                 break;
             case 'n':
-                dest = mmsg_WriteNoteName(dest, data);
+                dest = MidiMsg_writeNoteName(dest, data);
                 break;
             case 'O':
                 dest = util_strCpy_P(dest, data ? pstr_OnParentheses : pstr_OffParentheses);

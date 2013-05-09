@@ -13,7 +13,7 @@
 
 void    sdelay_Initialize(void);
 
-void    sdelay_HookMidiMsg_ISR(mmsg_t *msg);
+void    sdelay_HookMidiMsg_ISR(midiMsg_t *msg);
 void    sdelay_HookTick_ISR(void);
 void    sdelay_HookMainLoop(void);
 

@@ -44,7 +44,7 @@
 // The log buffer
 
 #define LOG_SIZE 32
-mmsg_t Log[LOG_SIZE];
+midiMsg_t Log[LOG_SIZE];
 uint8_t volatile LogIndexIsr;
 
 // Log controlling variables
@@ -111,7 +111,7 @@ static void mlog_WriteWindowBuffer(void)
         }
 
         // Write raw decode
-        ptr = mmsg_WriteMsgRaw(ptr, &(Log[index]));
+        ptr = MidiMsg_writeRaw(ptr, &(Log[index]));
 
         // Pad with spaces until we are at col 8, or at least one
         do
@@ -120,7 +120,7 @@ static void mlog_WriteWindowBuffer(void)
         } while (ptr < (char*)&(windowBuffer[row][8]));
 
         // Write parsed message
-        ptr = mmsg_WriteMsgParsed(ptr, &(Log[index]));
+        ptr = MidiMsg_writeParsed(ptr, &(Log[index]));
 
         // Write spaces for the rest of this row
         while (ptr < (char*)&(windowBuffer[row][BUFFER_MAX]))
@@ -314,7 +314,7 @@ void mlog_Initialize(void)
 }
 
 
-void mlog_handleMidiMsgIn_ISR(mmsg_t *msg)
+void mlog_handleMidiMsgIn_ISR(midiMsg_t *msg)
 {
     // Grab incoming message if enabled
 
@@ -323,7 +323,7 @@ void mlog_handleMidiMsgIn_ISR(mmsg_t *msg)
 
         if (LogIndexIsr < LOG_SIZE)
         {
-            memcpy(&(Log[LogIndexIsr]), msg, sizeof(mmsg_t));
+            memcpy(&(Log[LogIndexIsr]), msg, sizeof(midiMsg_t));
         }
         else
         {
@@ -340,7 +340,7 @@ void mlog_handleMidiMsgIn_ISR(mmsg_t *msg)
 }
 
 
-void mlog_handleMidiMsgOut_ISR(mmsg_t *msg)
+void mlog_handleMidiMsgOut_ISR(midiMsg_t *msg)
 {
     // Grab outgoing message if enabled
 
@@ -348,7 +348,7 @@ void mlog_handleMidiMsgOut_ISR(mmsg_t *msg)
     {
         if (LogIndexIsr < LOG_SIZE)
         {
-            memcpy(&(Log[LogIndexIsr]), msg, sizeof(mmsg_t));
+            memcpy(&(Log[LogIndexIsr]), msg, sizeof(midiMsg_t));
         }
         else
         {

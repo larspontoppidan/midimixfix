@@ -23,8 +23,8 @@
 #define COMP_INITIALIZE_HOOKS()   \
     do {                        \
     mlog_Initialize();          \
-    blockf_Initialize();        \
-    curvef_Initialize();        \
+    BlockFlt_initialize();        \
+    CurveFlt_initialize();        \
     genmsg_initialize();        \
     sdelay_Initialize();        \
     presets_initialize();       \
@@ -34,8 +34,8 @@
 #define COMP_MESSAGE_ISR_HOOKS(x) \
     do {                        \
     mlog_handleMidiMsgIn_ISR(x);   \
-    blockf_HookMidiMsg_ISR(x);   \
-    curvef_HookMidiMsg_ISR(x);   \
+    BlockFlt_hookMidiMsg_ISR(x);   \
+    CurveFlt_hookMidiMsg_ISR(x);   \
     sdelay_HookMidiMsg_ISR(x);   \
     } while (0)
 
@@ -55,7 +55,7 @@
 #define COMP_TICK_ISR_HOOKS()   \
     do {                        \
     mlog_handleTick_ISR();      \
-    blockf_HookTick_ISR();      \
+    BlockFlt_hookTick_ISR();      \
     sdelay_HookTick_ISR();      \
     } while (0)
 
@@ -63,8 +63,8 @@
 #define COMP_MAIN_LOOP_HOOKS()    \
     do {                        \
     mlog_handleMainLoop();        \
-    blockf_HookMainLoop();      \
-    curvef_HookMainLoop();      \
+    BlockFlt_hookMainLoop();      \
+    CurveFlt_hookMainLoop();      \
     sdelay_HookMainLoop();      \
     } while (0)
 

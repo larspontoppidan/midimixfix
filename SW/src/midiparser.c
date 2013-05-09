@@ -70,7 +70,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
 {
     uint8_t type;
 
-    type = mmsg_getDataType(x);
+    type = MidiMsg_getDataType(x);
 
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
@@ -98,7 +98,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                     x_used = TRUE;
 
                     // Predict expected length
-                    Input1State.expected_data_count = mmsg_dataCountGet(x);
+                    Input1State.expected_data_count = MidiMsg_predictDataCount(x);
 
                     // Can we use this for running status?
                     if ((type == MIDI_TYPE_CHAN_VOICE) ||
@@ -122,7 +122,7 @@ void mparser_handleInput1Rx_Isr(uint8_t x)
                                 Input1State.midi_status);
 
                         // Predict expected length
-                        Input1State.expected_data_count = mmsg_dataCountGet(Input1State.midi_status);
+                        Input1State.expected_data_count = MidiMsg_predictDataCount(Input1State.midi_status);
                     }
                     else
                     {
@@ -195,7 +195,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
 {
     uint8_t type;
 
-    type = mmsg_getDataType(x);
+    type = MidiMsg_getDataType(x);
 
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
@@ -223,7 +223,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                     x_used = TRUE;
 
                     // Predict expected length
-                    Input2State.expected_data_count = mmsg_dataCountGet(x);
+                    Input2State.expected_data_count = MidiMsg_predictDataCount(x);
 
                     // Can we use this for running status?
                     if ((type == MIDI_TYPE_CHAN_VOICE) ||
@@ -247,7 +247,7 @@ void mparser_handleInput2Rx_Isr(uint8_t x)
                                 Input2State.midi_status);
 
                         // Predict expected length
-                        Input2State.expected_data_count = mmsg_dataCountGet(Input2State.midi_status);
+                        Input2State.expected_data_count = MidiMsg_predictDataCount(Input2State.midi_status);
                     }
                     else
                     {

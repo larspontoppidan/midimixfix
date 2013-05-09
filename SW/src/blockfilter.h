@@ -11,18 +11,18 @@
 #include "common.h"
 #include "midimessage.h"
 
-void    blockf_Initialize(void);
+void    BlockFlt_initialize(void);
 
-void    blockf_HookMidiMsg_ISR(mmsg_t *msg);
-void    blockf_HookTick_ISR(void);
-void    blockf_HookMainLoop(void);
+void    BlockFlt_hookMidiMsg_ISR(midiMsg_t *msg);
+void    BlockFlt_hookTick_ISR(void);
+void    BlockFlt_hookMainLoop(void);
 
-uint8_t blockf_MenuGetSubCount(void);
-void    blockf_MenuGetText(char *dest, uint8_t item);
-uint8_t blockf_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
+uint8_t BlockFlt_menuGetSubCount(void);
+void    BlockFlt_menuGetText(char *dest, uint8_t item);
+uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
 
-uint8_t blockf_ConfigGetSize(void);
-void    blockf_ConfigSave(uint8_t *dest);
-void    blockf_ConfigLoad(uint8_t *dest);
+uint8_t BlockFlt_configGetSize(void);
+void    BlockFlt_configSave(uint8_t *dest);
+void    BlockFlt_configLoad(uint8_t *dest);
 
 #endif /* BLOCKFILTER_H_ */

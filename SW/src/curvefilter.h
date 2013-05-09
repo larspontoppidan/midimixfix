@@ -11,18 +11,18 @@
 #include "common.h"
 #include "midimessage.h"
 
-void curvef_Initialize(void);
+void CurveFlt_initialize(void);
 
-void curvef_HookMidiMsg_ISR(mmsg_t *msg);
-void curvef_HookMainLoop(void);
+void CurveFlt_hookMidiMsg_ISR(midiMsg_t *msg);
+void CurveFlt_hookMainLoop(void);
 
-uint8_t curvef_MenuGetSubCount(void);
-void    curvef_MenuGetText(char *dest, uint8_t item);
-uint8_t curvef_MenuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
+uint8_t CurveFlt_menuGetSubCount(void);
+void    CurveFlt_menuGetText(char *dest, uint8_t item);
+uint8_t CurveFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
 
-uint8_t curvef_ConfigGetSize(void);
-void    curvef_ConfigSave(uint8_t *dest);
-void    curvef_ConfigLoad(uint8_t *dest);
+uint8_t CurveFlt_configGetSize(void);
+void    CurveFlt_configSave(uint8_t *dest);
+void    CurveFlt_configLoad(uint8_t *dest);
 
 
 
