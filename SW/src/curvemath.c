@@ -218,7 +218,7 @@ int16_t curvem_CalculateHigh(int16_t gain, int8_t offset)
 
 // PUBLIC
 
-void CurveMath_reset(curveMath_t *curve)
+void curvemath_reset(curveMath_t *curve)
 {
     curve->Type = 0;
     curve->Gain = GAIN_FIXPOINT_SCALE;
@@ -226,25 +226,25 @@ void CurveMath_reset(curveMath_t *curve)
 }
 
 // Functions for displaying the curve spec
-char *CurveMath_writeLow(char *dest, curveMath_t *curve)
+char *curvemath_writeLow(char *dest, curveMath_t *curve)
 {
-    return Util_writeInt8LA(dest, curve->Offset);
+    return util_writeInt8LA(dest, curve->Offset);
 }
 
-char *CurveMath_writeType(char *dest, curveMath_t *curve)
+char *curvemath_writeType(char *dest, curveMath_t *curve)
 {
-    return Util_copyString_P(dest, CurveNames[curve->Type]);
+    return util_copyString_P(dest, CurveNames[curve->Type]);
 }
 
-char *CurveMath_writeHigh(char *dest, curveMath_t *curve)
+char *curvemath_writeHigh(char *dest, curveMath_t *curve)
 {
     int16_t high = curvem_CalculateHigh(curve->Gain, curve->Offset);
 
-    return Util_writeInt16LA(dest, high);
+    return util_writeInt16LA(dest, high);
 }
 
 // Applying curve on a value
-uint8_t CurveMath_apply(uint8_t x, curveMath_t *curve)
+uint8_t curvemath_apply(uint8_t x, curveMath_t *curve)
 {
     uint8_t ret;
     int16_t w;

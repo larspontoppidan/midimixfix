@@ -75,7 +75,7 @@ static int8_t UpdateState(uint8_t new_state)
     return delta;
 }
 
-void QuadDecode_initialize(void)
+void quaddecode_initialize(void)
 {
     CurrentState = 0;
     KnobDelta = 0;
@@ -83,7 +83,7 @@ void QuadDecode_initialize(void)
 }
 
 
-void QuadDecode_handleAChange_ISR(bool_t b_value, bool_t pushed)
+void quaddecode_handleAChange_ISR(bool_t b_value, bool_t pushed)
 {
     uint8_t new_state;
 
@@ -99,7 +99,7 @@ void QuadDecode_handleAChange_ISR(bool_t b_value, bool_t pushed)
     }
 }
 
-void QuadDecode_handleBChange_ISR(bool_t a_value, bool_t pushed)
+void quaddecode_handleBChange_ISR(bool_t a_value, bool_t pushed)
 {
     uint8_t new_state;
 
@@ -116,7 +116,7 @@ void QuadDecode_handleBChange_ISR(bool_t a_value, bool_t pushed)
 }
 
 
-int8_t QuadDecode_getPushedDelta_MAIN(void)
+int8_t quaddecode_getPushedDelta_MAIN(void)
 {
     int8_t delta = 0;
 
@@ -126,18 +126,18 @@ int8_t QuadDecode_getPushedDelta_MAIN(void)
         // Read out the delta value and reset it in one
         // atomic operation:
 
-        Hal_interruptsDisable();
+        hal_interruptsDisable();
 
         delta = KnobPushedDelta;
         KnobPushedDelta = 0u;
 
-        Hal_interruptsEnable();
+        hal_interruptsEnable();
     }
 
     return delta;
 }
 
-int8_t QuadDecode_getDelta_MAIN(void)
+int8_t quaddecode_getDelta_MAIN(void)
 {
     int8_t delta = 0;
 
@@ -147,12 +147,12 @@ int8_t QuadDecode_getDelta_MAIN(void)
         // Read out the delta value and reset it in one
         // atomic operation:
 
-        Hal_interruptsDisable();
+        hal_interruptsDisable();
 
         delta = KnobDelta;
         KnobDelta = 0u;
 
-        Hal_interruptsEnable();
+        hal_interruptsEnable();
     }
 
     return delta;

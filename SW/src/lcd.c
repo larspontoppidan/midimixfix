@@ -182,7 +182,7 @@ static bool_t checkReady()
 
 //////////////////////// Public functions ////////////////////////
 
-void Lcd_initialize(void)
+void lcd_initialize(void)
 {
     // Make data port inputs and control signals low outputs
 
@@ -239,18 +239,18 @@ void Lcd_initialize(void)
     // Thats it!
 }
 
-void Lcd_clear(void)
+void lcd_clear(void)
 {
     sendLcdCommand(CMD_CLEAR_DISP);
 }
 
-void Lcd_setCursor(uint8_t row, uint8_t column)
+void lcd_setCursor(uint8_t row, uint8_t column)
 {
     uint8_t addr;
 
     if ((row >= 4u) || (column >= 20u))
     {
-        Err_raise(ERR_MODULE_LCD, __LINE__);
+        err_raise(ERR_MODULE_LCD, __LINE__);
     }
     else
     {
@@ -270,13 +270,13 @@ void Lcd_setCursor(uint8_t row, uint8_t column)
     }
 }
 
-void Lcd_write(uint8_t c)
+void lcd_write(uint8_t c)
 {
     sendLcdData(c);
 }
 
 
-void Lcd_writeRepeat(uint8_t c, uint8_t repeat)
+void lcd_writeRepeat(uint8_t c, uint8_t repeat)
 {
     uint8_t i;
 
@@ -287,7 +287,7 @@ void Lcd_writeRepeat(uint8_t c, uint8_t repeat)
 }
 
 
-uint8_t Lcd_writeString(char const *s)
+uint8_t lcd_writeString(char const *s)
 {
     uint8_t data;
     uint8_t l = 0;
@@ -302,7 +302,7 @@ uint8_t Lcd_writeString(char const *s)
     return l;
 }
 
-uint8_t Lcd_writeString_P(char const *s)
+uint8_t lcd_writeString_P(char const *s)
 {
     uint8_t data;
     uint8_t l = 0;

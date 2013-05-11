@@ -22,6 +22,8 @@
 #include "errors.h"
 #include "generatemsg.h"
 
+#include "pedals.h"
+
 /// VARIABLES
 
 static bool_t UiSelectPushed = FALSE;
@@ -39,25 +41,25 @@ static void handleUi(void)
 {
     int8_t i;
 
-    i = QuadDecode_getDelta_MAIN();
+    i = quaddecode_getDelta_MAIN();
 
     if (i != 0u)
     {
-        Menu_handleUserTurns(i, FALSE);
+        menu_handleUserTurns(i, FALSE);
     }
 
-    i = QuadDecode_getPushedDelta_MAIN();
+    i = quaddecode_getPushedDelta_MAIN();
 
     if (i != 0u)
     {
-        Menu_handleUserTurns(i, TRUE);
+        menu_handleUserTurns(i, TRUE);
     }
 
-    if (Hal_buttonStatesGet() & HAL_BUTTON_SEL)
+    if (hal_buttonStatesGet() & HAL_BUTTON_SEL)
     {
         if (!UiSelectPushed)
         {
-            Menu_handleUserSelects();
+            menu_handleUserSelects();
             UiSelectPushed = TRUE;
         }
     }
@@ -66,11 +68,11 @@ static void handleUi(void)
         UiSelectPushed = FALSE;
     }
 
-    if (Hal_buttonStatesGet() & HAL_BUTTON_BACK)
+    if (hal_buttonStatesGet() & HAL_BUTTON_BACK)
     {
         if (!UiBackPushed)
         {
-            Menu_handleUserBacks();
+            menu_handleUserBacks();
             UiBackPushed = TRUE;
         }
     }
@@ -86,35 +88,54 @@ static void handleUi(void)
 int main(void)
 {
     // Initialize basic modules
-    Err_initialize();
-    Hal_initialize();
-    Lcd_initialize();
-    QuadDecode_initialize();
-    MidiIo_initialize();
-    MidiParser_initialize();
+    err_initialize();
+    hal_initialize();
+    lcd_initialize();
+    quaddecode_initialize();
+    midiio_initialize();
+    midiparser_initialize();
 
     // Initialize components
     COMP_HOOKS_INITIALIZE();
 
     // Interrupts can start firing now
-    Hal_interruptsEnable();
+    hal_interruptsEnable();
 
     // Let menu start up
-    Menu_initialize();
+    menu_initialize();
 
     // Turn on display
-    Hal_lcdBacklightSet(TRUE);
+    hal_lcdBacklightSet(TRUE);
+
+    uint8_t pre = 0;
 
     while(TRUE)
     {
+
         // Component hooks for main loop
         COMP_HOOKS_MAIN_LOOP();
 
         // We are handling menu aspects here. Call the menu hook
-        Menu_handleMainLoop();
+        menu_handleMainLoop();
 
         // Check if user did something on the controls
         handleUi();
+
+
+        // Blit latest ADC values
+        if (((pre++) & 15) == 0u)
+        {
+            uint8_t x;
+            err_debugPrintInt16(hal_adcGetValue_MAIN(0));
+
+            hal_debugSignalSet(TRUE);
+            x = ProcessAdcValue(-3, 55, hal_adcGetValue_MAIN(1));
+            hal_debugSignalSet(FALSE);
+
+            err_debugPrintInt16(x);
+            err_debugPrintInt16(0u);
+        }
+
     }
 
     return 0;

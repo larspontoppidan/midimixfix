@@ -57,7 +57,7 @@ typedef struct
 mparse_State_t Input1State;
 mparse_State_t Input2State;
 
-void MidiParser_initialize(void)
+void midiparser_initialize(void)
 {
     Input1State.Receiving = FALSE;
     Input1State.AllowRunningStatus = FALSE;
@@ -67,16 +67,16 @@ void MidiParser_initialize(void)
 }
 
 
-void MidiParser_handleInput1_ISR(uint8_t x)
+void midiparser_handleInput1_ISR(uint8_t x)
 {
     uint8_t type;
 
-    type = Midi_getDataType(x);
+    type = midi_getDataType(x);
 
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
     {
-        MidiIo_realtimeMsg_ISR(MMSG_SOURCE_INPUT1 | MMSG_FLAG_MSG_OK, x);
+        midiio_realtimeMsg_ISR(MIDIMSG_SOURCE_INPUT1 | MIDIMSG_FLAG_MSG_OK, x);
     }
     else
     {
@@ -94,12 +94,12 @@ void MidiParser_handleInput1_ISR(uint8_t x)
                 if (type != MIDI_TYPE_DATA)
                 {
                     // Yes, we'll use it for status, create new message
-                    Input1State.MsgIndex = MidiIo_msgNew_ISR(MMSG_SOURCE_INPUT1, x);
+                    Input1State.MsgIndex = midiio_msgNew_ISR(MIDIMSG_SOURCE_INPUT1, x);
                     Input1State.MidiStatus = x;
                     x_used = TRUE;
 
                     // Predict expected length
-                    Input1State.ExpectedDataCount = Midi_getDataCount(x);
+                    Input1State.ExpectedDataCount = midi_getDataCount(x);
 
                     // Can we use this for running status?
                     if ((type == MIDI_TYPE_CHAN_VOICE) ||
@@ -118,18 +118,18 @@ void MidiParser_handleInput1_ISR(uint8_t x)
                     if (Input1State.AllowRunningStatus)
                     {
                         // Ok, this is normal running status, create message
-                        Input1State.MsgIndex = MidiIo_msgNew_ISR(
-                                MMSG_SOURCE_INPUT1 | MMSG_FLAG_RUNNING_STATUS,
+                        Input1State.MsgIndex = midiio_msgNew_ISR(
+                                MIDIMSG_SOURCE_INPUT1 | MIDIMSG_FLAG_RUNNING_STATUS,
                                 Input1State.MidiStatus);
 
                         // Predict expected length
-                        Input1State.ExpectedDataCount = Midi_getDataCount(Input1State.MidiStatus);
+                        Input1State.ExpectedDataCount = midi_getDataCount(Input1State.MidiStatus);
                     }
                     else
                     {
                         // We can't do running status, so we don't know what status is!
                         // Add data as raw
-                        Input1State.MsgIndex = MidiIo_msgNew_ISR(MMSG_SOURCE_INPUT1 | MMSG_FLAG_RAW, 0);
+                        Input1State.MsgIndex = midiio_msgNew_ISR(MIDIMSG_SOURCE_INPUT1 | MIDIMSG_FLAG_RAW, 0);
 
                         Input1State.ExpectedDataCount = 0xFF;
                     }
@@ -142,7 +142,7 @@ void MidiParser_handleInput1_ISR(uint8_t x)
                 if (Input1State.ExpectedDataCount == Input1State.DataCount)
                 {
                     // Yep
-                    MidiIo_msgFinish_ISR(Input1State.MsgIndex, MMSG_FLAG_MSG_OK);
+                    midiio_msgFinish_ISR(Input1State.MsgIndex, MIDIMSG_FLAG_MSG_OK);
                     Input1State.Receiving = FALSE;
                 }
             }
@@ -153,7 +153,7 @@ void MidiParser_handleInput1_ISR(uint8_t x)
                 if (type == MIDI_TYPE_DATA)
                 {
                     // Yes, store it
-                    MidiIo_msgAddData_ISR(Input1State.MsgIndex, x);
+                    midiio_msgAddData_ISR(Input1State.MsgIndex, x);
                     Input1State.DataCount++;
                     x_used = TRUE;
 
@@ -161,7 +161,7 @@ void MidiParser_handleInput1_ISR(uint8_t x)
                     if (Input1State.ExpectedDataCount == Input1State.DataCount)
                     {
                         // Yep
-                        MidiIo_msgFinish_ISR(Input1State.MsgIndex, MMSG_FLAG_MSG_OK);
+                        midiio_msgFinish_ISR(Input1State.MsgIndex, MIDIMSG_FLAG_MSG_OK);
                         Input1State.Receiving = FALSE;
                     }
                 }
@@ -171,7 +171,7 @@ void MidiParser_handleInput1_ISR(uint8_t x)
 
                     // We must finish current message. Do so without the OK flag, since it didn't
                     // have the expected length
-                    MidiIo_msgFinish_ISR(Input1State.MsgIndex, 0u);
+                    midiio_msgFinish_ISR(Input1State.MsgIndex, 0u);
                     Input1State.Receiving = FALSE;
 
                     // We didn't use x at this point.
@@ -192,16 +192,16 @@ void MidiParser_handleInput1_ISR(uint8_t x)
 //       input state struct members without indirection. Since these functions are called by ISR
 //       and are always in the midi processing chain, they should be as lightweight as possible.
 //
-void MidiParser_handleInput2_ISR(uint8_t x)
+void midiparser_handleInput2_ISR(uint8_t x)
 {
     uint8_t type;
 
-    type = Midi_getDataType(x);
+    type = midi_getDataType(x);
 
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
     {
-        MidiIo_realtimeMsg_ISR(MMSG_SOURCE_INPUT2 | MMSG_FLAG_MSG_OK, x);
+        midiio_realtimeMsg_ISR(MIDIMSG_SOURCE_INPUT2 | MIDIMSG_FLAG_MSG_OK, x);
     }
     else
     {
@@ -219,12 +219,12 @@ void MidiParser_handleInput2_ISR(uint8_t x)
                 if (type != MIDI_TYPE_DATA)
                 {
                     // Yes, we'll use it for status, create new message
-                    Input2State.MsgIndex = MidiIo_msgNew_ISR(MMSG_SOURCE_INPUT2, x);
+                    Input2State.MsgIndex = midiio_msgNew_ISR(MIDIMSG_SOURCE_INPUT2, x);
                     Input2State.MidiStatus = x;
                     x_used = TRUE;
 
                     // Predict expected length
-                    Input2State.ExpectedDataCount = Midi_getDataCount(x);
+                    Input2State.ExpectedDataCount = midi_getDataCount(x);
 
                     // Can we use this for running status?
                     if ((type == MIDI_TYPE_CHAN_VOICE) ||
@@ -243,18 +243,18 @@ void MidiParser_handleInput2_ISR(uint8_t x)
                     if (Input2State.AllowRunningStatus)
                     {
                         // Ok, this is normal running status, create message
-                        Input2State.MsgIndex = MidiIo_msgNew_ISR(
-                                MMSG_SOURCE_INPUT2 | MMSG_FLAG_RUNNING_STATUS,
+                        Input2State.MsgIndex = midiio_msgNew_ISR(
+                                MIDIMSG_SOURCE_INPUT2 | MIDIMSG_FLAG_RUNNING_STATUS,
                                 Input2State.MidiStatus);
 
                         // Predict expected length
-                        Input2State.ExpectedDataCount = Midi_getDataCount(Input2State.MidiStatus);
+                        Input2State.ExpectedDataCount = midi_getDataCount(Input2State.MidiStatus);
                     }
                     else
                     {
                         // We can't do running status, so we don't know what status is!
                         // Add data as raw
-                        Input2State.MsgIndex = MidiIo_msgNew_ISR(MMSG_SOURCE_INPUT2 | MMSG_FLAG_RAW, 0);
+                        Input2State.MsgIndex = midiio_msgNew_ISR(MIDIMSG_SOURCE_INPUT2 | MIDIMSG_FLAG_RAW, 0);
 
                         Input2State.ExpectedDataCount = 0xFF;
                     }
@@ -267,7 +267,7 @@ void MidiParser_handleInput2_ISR(uint8_t x)
                 if (Input2State.ExpectedDataCount == Input2State.DataCount)
                 {
                     // Yep
-                    MidiIo_msgFinish_ISR(Input2State.MsgIndex, MMSG_FLAG_MSG_OK);
+                    midiio_msgFinish_ISR(Input2State.MsgIndex, MIDIMSG_FLAG_MSG_OK);
                     Input2State.Receiving = FALSE;
                 }
             }
@@ -278,7 +278,7 @@ void MidiParser_handleInput2_ISR(uint8_t x)
                 if (type == MIDI_TYPE_DATA)
                 {
                     // Yes, store it
-                    MidiIo_msgAddData_ISR(Input2State.MsgIndex, x);
+                    midiio_msgAddData_ISR(Input2State.MsgIndex, x);
                     Input2State.DataCount++;
                     x_used = TRUE;
 
@@ -286,7 +286,7 @@ void MidiParser_handleInput2_ISR(uint8_t x)
                     if (Input2State.ExpectedDataCount == Input2State.DataCount)
                     {
                         // Yep
-                        MidiIo_msgFinish_ISR(Input2State.MsgIndex, MMSG_FLAG_MSG_OK);
+                        midiio_msgFinish_ISR(Input2State.MsgIndex, MIDIMSG_FLAG_MSG_OK);
                         Input2State.Receiving = FALSE;
                     }
                 }
@@ -296,7 +296,7 @@ void MidiParser_handleInput2_ISR(uint8_t x)
 
                     // We must finish current message. Do so without the OK flag, since it didn't
                     // have the expected length
-                    MidiIo_msgFinish_ISR(Input2State.MsgIndex, 0u);
+                    midiio_msgFinish_ISR(Input2State.MsgIndex, 0u);
                     Input2State.Receiving = FALSE;
 
                     // We didn't use x at this point.

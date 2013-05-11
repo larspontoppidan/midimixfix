@@ -31,17 +31,17 @@ static char SetupString5[] PROGMEM = "Send runn.st.:";
 static uint8_t CursorPositions[6] = {0, 11, 11, 11, 11, 14};
 
 
-static char *ModeStrings[3] = {PStr_Discard, PStr_Through, PStr_Use};
+static char *ModeStrings[3] = {pstr_Discard, pstr_Through, pstr_Use};
 
 static bool_t SetupMenuVisible = FALSE;
 
 static bool_t TitleMenuVisible = FALSE;
 
-uint8_t MainMenu_titleGetSubCount(void)
+uint8_t mainmenu_titleGetSubCount(void)
 {
     if (TitleMenuVisible)
     {
-        return Err_getCount() + 1;
+        return err_getCount() + 1;
     }
     else
     {
@@ -49,31 +49,31 @@ uint8_t MainMenu_titleGetSubCount(void)
     }
 }
 
-void MainMenu_titleGetText(char *dest, uint8_t item)
+void mainmenu_titleGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        dest = Util_copyString_P(dest, TitleString0);
+        dest = util_copyString_P(dest, TitleString0);
 
-        dest = Util_writeInt8LA(dest, BUILD_VERSION_MAJOR);
+        dest = util_writeInt8LA(dest, BUILD_VERSION_MAJOR);
         (*dest++) = '.';
-        dest = Util_writeInt8LA(dest, BUILD_VERSION_MINOR);
+        dest = util_writeInt8LA(dest, BUILD_VERSION_MINOR);
         (*dest++) = ' ';
         (*dest++) = '-';
     }
     else if (item == 1)
     {
         // Build date
-        Util_copyString_P(dest, TitleString1);
+        util_copyString_P(dest, TitleString1);
     }
     else
     {
         // Errors
-        Err_print(dest, item - 2);
+        err_print(dest, item - 2);
     }
 }
 
-uint8_t MainMenu_titleHandleEvent(uint8_t item, uint8_t edit_mode,
+uint8_t mainmenu_titleHandleEvent(uint8_t item, uint8_t edit_mode,
                                 uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
@@ -99,71 +99,71 @@ uint8_t MainMenu_titleHandleEvent(uint8_t item, uint8_t edit_mode,
 
 // The general setup options
 
-uint8_t MainMenu_setupGetSubCount(void)
+uint8_t mainmenu_setupGetSubCount(void)
 {
     return SetupMenuVisible ? 5 : 0;
 }
 
-void MainMenu_setupGetText(char *dest, uint8_t item)
+void mainmenu_setupGetText(char *dest, uint8_t item)
 {
     uint8_t i;
 
     switch (item)
     {
     case 0: // General setup
-        Util_copyString_P(dest, SetupString0);
+        util_copyString_P(dest, SetupString0);
         if (SetupMenuVisible)
         {
-            dest = Util_copyString_P(dest + 16, PStr_MinusParentheses);
+            dest = util_copyString_P(dest + 16, pstr_MinusParentheses);
         }
         else
         {
-            dest = Util_copyString_P(dest + 16, PStr_PlusParentheses);
+            dest = util_copyString_P(dest + 16, pstr_PlusParentheses);
         }
         break;
 
     case 1: // In1
-        dest = Util_copyString_P(dest, SetupString1);
+        dest = util_copyString_P(dest, SetupString1);
 
-        i = MidiIo_getMode(MMSG_SOURCE_INPUT1, FALSE);
-        dest = Util_copyString_P(dest, ModeStrings[i]);
+        i = midiio_getMode(MIDIMSG_SOURCE_INPUT1, FALSE);
+        dest = util_copyString_P(dest, ModeStrings[i]);
 
         break;
 
     case 2: // In1 realtime:
-        dest = Util_copyString_P(dest, SetupString2);
+        dest = util_copyString_P(dest, SetupString2);
 
-        i = MidiIo_getMode(MMSG_SOURCE_INPUT1, TRUE);
-        dest = Util_copyString_P(dest, ModeStrings[i]);
+        i = midiio_getMode(MIDIMSG_SOURCE_INPUT1, TRUE);
+        dest = util_copyString_P(dest, ModeStrings[i]);
 
         break;
 
     case 3: // In2
-        dest = Util_copyString_P(dest, SetupString3);
+        dest = util_copyString_P(dest, SetupString3);
 
-        i = MidiIo_getMode(MMSG_SOURCE_INPUT2, FALSE);
-        dest = Util_copyString_P(dest, ModeStrings[i]);
+        i = midiio_getMode(MIDIMSG_SOURCE_INPUT2, FALSE);
+        dest = util_copyString_P(dest, ModeStrings[i]);
 
         break;
 
     case 4: // In2 realtime:
-        dest = Util_copyString_P(dest, SetupString4);
+        dest = util_copyString_P(dest, SetupString4);
 
-        i = MidiIo_getMode(MMSG_SOURCE_INPUT2, TRUE);
-        dest = Util_copyString_P(dest, ModeStrings[i]);
+        i = midiio_getMode(MIDIMSG_SOURCE_INPUT2, TRUE);
+        dest = util_copyString_P(dest, ModeStrings[i]);
 
         break;
 
     case 5: // Send runn. status
-        dest = Util_copyString_P(dest, SetupString5);
+        dest = util_copyString_P(dest, SetupString5);
 
-        if (MidiIo_getRunStatusMode())
+        if (midiio_getRunStatusMode())
         {
-            dest = Util_copyString_P(dest, PStr_On);
+            dest = util_copyString_P(dest, pstr_On);
         }
         else
         {
-            dest = Util_copyString_P(dest, PStr_Off);
+            dest = util_copyString_P(dest, pstr_Off);
         }
         break;
     }
@@ -171,7 +171,7 @@ void MainMenu_setupGetText(char *dest, uint8_t item)
 }
 
 
-uint8_t MainMenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
+uint8_t mainmenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
                                 uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
@@ -204,34 +204,34 @@ uint8_t MainMenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
         {
         case 1: // In1
             // Get current mode
-            i = MidiIo_getMode(MMSG_SOURCE_INPUT1, FALSE);
+            i = midiio_getMode(MIDIMSG_SOURCE_INPUT1, FALSE);
             // The available modes are 0, 1, 2. Add the knob delta with bounds
-            i = Util_boundedAddInt8(i, 0, 2, knob_delta);
+            i = util_boundedAddInt8(i, 0, 2, knob_delta);
             // Set new mode
-            MidiIo_setMode(i, MMSG_SOURCE_INPUT1, FALSE);
+            midiio_setMode(i, MIDIMSG_SOURCE_INPUT1, FALSE);
             break;
 
         case 2: // In1 realtime
-            i = MidiIo_getMode(MMSG_SOURCE_INPUT1, TRUE);
-            i = Util_boundedAddInt8(i, 0, 2, knob_delta);
-            MidiIo_setMode(i, MMSG_SOURCE_INPUT1, TRUE);
+            i = midiio_getMode(MIDIMSG_SOURCE_INPUT1, TRUE);
+            i = util_boundedAddInt8(i, 0, 2, knob_delta);
+            midiio_setMode(i, MIDIMSG_SOURCE_INPUT1, TRUE);
             break;
 
         case 3: // In2
-            i = MidiIo_getMode(MMSG_SOURCE_INPUT2, FALSE);
-            i = Util_boundedAddInt8(i, 0, 2, knob_delta);
-            MidiIo_setMode(i, MMSG_SOURCE_INPUT2, FALSE);
+            i = midiio_getMode(MIDIMSG_SOURCE_INPUT2, FALSE);
+            i = util_boundedAddInt8(i, 0, 2, knob_delta);
+            midiio_setMode(i, MIDIMSG_SOURCE_INPUT2, FALSE);
             break;
 
         case 4: // In2 realtime
-            i = MidiIo_getMode(MMSG_SOURCE_INPUT2, TRUE);
-            i = Util_boundedAddInt8(i, 0, 2, knob_delta);
-            MidiIo_setMode(i, MMSG_SOURCE_INPUT2, TRUE);
+            i = midiio_getMode(MIDIMSG_SOURCE_INPUT2, TRUE);
+            i = util_boundedAddInt8(i, 0, 2, knob_delta);
+            midiio_setMode(i, MIDIMSG_SOURCE_INPUT2, TRUE);
             break;
 
         case 5:
             // Set the running status
-            MidiIo_setRunStatusMode(knob_delta > 0 ? TRUE : FALSE);
+            midiio_setRunStatusMode(knob_delta > 0 ? TRUE : FALSE);
             break;
         }
     }
@@ -242,25 +242,25 @@ uint8_t MainMenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
 
 // Configuration store and load implementation
 
-uint8_t MainMenu_configGetSize(void)
+uint8_t mainmenu_configGetSize(void)
 {
     return 5;
 }
 
-void MainMenu_configSave(uint8_t *dest)
+void mainmenu_configSave(uint8_t *dest)
 {
-    *(dest++) = MidiIo_getMode(MMSG_SOURCE_INPUT1, FALSE);
-    *(dest++) = MidiIo_getMode(MMSG_SOURCE_INPUT1, TRUE);
-    *(dest++) = MidiIo_getMode(MMSG_SOURCE_INPUT2, FALSE);
-    *(dest++) = MidiIo_getMode(MMSG_SOURCE_INPUT2, TRUE);
-    *(dest++) = MidiIo_getRunStatusMode();
+    *(dest++) = midiio_getMode(MIDIMSG_SOURCE_INPUT1, FALSE);
+    *(dest++) = midiio_getMode(MIDIMSG_SOURCE_INPUT1, TRUE);
+    *(dest++) = midiio_getMode(MIDIMSG_SOURCE_INPUT2, FALSE);
+    *(dest++) = midiio_getMode(MIDIMSG_SOURCE_INPUT2, TRUE);
+    *(dest++) = midiio_getRunStatusMode();
 }
 
-void MainMenu_configLoad(uint8_t *dest)
+void mainmenu_configLoad(uint8_t *dest)
 {
-    MidiIo_setMode(*(dest++), MMSG_SOURCE_INPUT1, FALSE);
-    MidiIo_setMode(*(dest++), MMSG_SOURCE_INPUT1, TRUE);
-    MidiIo_setMode(*(dest++), MMSG_SOURCE_INPUT2, FALSE);
-    MidiIo_setMode(*(dest++), MMSG_SOURCE_INPUT2, TRUE);
-    MidiIo_setRunStatusMode(*(dest++));
+    midiio_setMode(*(dest++), MIDIMSG_SOURCE_INPUT1, FALSE);
+    midiio_setMode(*(dest++), MIDIMSG_SOURCE_INPUT1, TRUE);
+    midiio_setMode(*(dest++), MIDIMSG_SOURCE_INPUT2, FALSE);
+    midiio_setMode(*(dest++), MIDIMSG_SOURCE_INPUT2, TRUE);
+    midiio_setRunStatusMode(*(dest++));
 }

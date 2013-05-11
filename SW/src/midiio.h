@@ -17,24 +17,24 @@
 //  - transmission of output, if required
 
 
-void    MidiIo_initialize(void);
+void    midiio_initialize(void);
 
 
 // Allocate new message, returns msg_index
-uint8_t MidiIo_msgNew_ISR(uint8_t flags, uint8_t midi_status);
-uint8_t MidiIo_msgNew_MAIN(uint8_t flags, uint8_t midi_status);
+uint8_t midiio_msgNew_ISR(uint8_t flags, uint8_t midi_status);
+uint8_t midiio_msgNew_MAIN(uint8_t flags, uint8_t midi_status);
 
 // Add data to message
-void MidiIo_msgAddData_ISR(uint8_t msg_index, uint8_t midi_data);
+void midiio_msgAddData_ISR(uint8_t msg_index, uint8_t midi_data);
 
 // Indicate message is complete, and should be processed
-void MidiIo_msgFinish_ISR(uint8_t msg_index, uint8_t flags);
+void midiio_msgFinish_ISR(uint8_t msg_index, uint8_t flags);
 
 // Add realtime message (F8 <= midi_status <= FF)
-void MidiIo_realtimeMsg_ISR(uint8_t flags, uint8_t midi_status);
+void midiio_realtimeMsg_ISR(uint8_t flags, uint8_t midi_status);
 
 // Called by hal module at tx complete:
-void MidiIo_outputTxComplete_ISR(void);
+void midiio_outputTxComplete_ISR(void);
 
 
 // IO setup
@@ -43,11 +43,11 @@ void MidiIo_outputTxComplete_ISR(void);
 #define MIDIIO_MODE_THROUGH 1u
 #define MIDIIO_MODE_PROCESS 2u
 
-void    MidiIo_setMode(uint8_t mode, uint8_t source, bool_t rt);
-uint8_t MidiIo_getMode(uint8_t source, bool_t rt);
+void    midiio_setMode(uint8_t mode, uint8_t source, bool_t rt);
+uint8_t midiio_getMode(uint8_t source, bool_t rt);
 
-void    MidiIo_setRunStatusMode(bool_t x);
-bool_t  MidiIo_getRunStatusMode(void);
+void    midiio_setRunStatusMode(bool_t x);
+bool_t  midiio_getRunStatusMode(void);
 
 
 #endif /* MIDIIO_H_ */

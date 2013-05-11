@@ -280,30 +280,30 @@ static char *writeTargetName(char *dest, uint8_t target)
 {
     if (target == TARGET_DISCARD)
     {
-        dest = Util_copyString_P(dest, PSTR("discard"));
+        dest = util_copyString_P(dest, PSTR("discard"));
     }
     else if (target < 17)
     {
         // A channel
-        dest = Util_writeFormat_P(dest, PSTR("Chan %i"), target);
+        dest = util_writeFormat_P(dest, PSTR("Chan %i"), target);
     }
     else if (target < TARGET_FIRST_CC)
     {
         // A midi message type
-        dest = Midi_writeStatusName(dest, pgm_read_byte( & (targetStatusMap[target - 17])) );
+        dest = midi_writeStatusName(dest, pgm_read_byte( & (targetStatusMap[target - 17])) );
     }
     else if (target <= TARGET_LAST_CC)
     {
         // A controller
-        dest = Util_copyString_P(dest, PSTR("CC: "));
-        dest = Midi_writeControllerName(dest, target - TARGET_FIRST_CC);
+        dest = util_copyString_P(dest, PSTR("CC: "));
+        dest = midi_writeControllerName(dest, target - TARGET_FIRST_CC);
     }
 
     return dest;
 }
 
 
-void BlockFlt_initialize(void)
+void blockflt_initialize(void)
 {
     uint8_t i;
 
@@ -320,7 +320,7 @@ void BlockFlt_initialize(void)
 
 }
 
-void BlockFlt_handleMidiMsg_ISR(midiMsg_t *msg)
+void blockflt_handleMidiMsg_ISR(midiMsg_t *msg)
 {
     uint8_t midistatus = msg->MidiStatus;
 
@@ -408,7 +408,7 @@ void BlockFlt_handleMidiMsg_ISR(midiMsg_t *msg)
 
             if (discard)
             {
-                msg->Flags |= MMSG_FLAG_DISCARD;
+                msg->Flags |= MIDIMSG_FLAG_DISCARD;
                 break;
             }
 
@@ -416,28 +416,28 @@ void BlockFlt_handleMidiMsg_ISR(midiMsg_t *msg)
     }
 }
 
-void BlockFlt_handleTick_ISR(void)
+void blockflt_handleTick_ISR(void)
 {
     // TODO remove
 }
 
-void BlockFlt_handleMainLoop(void)
+void blockflt_handleMainLoop(void)
 {
     // TODO remove
 }
 
-uint8_t BlockFlt_menuGetSubCount(void)
+uint8_t blockflt_menuGetSubCount(void)
 {
     return RuleCount * 2;
 }
 
-void BlockFlt_menuGetText(char *dest, uint8_t item)
+void blockflt_menuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
         // Write first menu line
-        Util_copyString_P(dest, TitleString);
-        Util_writeNumberParentheses(dest + 14, RuleCount);
+        util_copyString_P(dest, TitleString);
+        util_writeNumberParentheses(dest + 14, RuleCount);
     }
     else
     {
@@ -446,7 +446,7 @@ void BlockFlt_menuGetText(char *dest, uint8_t item)
         if ((item & 1) == 1)
         {
             // First line of a block filter, write: "InX ..."
-            dest = PStr_writeInX(dest, RuleConfigs[c].Input);
+            dest = pstr_writeInX(dest, RuleConfigs[c].Input);
             (*dest++) = ' ';
 
             // Write input target
@@ -455,7 +455,7 @@ void BlockFlt_menuGetText(char *dest, uint8_t item)
         else
         {
             // Second line of a block filter, write " to "
-            dest = Util_copyString_P(dest, PSTR(" to "));
+            dest = util_copyString_P(dest, PSTR(" to "));
 
             // Write output target
             dest = writeTargetName(dest, RuleConfigs[c].TargetOut);
@@ -463,14 +463,14 @@ void BlockFlt_menuGetText(char *dest, uint8_t item)
             // Notify user if this config is invalid
             if (Rules[c].Mode == MODE_OFF)
             {
-                dest = Util_copyString_P(dest, PSTR(" ERR!"));
+                dest = util_copyString_P(dest, PSTR(" ERR!"));
             }
         }
 
     }
 }
 
-uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t blockflt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 
@@ -498,7 +498,7 @@ uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
             if ((user_event == MENU_EVENT_TURN) || (user_event == MENU_EVENT_TURN_PUSH))
             {
                 // Modify filter count
-                RuleCount = Util_boundedAddInt8(RuleCount, 0, RULE_MAX, knob_delta);
+                RuleCount = util_boundedAddInt8(RuleCount, 0, RULE_MAX, knob_delta);
 
                 // Keep cursor at position, and notify menu that this may alter our submenu
                 ret = 17 | MENU_UPDATE_ALL;
@@ -531,14 +531,14 @@ uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
                 {
                     ret = 0;
                     RuleConfigs[c].Input =
-                            Util_boundedAddInt8(RuleConfigs[c].Input, 1, 3, knob_delta);
+                            util_boundedAddInt8(RuleConfigs[c].Input, 1, 3, knob_delta);
                 }
                 else if (edit_mode == 2)
                 {
                     ret = 4 | MENU_UPDATE_ALL;
 
                     RuleConfigs[c].TargetIn =
-                            Util_boundedAddInt8(RuleConfigs[c].TargetIn, 1, TARGET_MAX, knob_delta);
+                            util_boundedAddInt8(RuleConfigs[c].TargetIn, 1, TARGET_MAX, knob_delta);
 
                 }
 
@@ -563,7 +563,7 @@ uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
                     ret = 5;
 
                     RuleConfigs[c].TargetOut =
-                            Util_boundedAddInt8(RuleConfigs[c].TargetOut, 0, TARGET_MAX, knob_delta);
+                            util_boundedAddInt8(RuleConfigs[c].TargetOut, 0, TARGET_MAX, knob_delta);
 
                     processRuleConfig(c);
                 }
@@ -576,19 +576,19 @@ uint8_t BlockFlt_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
 
 // Configuration store and load implementation
 
-uint8_t BlockFlt_configGetSize(void)
+uint8_t blockflt_configGetSize(void)
 {
     return 1 + RULE_MAX * sizeof(ruleConfig_t);
 }
 
-void BlockFlt_configSave(uint8_t *dest)
+void blockflt_configSave(uint8_t *dest)
 {
     *(dest++) = RuleCount;
 
     memcpy(dest, &(RuleConfigs[0]), RULE_MAX * sizeof(ruleConfig_t));
 }
 
-void BlockFlt_configLoad(uint8_t *dest)
+void blockflt_configLoad(uint8_t *dest)
 {
     uint8_t new_count;
     uint8_t i;

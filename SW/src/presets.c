@@ -89,11 +89,11 @@ static void calculateRecordSize(void)
 
     for (i = 0; i < MENUE_ENTITY_COUNT; i++)
     {
-        size = MenuEnts_configGetSize(i);
+        size = menuents_configGetSize(i);
 
         if (size > PRESETS_BUFFER_SIZE)
         {
-            Err_raise(ERR_MODULE_PRESETS, __LINE__); // Whoops, presets buffer too small!!
+            err_raise(ERR_MODULE_PRESETS, __LINE__); // Whoops, presets buffer too small!!
         }
 
         PresetRecordSize += size;
@@ -115,7 +115,7 @@ static void fillEepromHeader(eeprom_header_t *header)
 
     for (i = 0; i < MENUE_ENTITY_COUNT; i++)
     {
-        header->EntitySizes[i] = MenuEnts_configGetSize(i);
+        header->EntitySizes[i] = menuents_configGetSize(i);
     }
 }
 
@@ -173,8 +173,8 @@ static void savePreset(uint8_t slot)
     for (i = 0; i < MENUE_ENTITY_COUNT; i++)
     {
         // Let entity write its data into our buffer
-        MenuEnts_configSave(i, PresetsBuffer);
-        size = MenuEnts_configGetSize(i);
+        menuents_configSave(i, PresetsBuffer);
+        size = menuents_configGetSize(i);
 
         for (j = 0; j < size; j++)
         {
@@ -212,7 +212,7 @@ static void loadPreset(uint8_t slot)
 
     for (i = 0; i < MENUE_ENTITY_COUNT; i++)
     {
-        size = MenuEnts_configGetSize(i);
+        size = menuents_configGetSize(i);
 
         for (j = 0; j < size; j++)
         {
@@ -230,7 +230,7 @@ static void loadPreset(uint8_t slot)
 
         for (i = 0; i < MENUE_ENTITY_COUNT; i++)
         {
-            size = MenuEnts_configGetSize(i);
+            size = menuents_configGetSize(i);
 
             for (j = 0; j < size; j++)
             {
@@ -238,7 +238,7 @@ static void loadPreset(uint8_t slot)
                 addr++;
             }
 
-            MenuEnts_configLoad(i, PresetsBuffer);
+            menuents_configLoad(i, PresetsBuffer);
         }
 
         // Thats it!
@@ -248,7 +248,7 @@ static void loadPreset(uint8_t slot)
     }
     else
     {
-        Err_raise(ERR_MODULE_PRESETS, __LINE__); // Unexpected checksum error in EEPROM!
+        err_raise(ERR_MODULE_PRESETS, __LINE__); // Unexpected checksum error in EEPROM!
     }
 }
 
@@ -273,8 +273,8 @@ static bool_t checkForChanges(uint8_t slot)
     for (i = 0; (i < MENUE_ENTITY_COUNT) && (changes == FALSE); i++)
     {
         // Let entity write its data into our buffer
-        MenuEnts_configSave(i, PresetsBuffer);
-        size = MenuEnts_configGetSize(i);
+        menuents_configSave(i, PresetsBuffer);
+        size = menuents_configGetSize(i);
 
         for (j = 0; (j < size) && (changes == FALSE); j++)
         {
@@ -301,7 +301,7 @@ static bool_t checkForChanges(uint8_t slot)
 // initialization procedure. During initialization, a preset may be loaded into
 // the components. If a component is initialized later, it may overwrite with
 // default values.
-void Presets_initialize(void)
+void presets_initialize(void)
 {
     CurrentPreset = 1; // TODO implement having no preset loaded / saved, and implement a load defaults!
     ConfigModified = FALSE;
@@ -338,7 +338,7 @@ void Presets_initialize(void)
 }
 
 
-void Presets_notifyConfigMayChange(uint8_t entity_index)
+void presets_notifyConfigMayChange(uint8_t entity_index)
 {
     UNUSED(entity_index);
 
@@ -349,19 +349,19 @@ void Presets_notifyConfigMayChange(uint8_t entity_index)
 // MENU implementation
 
 
-uint8_t Presets_menuGetSubCount(void)
+uint8_t presets_menuGetSubCount(void)
 {
     return MenuVisible ? 2 : 0;
 }
 
-void Presets_menuGetText(char *dest, uint8_t item)
+void presets_menuGetText(char *dest, uint8_t item)
 {
     switch (item)
     {
     case 0:
         // Write ex.: "Preset 10 (mod) (+)"
-        Util_copyString_P(dest, StrTitle);
-        Util_writeInt8LA(dest + 7, CurrentPreset);
+        util_copyString_P(dest, StrTitle);
+        util_writeInt8LA(dest + 7, CurrentPreset);
 
         // Check if any of the menu entities config has changed
         if (ConfigMustBeChecked)
@@ -372,35 +372,35 @@ void Presets_menuGetText(char *dest, uint8_t item)
 
         if (ConfigModified)
         {
-            Util_copyString_P(dest + ((CurrentPreset > 9) ? 10 : 9), StrMod);
+            util_copyString_P(dest + ((CurrentPreset > 9) ? 10 : 9), StrMod);
         }
 
         if (MenuVisible)
         {
-            dest = Util_copyString_P(dest + 16, PStr_MinusParentheses);
+            dest = util_copyString_P(dest + 16, pstr_MinusParentheses);
         }
         else
         {
-            dest = Util_copyString_P(dest + 16, PStr_PlusParentheses);
+            dest = util_copyString_P(dest + 16, pstr_PlusParentheses);
         }
         break;
 
     case 1: // Load
-        dest = Util_copyString_P(dest, StrLoad);
+        dest = util_copyString_P(dest, StrLoad);
 
         if (MenuSelected != 0)
         {
-            Util_writeInt8LA(dest, MenuSelected);
+            util_writeInt8LA(dest, MenuSelected);
             //util_strCpy_P(dest + 2, presets_StrBackAborts);
         }
         break;
 
     case 2: // Save
-        dest = Util_copyString_P(dest, StrSave);
+        dest = util_copyString_P(dest, StrSave);
 
         if (MenuSelected != 0)
         {
-            Util_writeInt8LA(dest, MenuSelected);
+            util_writeInt8LA(dest, MenuSelected);
             //util_strCpy_P(dest + 2, presets_StrBackAborts);
         }
         break;
@@ -408,7 +408,7 @@ void Presets_menuGetText(char *dest, uint8_t item)
 
 }
 
-uint8_t Presets_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t presets_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 
@@ -457,7 +457,7 @@ uint8_t Presets_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_ev
     {
         if (edit_mode == 1)
         {
-            MenuSelected = Util_boundedAddInt8(MenuSelected, 1, PRESET_SLOTS_COUNT, knob_delta);
+            MenuSelected = util_boundedAddInt8(MenuSelected, 1, PRESET_SLOTS_COUNT, knob_delta);
             ret = 5;
         }
     }

@@ -14,13 +14,13 @@
 #include <avr/pgmspace.h>
 
 
-uint8_t MidiMsg_getLength(midiMsg_t *msg)
+uint8_t midimsg_getLength(midiMsg_t *msg)
 {
     uint8_t ret;
 
     ret = msg->DataLen;
 
-    if ((msg->Flags & MMSG_FLAG_RAW) == 0u)
+    if ((msg->Flags & MIDIMSG_FLAG_RAW) == 0u)
     {
         ret++;
     }
@@ -29,11 +29,11 @@ uint8_t MidiMsg_getLength(midiMsg_t *msg)
 }
 
 
-uint8_t MidiMsg_getByte(midiMsg_t *msg, uint8_t index)
+uint8_t midimsg_getByte(midiMsg_t *msg, uint8_t index)
 {
     uint8_t ret;
 
-    if ((msg->Flags & MMSG_FLAG_RAW) == 0u)
+    if ((msg->Flags & MIDIMSG_FLAG_RAW) == 0u)
     {
         // Not a raw type message, index 0 is status:
 
@@ -54,7 +54,7 @@ uint8_t MidiMsg_getByte(midiMsg_t *msg, uint8_t index)
     else
     {
         ret = 0u;
-        Err_raise(ERR_MODULE_MMSG, __LINE__);;
+        err_raise(ERR_MODULE_MMSG, __LINE__);;
     }
 
     return ret;
@@ -68,7 +68,7 @@ uint8_t MidiMsg_getByte(midiMsg_t *msg, uint8_t index)
 // "SS.AABB"    Two data bytes
 // "AABBCCDDEE" Raw message with 5 bytes
 
-char *MidiMsg_writeRaw(char *dest, midiMsg_t *msg)
+char *midimsg_writeRaw(char *dest, midiMsg_t *msg)
 {
     if (msg->Flags == 0u)
     {
@@ -80,13 +80,13 @@ char *MidiMsg_writeRaw(char *dest, midiMsg_t *msg)
         uint8_t i;
 
         // Do we have a status?
-        if (msg->Flags & MMSG_FLAG_MSG_OK)
+        if (msg->Flags & MIDIMSG_FLAG_MSG_OK)
         {
             // Write it
-            dest = Util_writeHex(dest, msg->MidiStatus);
+            dest = util_writeHex(dest, msg->MidiStatus);
 
             // Did we use running status?
-            if (msg->Flags & MMSG_FLAG_RUNNING_STATUS)
+            if (msg->Flags & MIDIMSG_FLAG_RUNNING_STATUS)
             {
                 *(dest++) = '!';
             }
@@ -99,7 +99,7 @@ char *MidiMsg_writeRaw(char *dest, midiMsg_t *msg)
         // Write all the data
         for (i = 0u; i < msg->DataLen; i++)
         {
-            dest = Util_writeHex(dest, msg->Data[i]);
+            dest = util_writeHex(dest, msg->Data[i]);
         }
     }
 
@@ -107,20 +107,20 @@ char *MidiMsg_writeRaw(char *dest, midiMsg_t *msg)
 }
 
 
-char *MidiMsg_writeParsed(char *dest, midiMsg_t *msg)
+char *midimsg_writeParsed(char *dest, midiMsg_t *msg)
 {
     if (msg->Flags == 0u)
     {
         // Nothing here
         *(dest++) = '-';
     }
-    else if (msg->Flags & MMSG_FLAG_RAW)
+    else if (msg->Flags & MIDIMSG_FLAG_RAW)
     {
-        dest = Util_copyString_P(dest, PSTR("Raw data"));
+        dest = util_copyString_P(dest, PSTR("Raw data"));
     }
-    else if ((msg->Flags & MMSG_FLAG_MSG_OK) == 0u)
+    else if ((msg->Flags & MIDIMSG_FLAG_MSG_OK) == 0u)
     {
-        dest = Util_copyString_P(dest, PSTR("Bad length"));
+        dest = util_copyString_P(dest, PSTR("Bad length"));
     }
     else
     {
@@ -130,19 +130,19 @@ char *MidiMsg_writeParsed(char *dest, midiMsg_t *msg)
         if (status >= 0xF0)
         {
             // Its a system status<
-            dest = Midi_writeStatusName(dest, status);
+            dest = midi_writeStatusName(dest, status);
 
             if ((status == 0xF1) || (status == 0xF2) || (status == 0xF3))
             {
                 // We have one parameter (or more)
                 *(dest++) = ' ';
-                dest = Util_writeInt8LA(dest, msg->Data[0]);
+                dest = util_writeInt8LA(dest, msg->Data[0]);
 
                 if (status == 0xF2)
                 {
                     // We have two parameters
                     *(dest++) = ' ';
-                    dest = Util_writeInt8LA(dest, msg->Data[1]);
+                    dest = util_writeInt8LA(dest, msg->Data[1]);
                 }
             }
         }
@@ -155,9 +155,9 @@ char *MidiMsg_writeParsed(char *dest, midiMsg_t *msg)
             // Write channel number followed by midi status
             *(dest++) = 'C';
             *(dest++) = 'h';
-            dest = Util_writeInt8LA(dest, (status & 0x0F)+1);
+            dest = util_writeInt8LA(dest, (status & 0x0F)+1);
             *(dest++) = ' ';
-            dest = Midi_writeStatusName(dest, status);
+            dest = midi_writeStatusName(dest, status);
 
             switch (status & 0xF0)
             {
@@ -165,28 +165,28 @@ char *MidiMsg_writeParsed(char *dest, midiMsg_t *msg)
             case MIDI_STATUS_NOTE_OFF:
             case MIDI_STATUS_KEY_ATOUCH:
                 // Decode note number
-                dest = Midi_writeNoteName(dest, msg->Data[0]);
+                dest = midi_writeNoteName(dest, msg->Data[0]);
                 *(dest++) = ' ';
 
                 // Add velocity / pressure
-                dest = Util_writeInt8LA(dest, msg->Data[1]);
+                dest = util_writeInt8LA(dest, msg->Data[1]);
                 break;
 
             case MIDI_STATUS_CTRL_CHANGE:
                 // Write controller name=value
-                dest = Midi_writeControllerName(dest, msg->Data[0]);
+                dest = midi_writeControllerName(dest, msg->Data[0]);
                 *(dest++) = '=';
-                dest = Util_writeInt8LA(dest, msg->Data[1]);
+                dest = util_writeInt8LA(dest, msg->Data[1]);
                 break;
 
             case MIDI_STATUS_PROG_CHANGE:
                 // Write new prog name
-                dest = Util_writeInt16LA(dest, msg->Data[0] + 1);
+                dest = util_writeInt16LA(dest, msg->Data[0] + 1);
                 break;
 
             case MIDI_STATUS_CHAN_ATOUCH:
                 // Write value
-                dest = Util_writeInt8LA(dest, msg->Data[0]);
+                dest = util_writeInt8LA(dest, msg->Data[0]);
                 break;
 
             case MIDI_STATUS_PITCH_WHEEL:
@@ -195,7 +195,7 @@ char *MidiMsg_writeParsed(char *dest, midiMsg_t *msg)
                 sw |= msg->Data[1] << 7u; // MS 7 bits
                 sw -= 8192;
 
-                dest = Util_writeInt16(dest, sw);
+                dest = util_writeInt16(dest, sw);
                 break;
             }
         }

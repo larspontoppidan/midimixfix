@@ -112,7 +112,7 @@ static void writeWindowBuffer(void)
         }
 
         // Write raw decode
-        ptr = MidiMsg_writeRaw(ptr, &(Log[index]));
+        ptr = midimsg_writeRaw(ptr, &(Log[index]));
 
         // Pad with spaces until we are at col 8, or at least one
         do
@@ -121,7 +121,7 @@ static void writeWindowBuffer(void)
         } while (ptr < (char*)&(WindowBuffer[row][8]));
 
         // Write parsed message
-        ptr = MidiMsg_writeParsed(ptr, &(Log[index]));
+        ptr = midimsg_writeParsed(ptr, &(Log[index]));
 
         // Write spaces for the rest of this row
         while (ptr < (char*)&(WindowBuffer[row][BUFFER_MAX]))
@@ -189,7 +189,7 @@ static void writeDisplay(void)
 
     for (row = 0; row < LCD_ROWS; row++)
     {
-        Lcd_setCursor(row, 0);
+        lcd_setCursor(row, 0);
 
         // Blit data from window buffer to lcd
         for (col = 0; col < LCD_COLUMNS; col++)
@@ -198,45 +198,45 @@ static void writeDisplay(void)
             i = col + ColOffset;
             if ((i >= 0) && (i < BUFFER_MAX))
             {
-                Lcd_write(WindowBuffer[row][i]);
+                lcd_write(WindowBuffer[row][i]);
             }
             else
             {
-                Lcd_write(' ');
+                lcd_write(' ');
             }
         }
     }
 
-    Lcd_setCursor(0,LCD_COLUMNS - 2);
+    lcd_setCursor(0,LCD_COLUMNS - 2);
 
     if (LogMode == LOG_MODE_ACTIVE)
     {
         // We are enabled, write arrow
-        Lcd_write(LCD_CHAR_RIGHTARROW);
+        lcd_write(LCD_CHAR_RIGHTARROW);
     }
     else
     {
         // First pause mode, write || symbol
-        Lcd_write('"');
+        lcd_write('"');
     }
 
     if (LogInNotOut)
     {
-        Lcd_write('I');
+        lcd_write('I');
     }
     else
     {
-        Lcd_write('O');
+        lcd_write('O');
     }
 
     // Set cursor depending on mode
     if (LogMode == LOG_MODE_PAUSED2)
     {
-        Lcd_setCursor(0, LCD_COLUMNS-1);
+        lcd_setCursor(0, LCD_COLUMNS-1);
     }
     else
     {
-        Lcd_setCursor(LCD_ROWS-1, LCD_COLUMNS-1);
+        lcd_setCursor(LCD_ROWS-1, LCD_COLUMNS-1);
     }
 }
 
@@ -253,7 +253,7 @@ static void handleUserEvent(uint8_t user_event, int8_t knob_delta)
         if ((LogMode == LOG_MODE_ACTIVE) || (LogMode == LOG_MODE_PAUSED1))
         {
             // Move row
-            RowOffset = Util_boundedAddInt8(RowOffset, 0, LOG_SIZE - LCD_ROWS, -knob_delta);
+            RowOffset = util_boundedAddInt8(RowOffset, 0, LOG_SIZE - LCD_ROWS, -knob_delta);
         }
         else if (LogMode == LOG_MODE_PAUSED2)
         {
@@ -275,7 +275,7 @@ static void handleUserEvent(uint8_t user_event, int8_t knob_delta)
         if ((LogMode == LOG_MODE_ACTIVE) || (LogMode == LOG_MODE_PAUSED1))
         {
             // Move col
-            ColOffset = Util_boundedAddInt8(ColOffset, -10, 10, knob_delta);
+            ColOffset = util_boundedAddInt8(ColOffset, -10, 10, knob_delta);
         }
     }
     else if (user_event == MENU_EVENT_SELECT)
@@ -303,7 +303,7 @@ static void handleUserEvent(uint8_t user_event, int8_t knob_delta)
 ////// Function hooks
 
 
-void MidiLog_initialize(void)
+void midilog_initialize(void)
 {
     resetPan();
 
@@ -315,7 +315,7 @@ void MidiLog_initialize(void)
 }
 
 
-void MidiLog_handleMidiMsgIn_ISR(midiMsg_t *msg)
+void midilog_handleMidiMsgIn_ISR(midiMsg_t *msg)
 {
     // Grab incoming message if enabled
 
@@ -328,7 +328,7 @@ void MidiLog_handleMidiMsgIn_ISR(midiMsg_t *msg)
         }
         else
         {
-            Err_raise(ERR_MODULE_MLOG, __LINE__);
+            err_raise(ERR_MODULE_MLOG, __LINE__);
         }
 
         LogIndexIsr++;
@@ -341,7 +341,7 @@ void MidiLog_handleMidiMsgIn_ISR(midiMsg_t *msg)
 }
 
 
-void MidiLog_handleMidiMsgOut_ISR(midiMsg_t *msg)
+void midilog_handleMidiMsgOut_ISR(midiMsg_t *msg)
 {
     // Grab outgoing message if enabled
 
@@ -353,7 +353,7 @@ void MidiLog_handleMidiMsgOut_ISR(midiMsg_t *msg)
         }
         else
         {
-            Err_raise(ERR_MODULE_MLOG, __LINE__);
+            err_raise(ERR_MODULE_MLOG, __LINE__);
         }
 
         LogIndexIsr++;
@@ -365,12 +365,12 @@ void MidiLog_handleMidiMsgOut_ISR(midiMsg_t *msg)
     }
 }
 
-void MidiLog_handleTick_ISR(void)
+void midilog_handleTick_ISR(void)
 {
 
 }
 
-void MidiLog_handleMainLoop(void)
+void midilog_handleMainLoop(void)
 {
     if (LogMode != LOG_MODE_OFF)
     {
@@ -399,20 +399,20 @@ void MidiLog_handleMainLoop(void)
 
 /// Menu implementation
 
-uint8_t MidiLog_menuGetSubCount(void)
+uint8_t midilog_menuGetSubCount(void)
 {
     return 0u;
 }
 
-void MidiLog_menuGetText(char *dest, uint8_t item)
+void midilog_menuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        Util_copyString_P(dest, PStrTitle);
+        util_copyString_P(dest, PStrTitle);
     }
 }
 
-uint8_t MidiLog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t midilog_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 

@@ -10,15 +10,15 @@
 
 
 // Translating aspects of a message:
-uint8_t Midi_getDataType(uint8_t x);
-char *Midi_writeNoteName(char *dest, uint8_t note_number);
-char *Midi_writeControllerName(char *dest, uint8_t ctrl);
-char *Midi_writeStatusName(char *dest, uint8_t status);
+uint8_t midi_getDataType(uint8_t x);
+char *midi_writeNoteName(char *dest, uint8_t note_number);
+char *midi_writeControllerName(char *dest, uint8_t ctrl);
+char *midi_writeStatusName(char *dest, uint8_t status);
 
-uint8_t Midi_getDataCount(uint8_t midi_status);
+uint8_t midi_getDataCount(uint8_t midi_status);
 
 // Is a certain key white or black on the keyboard?
-bool_t Midi_isKeyBlack(uint8_t key);
+bool_t midi_isKeyBlack(uint8_t key);
 
 ////////////////////// Midi Message definitions ///////////////////////////
 

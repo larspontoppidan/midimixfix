@@ -16,22 +16,22 @@
 
 // The title menu entity
 
-uint8_t MainMenu_titleGetSubCount(void);
-void    MainMenu_titleGetText(char *dest, uint8_t item);
-uint8_t MainMenu_titleHandleEvent(uint8_t item, uint8_t edit_mode,
+uint8_t mainmenu_titleGetSubCount(void);
+void    mainmenu_titleGetText(char *dest, uint8_t item);
+uint8_t mainmenu_titleHandleEvent(uint8_t item, uint8_t edit_mode,
                                 uint8_t user_event, int8_t knob_delta);
 
 // The general setup options
 
-uint8_t MainMenu_setupGetSubCount(void);
-void    MainMenu_setupGetText(char *dest, uint8_t item);
-uint8_t MainMenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
+uint8_t mainmenu_setupGetSubCount(void);
+void    mainmenu_setupGetText(char *dest, uint8_t item);
+uint8_t mainmenu_setupHandleEvent(uint8_t item, uint8_t edit_mode,
                                 uint8_t user_event, int8_t knob_delta);
 
 
-uint8_t MainMenu_configGetSize(void);
-void    MainMenu_configSave(uint8_t *dest);
-void    MainMenu_configLoad(uint8_t *dest);
+uint8_t mainmenu_configGetSize(void);
+void    mainmenu_configSave(uint8_t *dest);
+void    mainmenu_configLoad(uint8_t *dest);
 
 
 #endif /* MAINMENU_H_ */

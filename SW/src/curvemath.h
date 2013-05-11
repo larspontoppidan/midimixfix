@@ -22,15 +22,15 @@ typedef struct
 } curveMath_t;
 
 
-void CurveMath_reset(curveMath_t *curve);
+void curvemath_reset(curveMath_t *curve);
 
 // Functions for displaying the curve spec
-char *CurveMath_writeLow(char *dest, curveMath_t *curve);
-char *CurveMath_writeType(char *dest, curveMath_t *curve);
-char *CurveMath_writeHigh(char *dest, curveMath_t *curve);
+char *curvemath_writeLow(char *dest, curveMath_t *curve);
+char *curvemath_writeType(char *dest, curveMath_t *curve);
+char *curvemath_writeHigh(char *dest, curveMath_t *curve);
 
 // Applying curve on a value
-uint8_t CurveMath_apply(uint8_t x, curveMath_t *curve);
+uint8_t curvemath_apply(uint8_t x, curveMath_t *curve);
 
 
 

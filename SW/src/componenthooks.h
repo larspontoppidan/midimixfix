@@ -22,50 +22,50 @@
 
 #define COMP_HOOKS_INITIALIZE()  \
     do {                         \
-    MidiLog_initialize();        \
-    BlockFlt_initialize();       \
-    CurveFlt_initialize();       \
-    GenMsg_initialize();         \
-    SuperDly_initialize();       \
-    Presets_initialize();        \
+    midilog_initialize();        \
+    blockflt_initialize();       \
+    curveflt_initialize();       \
+    genmsg_initialize();         \
+    superdly_initialize();       \
+    presets_initialize();        \
     } while (0)
 
 // For processing normal incoming messages
 #define COMP_HOOKS_MIDI_MSG_IN_ISR(x) \
     do {                              \
-    MidiLog_handleMidiMsgIn_ISR(x);   \
-    BlockFlt_handleMidiMsg_ISR(x);    \
-    CurveFlt_handleMidiMsg_ISR(x);    \
-    SuperDly_handleMidiMsg_ISR(x);    \
+    midilog_handleMidiMsgIn_ISR(x);   \
+    blockflt_handleMidiMsg_ISR(x);    \
+    curveflt_handleMidiMsg_ISR(x);    \
+    superdly_handleMidiMsg_ISR(x);    \
     } while (0)
 
 // For processing incoming realtime messages
 #define COMP_HOOKS_RT_MIDI_MSG_ISR(x) \
     do {                              \
-    MidiLog_handleMidiMsgIn_ISR(x);   \
+    midilog_handleMidiMsgIn_ISR(x);   \
     } while (0)
 
 // For logging outgoing messages (no processing should be done at this point)
 #define COMP_HOOKS_MIDI_MSG_OUT_ISR(x) \
     do {                               \
-    MidiLog_handleMidiMsgOut_ISR(x);   \
+    midilog_handleMidiMsgOut_ISR(x);   \
     } while (0)
 
 // For hooking up to the tick interrupt
 #define COMP_HOOKS_TICK_ISR()   \
     do {                        \
-    MidiLog_handleTick_ISR();   \
-    BlockFlt_handleTick_ISR();  \
-    SuperDly_handleTick_ISR();  \
+    midilog_handleTick_ISR();   \
+    blockflt_handleTick_ISR();  \
+    superdly_handleTick_ISR();  \
     } while (0)
 
 // For hooking up to the main loop idle loop
 #define COMP_HOOKS_MAIN_LOOP()  \
     do {                        \
-    MidiLog_handleMainLoop();   \
-    BlockFlt_handleMainLoop();  \
-    CurveFlt_handleMainLoop();  \
-    SuperDly_handleMainLoop();  \
+    midilog_handleMainLoop();   \
+    blockflt_handleMainLoop();  \
+    curveflt_handleMainLoop();  \
+    superdly_handleMainLoop();  \
     } while (0)
 
 

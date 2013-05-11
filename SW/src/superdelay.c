@@ -277,7 +277,7 @@ static void setFilterEnabled(bool_t enable)
             uint8_t i;
 
             // Filter is enabled right now. We must make sure active voices send a note off
-            Hal_interruptsDisable();
+            hal_interruptsDisable();
 
             for (i = 0; i < DELAY_VOICES_MAX; i++)
             {
@@ -287,7 +287,7 @@ static void setFilterEnabled(bool_t enable)
                 }
             }
 
-            Hal_interruptsEnable();
+            hal_interruptsEnable();
         }
     }
 
@@ -558,7 +558,7 @@ static void handleNoteOff(uint8_t index, midiMsg_t *msg)
     if (checkNoteActiveState(msg->Data[0]) == TRUE)
     {
         // Something is keeping this note active, don't send note off
-        msg->Flags |= MMSG_FLAG_DISCARD;
+        msg->Flags |= MIDIMSG_FLAG_DISCARD;
     }
 }
 
@@ -688,7 +688,7 @@ static void handleTapSpeedEvent(uint16_t tick)
             // Allright, we got a new delay speed:
             DelaySetup.Speed = (uint8_t)speedProposal;
 
-            Menu_notifyRefresh_SAFE();
+            menu_notifyRefresh_SAFE();
         }
 
     }
@@ -718,27 +718,27 @@ static void handleTapSpeedTick(uint16_t tick)
 
 static void sendNoteOn(uint8_t key, uint8_t velocity)
 {
-    uint8_t msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK,
+    uint8_t msg_index = midiio_msgNew_ISR(MIDIMSG_SOURCE_GENERATED | MIDIMSG_FLAG_MSG_OK,
             MIDI_STATUS_NOTE_ON | DelaySetup.Chan);
-    MidiIo_msgAddData_ISR(msg_index, key);
-    MidiIo_msgAddData_ISR(msg_index, velocity);
-    MidiIo_msgFinish_ISR(msg_index, 0);
+    midiio_msgAddData_ISR(msg_index, key);
+    midiio_msgAddData_ISR(msg_index, velocity);
+    midiio_msgFinish_ISR(msg_index, 0);
 }
 
 static void sendNoteOff(uint8_t key)
 {
-    uint8_t msg_index = MidiIo_msgNew_ISR(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK,
+    uint8_t msg_index = midiio_msgNew_ISR(MIDIMSG_SOURCE_GENERATED | MIDIMSG_FLAG_MSG_OK,
             MIDI_STATUS_NOTE_OFF | DelaySetup.Chan);
-    MidiIo_msgAddData_ISR(msg_index, key);
-    MidiIo_msgAddData_ISR(msg_index, NOTE_OFF_VELOCITY);
-    MidiIo_msgFinish_ISR(msg_index, 0);
+    midiio_msgAddData_ISR(msg_index, key);
+    midiio_msgAddData_ISR(msg_index, NOTE_OFF_VELOCITY);
+    midiio_msgFinish_ISR(msg_index, 0);
 }
 
 
 
 // ---- Public functions ----
 
-void SuperDly_initialize(void)
+void superdly_initialize(void)
 {
     // Set setup defaults
     FilterEnabled = FALSE;
@@ -752,14 +752,14 @@ void SuperDly_initialize(void)
     DelaySetup.SwingAmount = 0;
     DelaySetup.TapKey = 0x1C;
     DelaySetup.Chan = 0;
-    DelaySetup.Source = MMSG_SOURCE_INPUT1;
+    DelaySetup.Source = MIDIMSG_SOURCE_INPUT1;
     DelaySetup.EnableCc = INVALID_NUMBER;
 
     // Set delay state defaults
     initVoices();
 }
 
-void SuperDly_handleMidiMsg_ISR(midiMsg_t *msg)
+void superdly_handleMidiMsg_ISR(midiMsg_t *msg)
 {
     if (FilterEnabled)
     {
@@ -791,7 +791,7 @@ void SuperDly_handleMidiMsg_ISR(midiMsg_t *msg)
                     case MIDI_STATUS_KEY_ATOUCH: // NOTE: Intentional fall through
 
                         // Discard all NoteOn/Off/Aftertouch messages regarding this key
-                        msg->Flags |= MMSG_FLAG_DISCARD;
+                        msg->Flags |= MIDIMSG_FLAG_DISCARD;
                         done_with_msg = TRUE;
                     }
                 }
@@ -822,7 +822,7 @@ void SuperDly_handleMidiMsg_ISR(midiMsg_t *msg)
                         if (msg->Data[0] == DelaySetup.EnableCc)
                         {
                             DynamicEnable = (msg->Data[1] > 0x40);
-                            msg->Flags |= MMSG_FLAG_DISCARD;
+                            msg->Flags |= MIDIMSG_FLAG_DISCARD;
                         }
                         break;
 
@@ -839,12 +839,12 @@ void SuperDly_handleMidiMsg_ISR(midiMsg_t *msg)
 }
 
 
-void SuperDly_handleTick_ISR(void)
+void superdly_handleTick_ISR(void)
 {
     // Go through the active delays and check if there are delay events to do
 
     uint8_t i;
-    uint16_t tick_now = Hal_tickCountGet_ISR();
+    uint16_t tick_now = hal_tickCountGet_ISR();
 
     handleTapSpeedTick(tick_now);
 
@@ -855,13 +855,13 @@ void SuperDly_handleTick_ISR(void)
 }
 
 
-void SuperDly_handleMainLoop(void)
+void superdly_handleMainLoop(void)
 {
     // Maybe do maintenance to make sure we don't have stuck delays hanging around
 }
 
 
-uint8_t SuperDly_MenuGetSubCount(void)
+uint8_t superdly_menuGetSubCount(void)
 {
     return FilterEnabled ? MENU_SUB_ITEMS : 0;
 }
@@ -884,10 +884,10 @@ static char *writeMenuLine(char *dest, uint8_t item)
     }
 
     // Write the formatted menu text
-    return Util_writeFormat_P(dest, MenuItems[item].Text, data);
+    return util_writeFormat_P(dest, MenuItems[item].Text, data);
 }
 
-void SuperDly_menuGetText(char *dest, uint8_t item)
+void superdly_menuGetText(char *dest, uint8_t item)
 {
 
     dest = writeMenuLine(dest, item);
@@ -905,18 +905,18 @@ void SuperDly_menuGetText(char *dest, uint8_t item)
         // Only write 0 if swing is 0
         if (DelaySetup.SwingAmount == 0)
         {
-            dest = Util_copyString_P(dest - 2, PSTR("OFF"));
+            dest = util_copyString_P(dest - 2, PSTR("OFF"));
         }
         else
         {
-            dest = Util_copyString_P(dest, PSTR("0 ms"));
+            dest = util_copyString_P(dest, PSTR("0 ms"));
         }
         break;
     }
 
 }
 
-uint8_t SuperDly_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t superdly_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret;
     uint8_t menu_item;
@@ -975,33 +975,33 @@ uint8_t SuperDly_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
             ret |= MENU_UPDATE_ALL;
             break;
         case MENU_IN_CHAN:
-            DelaySetup.Source = Util_boundedAddInt8(DelaySetup.Source, 1, 2, knob_delta);
+            DelaySetup.Source = util_boundedAddInt8(DelaySetup.Source, 1, 2, knob_delta);
             break;
         case MENU_SPEED:
-            DelaySetup.Speed = Util_boundedAddUint8(DelaySetup.Speed, MINIMUM_SPEED, 255, knob_delta);
+            DelaySetup.Speed = util_boundedAddUint8(DelaySetup.Speed, MINIMUM_SPEED, 255, knob_delta);
             break;
         case MENU_SWING:
-            DelaySetup.SwingAmount = Util_boundedAddInt8(DelaySetup.SwingAmount, -100, 100, knob_delta);
+            DelaySetup.SwingAmount = util_boundedAddInt8(DelaySetup.SwingAmount, -100, 100, knob_delta);
             break;
         case MENU_FEEDBACK:
-            DelaySetup.Feedback = Util_boundedAddUint8(DelaySetup.Feedback, 1, 127, knob_delta);
+            DelaySetup.Feedback = util_boundedAddUint8(DelaySetup.Feedback, 1, 127, knob_delta);
             break;
         case MENU_STOP_VEL:
-            DelaySetup.StopVelocity = Util_boundedAddUint8(DelaySetup.StopVelocity, 1, 127, knob_delta);
+            DelaySetup.StopVelocity = util_boundedAddUint8(DelaySetup.StopVelocity, 1, 127, knob_delta);
             break;
         case MENU_STOP_REP:
-            DelaySetup.StopRepeat = Util_boundedAddUint8(DelaySetup.StopRepeat, 0, 100, knob_delta);
+            DelaySetup.StopRepeat = util_boundedAddUint8(DelaySetup.StopRepeat, 0, 100, knob_delta);
             break;
         case MENU_ENABLE_CC:
-            DelaySetup.EnableCc = Util_boundedAddInt8(DelaySetup.EnableCc, -1, 64, knob_delta);
+            DelaySetup.EnableCc = util_boundedAddInt8(DelaySetup.EnableCc, -1, 64, knob_delta);
             // If we are changing how to use enable / disable, better make sure we are enabled actually
             DynamicEnable = (DelaySetup.EnableCc == INVALID_NUMBER);
             break;
         case MENU_TAP_SPEED:
-            DelaySetup.TapKey = Util_boundedAddUint8(DelaySetup.TapKey, 0, 127, knob_delta);
+            DelaySetup.TapKey = util_boundedAddUint8(DelaySetup.TapKey, 0, 127, knob_delta);
             break;
         case MENU_SPECIAL_CHAN:
-            DelaySetup.Chan = Util_boundedAddInt8(DelaySetup.Chan, 0, 15, knob_delta);
+            DelaySetup.Chan = util_boundedAddInt8(DelaySetup.Chan, 0, 15, knob_delta);
             break;
         }
     }
@@ -1010,27 +1010,27 @@ uint8_t SuperDly_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_e
 }
 
 
-uint8_t SuperDly_configGetSize(void)
+uint8_t superdly_configGetSize(void)
 {
     return 1 + sizeof(delaySetup_t);
 }
 
-void SuperDly_configSave(uint8_t *dest)
+void superdly_configSave(uint8_t *dest)
 {
     *(dest++) = FilterEnabled;
 
     memcpy(dest, &(DelaySetup), sizeof(delaySetup_t));
 }
 
-void SuperDly_configLoad(uint8_t *dest)
+void superdly_configLoad(uint8_t *dest)
 {
     bool_t enable;
 
     enable = *(dest++);
 
-    Hal_interruptsDisable();
+    hal_interruptsDisable();
     memcpy(&(DelaySetup), dest, sizeof(delaySetup_t));
-    Hal_interruptsEnable();
+    hal_interruptsEnable();
 
     setFilterEnabled(enable);
 }

@@ -25,14 +25,14 @@ static error_t ErrorBuffer[ERROR_BUFFER_SIZE];
 
 static uint8_t DebugCursor;
 
-void Err_initialize(void)
+void err_initialize(void)
 {
     ErrorCount = 0;
     DebugCursor = 0;
 }
 
 
-void Err_raise(uint8_t module, uint16_t line_number)
+void err_raise(uint8_t module, uint16_t line_number)
 {
     //hal_InterruptsDisable();  TODO critical section
 
@@ -50,19 +50,19 @@ void Err_raise(uint8_t module, uint16_t line_number)
     }
 }
 
-void Err_debugPrint(uint8_t x)
+void err_debugPrint(uint8_t x)
 {
 
     // TODO this better
     char buffer[3];
 
-    Lcd_setCursor(0, DebugCursor);
+    lcd_setCursor(0, DebugCursor);
 
-    Util_writeHex(buffer, x);
+    util_writeHex(buffer, x);
 
-    Lcd_write(buffer[0]);
-    Lcd_write(buffer[1]);
-    Lcd_write('<');
+    lcd_write(buffer[0]);
+    lcd_write(buffer[1]);
+    lcd_write('<');
 
     DebugCursor += 2;
 
@@ -72,34 +72,58 @@ void Err_debugPrint(uint8_t x)
     }
 }
 
-void Err_debugPrintBlock(const void *src, uint8_t size)
+void err_debugPrintInt16(int16_t x)
+{
+    // TODO this better
+    char buffer[7];
+    char *p;
+
+    lcd_setCursor(0, DebugCursor);
+
+    // Write Int16 to buffer and zero terminate
+    p = util_writeInt16(buffer, x);
+    *p = 0;
+
+    // Blit to LCD
+    lcd_writeString(buffer);
+
+    // Move debug cursor
+    DebugCursor += 6;
+
+    if (DebugCursor >= 18)
+    {
+        DebugCursor = 0;
+    }
+}
+
+void err_debugPrintBlock(const void *src, uint8_t size)
 {
     uint8_t i;
 
     for (i = 0; i < size; i++)
     {
-        Err_debugPrint(((uint8_t*)src)[i]);
+        err_debugPrint(((uint8_t*)src)[i]);
     }
 }
 
-void Err_reset(void)
+void err_reset(void)
 {
     ErrorCount = 0;
 }
 
-char * Err_print(char *dest, uint8_t number)
+char * err_print(char *dest, uint8_t number)
 {
     if (number < ErrorCount)
     {
-        dest = Util_writeInt8LA(dest, ErrorBuffer[number].Module);
+        dest = util_writeInt8LA(dest, ErrorBuffer[number].Module);
         *(dest++) = '-';
-        dest = Util_writeInt16LA(dest, ErrorBuffer[number].LineNumber);
+        dest = util_writeInt16LA(dest, ErrorBuffer[number].LineNumber);
     }
 
     return dest;
 }
 
-uint8_t Err_getCount(void)
+uint8_t err_getCount(void)
 {
     return ErrorCount;
 }

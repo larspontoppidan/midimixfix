@@ -13,7 +13,7 @@
 
 int16_t TenthsTab[5] = {10000, 1000, 100, 10, 1};
 
-char *Util_writeInt16(char *dest, int16_t value)
+char *util_writeInt16(char *dest, int16_t value)
 {
     uint8_t p;
     uint8_t c;
@@ -63,7 +63,7 @@ char *Util_writeInt16(char *dest, int16_t value)
 }
 
 
-char *Util_writeInt16LA(char *dest, int16_t value)
+char *util_writeInt16LA(char *dest, int16_t value)
 {
     uint8_t p;
     uint8_t c;
@@ -105,7 +105,7 @@ char *Util_writeInt16LA(char *dest, int16_t value)
 }
 
 
-char * Util_writeUint8(char *dest, uint8_t value)
+char * util_writeUint8(char *dest, uint8_t value)
 {
     uint8_t c;
     bool_t numbernow = FALSE;
@@ -149,7 +149,7 @@ char * Util_writeUint8(char *dest, uint8_t value)
 }
 
 
-char *Util_writeInt8LA(char *dest, int8_t x)
+char *util_writeInt8LA(char *dest, int8_t x)
 {
     uint8_t value;
     uint8_t c;
@@ -196,7 +196,7 @@ char *Util_writeInt8LA(char *dest, int8_t x)
     return dest;
 }
 
-char *Util_writeInt8(char *dest, int8_t x)
+char *util_writeInt8(char *dest, int8_t x)
 {
     uint8_t value;
     uint8_t c;
@@ -253,7 +253,7 @@ char *Util_writeInt8(char *dest, int8_t x)
 }
 
 
-char *Util_writeHex(char *dest, uint8_t x)
+char *util_writeHex(char *dest, uint8_t x)
 {
     uint8_t c;
 
@@ -283,7 +283,7 @@ char *Util_writeHex(char *dest, uint8_t x)
 }
 
 
-char *Util_copyString_P(char *dest, PGM_P src)
+char *util_copyString_P(char *dest, PGM_P src)
 {
     char c;
 
@@ -301,7 +301,7 @@ char *Util_copyString_P(char *dest, PGM_P src)
     return dest;
 }
 
-int8_t Util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
+int8_t util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
 {
     // Work in 16 bit signed space to avoid rollover
     int16_t x;
@@ -320,7 +320,7 @@ int8_t Util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
     return (int8_t)x;
 }
 
-uint8_t Util_boundedAddUint8(uint8_t value, uint8_t min, uint8_t max, int8_t add)
+uint8_t util_boundedAddUint8(uint8_t value, uint8_t min, uint8_t max, int8_t add)
 {
     // Work in 16 bit signed space to avoid rollover
     int16_t x;
@@ -349,11 +349,11 @@ uint8_t Util_boundedAddUint8(uint8_t value, uint8_t min, uint8_t max, int8_t add
 // " (10)"   value = 10
 // "(200)"   value = 200
 
-void Util_writeNumberParentheses(char *dest, uint8_t value)
+void util_writeNumberParentheses(char *dest, uint8_t value)
 {
     if (value == 0)
     {
-        Util_copyString_P(dest, PStr_OffParentheses);
+        util_copyString_P(dest, pstr_OffParentheses);
     }
     else
     {
@@ -370,13 +370,13 @@ void Util_writeNumberParentheses(char *dest, uint8_t value)
             // Two digits
             dest[0] = ' ';
             dest[1] = '(';
-            Util_writeInt8LA(&(dest[2]), value);
+            util_writeInt8LA(&(dest[2]), value);
         }
         else
         {
             // Three digits
             dest[0] = '(';
-            Util_writeInt16LA(&(dest[1]), (int16_t)value);
+            util_writeInt16LA(&(dest[1]), (int16_t)value);
         }
 
         dest[4] = ')';
@@ -398,7 +398,7 @@ void Util_writeNumberParentheses(char *dest, uint8_t value)
 //   %c    Write data as midi controller
 //   %n    Write data as note name "C#-4" for example
 //
-char *Util_writeFormat_P(char *dest, PGM_P src, uint8_t data)
+char *util_writeFormat_P(char *dest, PGM_P src, uint8_t data)
 {
     bool_t finished = FALSE;
     char c;
@@ -420,32 +420,32 @@ char *Util_writeFormat_P(char *dest, PGM_P src, uint8_t data)
             switch (c)
             {
             case 'U':
-                dest = Util_writeUint8(dest, data);
+                dest = util_writeUint8(dest, data);
                 break;
             case 'I':
-                dest = Util_writeInt8(dest, data);
+                dest = util_writeInt8(dest, data);
                 break;
             case 'i':
-                dest = Util_writeInt8LA(dest, data);
+                dest = util_writeInt8LA(dest, data);
                 break;
             case 'x':
-                dest = Util_writeHex(dest, data);
+                dest = util_writeHex(dest, data);
                 break;
             case 'c':
                 if (data == 0xFF)
                 {
-                    dest = Util_copyString_P(dest, PStr_Off);
+                    dest = util_copyString_P(dest, pstr_Off);
                 }
                 else
                 {
-                    dest = Midi_writeControllerName(dest, data);
+                    dest = midi_writeControllerName(dest, data);
                 }
                 break;
             case 'n':
-                dest = Midi_writeNoteName(dest, data);
+                dest = midi_writeNoteName(dest, data);
                 break;
             case 'O':
-                dest = Util_copyString_P(dest, data ? PStr_OnParentheses : PStr_OffParentheses);
+                dest = util_copyString_P(dest, data ? pstr_OnParentheses : pstr_OffParentheses);
                 break;
             case 0:
                 finished = TRUE;

@@ -118,7 +118,7 @@ static void EditChannel(uint8_t msg, int8_t delta)
     // Modify lower nibble of midi status with delta:
 
     chan = Messages[msg].MidiStatus & MIDI_CHANNEL_MASK;
-    chan = Util_boundedAddInt8(chan, 0, 15, delta);
+    chan = util_boundedAddInt8(chan, 0, 15, delta);
     Messages[msg].MidiStatus = (Messages[msg].MidiStatus & (~MIDI_CHANNEL_MASK)) | chan;
 }
 
@@ -191,11 +191,11 @@ static void EditValue(uint8_t msg, int8_t delta)
 
     if (status == MIDI_STATUS_CTRL_CHANGE)
     {
-        Messages[msg].MidiParam[1] = Util_boundedAddInt8(Messages[msg].MidiParam[1], 0, 127, delta);
+        Messages[msg].MidiParam[1] = util_boundedAddInt8(Messages[msg].MidiParam[1], 0, 127, delta);
     }
     else
     {
-        Messages[msg].MidiParam[0] = Util_boundedAddInt8(Messages[msg].MidiParam[0], 0, 127, delta);
+        Messages[msg].MidiParam[0] = util_boundedAddInt8(Messages[msg].MidiParam[0], 0, 127, delta);
     }
 }
 
@@ -208,19 +208,19 @@ static void SendMessage(uint8_t msg)
     uint8_t len;
 
     // Reserve an index in the midiio buffer
-    msg_index = MidiIo_msgNew_MAIN(MMSG_SOURCE_GENERATED | MMSG_FLAG_MSG_OK, Messages[msg].MidiStatus);
+    msg_index = midiio_msgNew_MAIN(MIDIMSG_SOURCE_GENERATED | MIDIMSG_FLAG_MSG_OK, Messages[msg].MidiStatus);
 
     // Ensure we use the correct length
-    len = Midi_getDataCount(Messages[msg].MidiStatus);
+    len = midi_getDataCount(Messages[msg].MidiStatus);
 
     // Put in the data
     for (i = 0; i < len; i++)
     {
-        MidiIo_msgAddData_ISR(msg_index, Messages[msg].MidiParam[i]);
+        midiio_msgAddData_ISR(msg_index, Messages[msg].MidiParam[i]);
     }
 
     // Finish so it will be sent
-    MidiIo_msgFinish_ISR(msg_index, 0);
+    midiio_msgFinish_ISR(msg_index, 0);
 }
 
 
@@ -229,7 +229,7 @@ static void SendMessage(uint8_t msg)
 // --------------------
 
 
-void GenMsg_initialize(void)
+void genmsg_initialize(void)
 {
     uint8_t i;
 
@@ -244,7 +244,7 @@ void GenMsg_initialize(void)
 // =============================  PUBLIC FUNCTIONS  ===========================
 
 
-uint8_t GenMsg_menuGetSubCount(void)
+uint8_t genmsg_menuGetSubCount(void)
 {
     return MessageCount;
 }
@@ -252,29 +252,29 @@ uint8_t GenMsg_menuGetSubCount(void)
 
 // -----------------------------  PUBLIC FUNCTIONS  ---------------------------
 
-void GenMsg_menuGetText(char *dest, uint8_t item)
+void genmsg_menuGetText(char *dest, uint8_t item)
 {
     if (item == 0)
     {
-        Util_copyString_P(dest, TitleString);
-        Util_writeNumberParentheses(&(dest[14]), MessageCount);
+        util_copyString_P(dest, TitleString);
+        util_writeNumberParentheses(&(dest[14]), MessageCount);
     }
     else
     {
         // Write the decoded message. Move from message to mmsg_t
         midiMsg_t msg;
-        msg.Flags = MMSG_FLAG_MSG_OK;
+        msg.Flags = MIDIMSG_FLAG_MSG_OK;
         msg.MidiStatus = Messages[item-1].MidiStatus;
         msg.Data[0] = Messages[item-1].MidiParam[0];
         msg.Data[1] = Messages[item-1].MidiParam[1];
         msg.Data[2] = Messages[item-1].MidiParam[2];
-        msg.DataLen = Midi_getDataCount(msg.MidiStatus);
+        msg.DataLen = midi_getDataCount(msg.MidiStatus);
 
-        MidiMsg_writeParsed(dest, &msg);
+        midimsg_writeParsed(dest, &msg);
     }
 }
 
-uint8_t GenMsg_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+uint8_t genmsg_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = MENU_EDIT_MODE_UNAVAIL;
 
@@ -294,7 +294,7 @@ uint8_t GenMsg_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
              if ((user_event == MENU_EVENT_TURN) || (user_event == MENU_EVENT_TURN_PUSH))
              {
                  // Toggle number of filters
-                 MessageCount = Util_boundedAddInt8(MessageCount, 0, MESSAGES_MAX, knob_delta);
+                 MessageCount = util_boundedAddInt8(MessageCount, 0, MESSAGES_MAX, knob_delta);
 
                  // Keep cursor at position, and notify menu that this may alter our submenu
                  ret = 17 | MENU_UPDATE_ALL;
@@ -347,18 +347,18 @@ uint8_t GenMsg_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_eve
      return ret;
 }
 
-uint8_t GenMsg_configGetSize(void)
+uint8_t genmsg_configGetSize(void)
 {
     return (MESSAGES_MAX * sizeof(message_t) + 1);
 }
 
-void GenMsg_configSave(uint8_t *dest)
+void genmsg_configSave(uint8_t *dest)
 {
     *(dest++) = MessageCount;
     memcpy(dest, &(Messages[0]), MESSAGES_MAX * sizeof(message_t));
 }
 
-void GenMsg_configLoad(uint8_t *dest)
+void genmsg_configLoad(uint8_t *dest)
 {
     uint8_t i;
 

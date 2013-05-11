@@ -30,79 +30,79 @@ enum
     ENTITY_MIDILOG
 };
 
-uint8_t MenuEnts_getSubCount(uint8_t entity)
+uint8_t menuents_getSubCount(uint8_t entity)
 {
     uint8_t ret = 0u;
 
     switch(entity)
     {
     case ENTITY_MAINTITLE:
-        ret = MainMenu_titleGetSubCount();
+        ret = mainmenu_titleGetSubCount();
         break;
     case ENTITY_PRESETS:
-        ret = Presets_menuGetSubCount();
+        ret = presets_menuGetSubCount();
         break;
     case ENTITY_MAINSETUP:
-        ret = MainMenu_setupGetSubCount();
+        ret = mainmenu_setupGetSubCount();
         break;
     case ENTITY_GENERATEMSG:
-        ret = GenMsg_menuGetSubCount();
+        ret = genmsg_menuGetSubCount();
         break;
     case ENTITY_MIDILOG:
-        ret = MidiLog_menuGetSubCount();
+        ret = midilog_menuGetSubCount();
         break;
     case ENTITY_BLOCKFILTER:
-        ret = BlockFlt_menuGetSubCount();
+        ret = blockflt_menuGetSubCount();
         break;
     case ENTITY_CURVEFILTER:
-        ret = CurveFlt_menuGetSubCount();
+        ret = curveflt_menuGetSubCount();
         break;
     case ENTITY_SUPERDELAY:
-        ret = SuperDly_MenuGetSubCount();
+        ret = superdly_menuGetSubCount();
         break;
     default:
-        Err_raise(ERR_MODULE_MENUE, __LINE__);
+        err_raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 
     return ret;
 }
 
-void MenuEnts_getText(uint8_t entity, char *dest, uint8_t item)
+void menuents_getText(uint8_t entity, char *dest, uint8_t item)
 {
     switch(entity)
     {
     case ENTITY_MAINTITLE:
-        MainMenu_titleGetText(dest, item);
+        mainmenu_titleGetText(dest, item);
         break;
     case ENTITY_PRESETS:
-        Presets_menuGetText(dest, item);
+        presets_menuGetText(dest, item);
         break;
     case ENTITY_MAINSETUP:
-        MainMenu_setupGetText(dest, item);
+        mainmenu_setupGetText(dest, item);
         break;
     case ENTITY_GENERATEMSG:
-        GenMsg_menuGetText(dest, item);
+        genmsg_menuGetText(dest, item);
         break;
     case ENTITY_MIDILOG:
-        MidiLog_menuGetText(dest, item);
+        midilog_menuGetText(dest, item);
         break;
     case ENTITY_BLOCKFILTER:
-        BlockFlt_menuGetText(dest, item);
+        blockflt_menuGetText(dest, item);
         break;
     case ENTITY_CURVEFILTER:
-        CurveFlt_menuGetText(dest, item);
+        curveflt_menuGetText(dest, item);
         break;
     case ENTITY_SUPERDELAY:
-        SuperDly_menuGetText(dest, item);
+        superdly_menuGetText(dest, item);
         break;
     default:
-        Err_raise(ERR_MODULE_MENUE, __LINE__);
+        err_raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 }
 
-uint8_t MenuEnts_handleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
+uint8_t menuents_handleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
                        uint8_t user_event, int8_t knob_delta)
 {
     uint8_t ret = 0u;
@@ -110,31 +110,31 @@ uint8_t MenuEnts_handleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
     switch(entity)
     {
     case ENTITY_MAINTITLE:
-        ret = MainMenu_titleHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = mainmenu_titleHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_PRESETS:
-        ret = Presets_menuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = presets_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_MAINSETUP:
-        ret = MainMenu_setupHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = mainmenu_setupHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_GENERATEMSG:
-        ret = GenMsg_menuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = genmsg_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_MIDILOG:
-        ret = MidiLog_menuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = midilog_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_BLOCKFILTER:
-        ret = BlockFlt_menuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = blockflt_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_CURVEFILTER:
-        ret = CurveFlt_menuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = curveflt_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_SUPERDELAY:
-        ret = SuperDly_menuHandleEvent(item, edit_mode, user_event, knob_delta);
+        ret = superdly_menuHandleEvent(item, edit_mode, user_event, knob_delta);
         break;
     default:
-        Err_raise(ERR_MODULE_MENUE, __LINE__);
+        err_raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 
@@ -142,7 +142,7 @@ uint8_t MenuEnts_handleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
 }
 
 
-uint8_t MenuEnts_configGetSize(uint8_t entity)
+uint8_t menuents_configGetSize(uint8_t entity)
 {
     uint8_t ret = 0u;
 
@@ -155,32 +155,32 @@ uint8_t MenuEnts_configGetSize(uint8_t entity)
         ret = 0;
         break;
     case ENTITY_MAINSETUP:
-        ret = MainMenu_configGetSize();
+        ret = mainmenu_configGetSize();
         break;
     case ENTITY_GENERATEMSG:
-        ret = GenMsg_configGetSize();
+        ret = genmsg_configGetSize();
         break;
     case ENTITY_MIDILOG:
         ret = 0;
         break;
     case ENTITY_BLOCKFILTER:
-        ret = BlockFlt_configGetSize();
+        ret = blockflt_configGetSize();
         break;
     case ENTITY_CURVEFILTER:
-        ret = CurveFlt_configGetSize();
+        ret = curveflt_configGetSize();
         break;
     case ENTITY_SUPERDELAY:
-        ret = SuperDly_configGetSize();
+        ret = superdly_configGetSize();
         break;
     default:
-        Err_raise(ERR_MODULE_MENUE, __LINE__);
+        err_raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 
     return ret;
 }
 
-void MenuEnts_configSave(uint8_t entity, uint8_t *dest)
+void menuents_configSave(uint8_t entity, uint8_t *dest)
 {
     switch(entity)
     {
@@ -189,29 +189,29 @@ void MenuEnts_configSave(uint8_t entity, uint8_t *dest)
     case ENTITY_PRESETS:
         break;
     case ENTITY_MAINSETUP:
-        MainMenu_configSave(dest);
+        mainmenu_configSave(dest);
         break;
     case ENTITY_GENERATEMSG:
-        GenMsg_configSave(dest);
+        genmsg_configSave(dest);
         break;
     case ENTITY_MIDILOG:
         break;
     case ENTITY_BLOCKFILTER:
-        BlockFlt_configSave(dest);
+        blockflt_configSave(dest);
         break;
     case ENTITY_CURVEFILTER:
-        CurveFlt_configSave(dest);
+        curveflt_configSave(dest);
         break;
     case ENTITY_SUPERDELAY:
-        SuperDly_configSave(dest);
+        superdly_configSave(dest);
         break;
     default:
-        Err_raise(ERR_MODULE_MENUE, __LINE__);
+        err_raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 }
 
-void MenuEnts_configLoad(uint8_t entity, uint8_t *dest)
+void menuents_configLoad(uint8_t entity, uint8_t *dest)
 {
     switch(entity)
     {
@@ -220,24 +220,24 @@ void MenuEnts_configLoad(uint8_t entity, uint8_t *dest)
     case ENTITY_PRESETS:
         break;
     case ENTITY_MAINSETUP:
-        MainMenu_configLoad(dest);
+        mainmenu_configLoad(dest);
         break;
     case ENTITY_GENERATEMSG:
-        GenMsg_configLoad(dest);
+        genmsg_configLoad(dest);
         break;
     case ENTITY_MIDILOG:
         break;
     case ENTITY_BLOCKFILTER:
-        BlockFlt_configLoad(dest);
+        blockflt_configLoad(dest);
         break;
     case ENTITY_CURVEFILTER:
-        CurveFlt_configLoad(dest);
+        curveflt_configLoad(dest);
         break;
     case ENTITY_SUPERDELAY:
-        SuperDly_configLoad(dest);
+        superdly_configLoad(dest);
         break;
     default:
-        Err_raise(ERR_MODULE_MENUE, __LINE__);
+        err_raise(ERR_MODULE_MENUE, __LINE__);
         break;
     }
 }

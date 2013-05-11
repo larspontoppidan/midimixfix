@@ -36,21 +36,30 @@
 
 #define MIDI_BAUD_RATE 31250
 
+// Debug signal is intended for timing measurements.
+// It is pin 4 in J9 (ISP connector) and is driven high / low.
+#define DEBUG_SIG_MASK (1u << 5)
+#define DEBUG_SIG_PORT PORTB
+#define DEBUG_SIG_DDR  DDRB
+
 /////////////////////////   Variables    /////////////////////////
 
-static uint16_t tickCount;
+static uint16_t TickCount;
 
+static uint8_t AdcState = 0;
+static uint16_t AdcValue0;
+static uint16_t AdcValue1;
 
 /////////////////////////   Prototypes   /////////////////////////
 
 
 static void midiIoSetup(void);
 static void tickIsrSetup(void);
-
+static void adcSetup(void);
 
 ///////////////////////// Implementation /////////////////////////
 
-void Hal_initialize(void)
+void hal_initialize(void)
 {
     // Status led
     PORTB |= (1u << 4);
@@ -59,6 +68,10 @@ void Hal_initialize(void)
     // LCD backlight
     PORTB &= ~(1u << 3);
     DDRB |= (1u << 3);
+
+    // Debug signal is active low output:
+    DEBUG_SIG_PORT &= ~DEBUG_SIG_MASK;
+    DEBUG_SIG_DDR |= DEBUG_SIG_MASK;
 
     // Quadrature encoder, configure pull up enabled inputs
     QUADA_PORT |= QUADA_MASK;
@@ -81,9 +94,10 @@ void Hal_initialize(void)
     // Init other stuff
     midiIoSetup();
     tickIsrSetup();
+    adcSetup();
 }
 
-void Hal_statusLedSet(bool_t on)
+void hal_statusLedSet(bool_t on)
 {
     if (on)
     {
@@ -96,7 +110,21 @@ void Hal_statusLedSet(bool_t on)
 
 }
 
-void Hal_lcdBacklightSet(bool_t on)
+void hal_debugSignalSet(bool_t value)
+{
+    if (value)
+    {
+        DEBUG_SIG_PORT |= DEBUG_SIG_MASK;
+    }
+    else
+    {
+        DEBUG_SIG_PORT &= ~DEBUG_SIG_MASK;
+    }
+
+}
+
+
+void hal_lcdBacklightSet(bool_t on)
 {
     if (on)
     {
@@ -110,7 +138,7 @@ void Hal_lcdBacklightSet(bool_t on)
 }
 
 
-uint8_t Hal_encoderQuadGet(void)
+uint8_t hal_encoderQuadGet(void)
 {
     uint8_t ret;
 
@@ -123,18 +151,18 @@ uint8_t Hal_encoderQuadGet(void)
 
 ISR(INT1_vect)
 {
-    QuadDecode_handleAChange_ISR(QUADB_PIN & QUADB_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
+    quaddecode_handleAChange_ISR(QUADB_PIN & QUADB_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
 }
 
 
 ISR(PCINT0_vect)
 {
-    QuadDecode_handleBChange_ISR(QUADA_PIN & QUADA_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
+    quaddecode_handleBChange_ISR(QUADA_PIN & QUADA_MASK, (BUTTONS_PIN & HAL_BUTTON_PUSH) == 0u);
 }
 
 
 
-uint8_t Hal_buttonStatesGet(void)
+uint8_t hal_buttonStatesGet(void)
 {
     uint8_t ret;
 
@@ -144,12 +172,12 @@ uint8_t Hal_buttonStatesGet(void)
     return ret;
 }
 
-void Hal_interruptsDisable(void)
+void hal_interruptsDisable(void)
 {
     cli();
 }
 
-void Hal_interruptsEnable(void)
+void hal_interruptsEnable(void)
 {
     sei();
 }
@@ -197,45 +225,45 @@ ISR(USART0_RX_vect)
 {
     uint8_t x;
 
-    Hal_statusLedSet(TRUE);
+    hal_statusLedSet(TRUE);
     x = UDR0;
-    MidiParser_handleInput1_ISR(x);
-    Hal_statusLedSet(FALSE);
+    midiparser_handleInput1_ISR(x);
+    hal_statusLedSet(FALSE);
 }
 
 ISR(USART1_RX_vect)
 {
     uint8_t x;
 
-    Hal_statusLedSet(TRUE);
+    hal_statusLedSet(TRUE);
     x = UDR1;
-    MidiParser_handleInput2_ISR(x);
-    Hal_statusLedSet(FALSE);
+    midiparser_handleInput2_ISR(x);
+    hal_statusLedSet(FALSE);
 }
 
 
 // Midi out transmission on UART0, data register empty interrupt
 ISR(USART0_UDRE_vect)
 {
-    Hal_statusLedSet(TRUE);
-    MidiIo_outputTxComplete_ISR();
-    Hal_statusLedSet(FALSE);
+    hal_statusLedSet(TRUE);
+    midiio_outputTxComplete_ISR();
+    hal_statusLedSet(FALSE);
 }
 
 
 // Return true if Uart Data Register Empty bit is not set
-bool_t Hal_midiTxGetActive_ISR(void)
+bool_t hal_midiTxGetActive_ISR(void)
 {
     return ((UCSR0A & (1u << UDRE0)) == 0u);
 }
 
 
-void Hal_midiTxSend_ISR(uint8_t x)
+void hal_midiTxSend_ISR(uint8_t x)
 {
     UDR0 = x;
 }
 
-void Hal_midiTxEnableIsr_ISR(bool_t en)
+void hal_midiTxEnableIsr_ISR(bool_t en)
 {
 
     if (en)
@@ -250,6 +278,120 @@ void Hal_midiTxEnableIsr_ISR(bool_t en)
 
 }
 
+
+// ADC
+
+static void adcSetup(void)
+{
+    // The ADC converts the analog voltage on ADC0 and ADC1 which represents pedal 2 and 1.
+    // Components that may access the pedals should have accurate data available which is
+    // as fresh as possible.
+    //
+    // To achieve this, the ADC conversions are done with the help of a timer ISR's
+    // that does 1, 2, 3 or 4 alternately:
+    //   1. Store ADC1 result, set MUX to ADC0 (now MUX has has some time to settle)
+    //   2. Start ADC0 conversion
+    //   3. Store ADC0 result, set MUX to ADC1 (now MUX has has some time to settle)
+    //   4. Start ADC1 conversion
+    //
+    // The AD conversion itself is driven by the ADC clock, which should be between 50 and 200 kHz
+    // With the slowest prescaler 1/128 we get 20 MHz / 128 = 156 kHz. This means that an
+    // AD conversion takes 25 clocks / (156e3) = 0.16 ms.
+    //
+    // A suitable interval for the timer ISR would be about 1 ms. This is a compromise between
+    // not burdening the MCU too much, and age of the ADC data available. With 1 ms, the data
+    // would be between 1 ms and 4 ms old.
+
+
+    // Setup timer0 for CTC, 1/1024 prescaler and compare match on 19:
+    //
+    //  f(OCR) = f(clk) / (N * (1 + OCR))
+    //         = 20E6 / (1024 * (1 + 19)) = 976.6 Hz
+    TCCR0A = (1 << WGM01);
+    TCCR0B = (1 << CS00) | (1 << CS02);
+    TCNT0 = 0;
+    OCR0A = 19;
+    TIMSK0 = (1 << OCF0A);
+
+    AdcState = 0;
+
+    // Initial configuration of ADC. Use VCC as reference.
+
+    ADMUX = (1 << REFS0);
+    ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+}
+
+// ADC TICK ISR. Executes with 976.6 Hz
+ISR(TIMER0_COMPA_vect)
+{
+    switch (AdcState)
+    {
+    case 0:
+        // Store ADC1 result and set MUX to ADC0
+        AdcValue1 = ADC;
+        ADMUX = (1 << REFS0);
+        break;
+
+    case 1:
+        // Start conversion
+        ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+        break;
+
+    case 2:
+        // Store ADC0 result and set MUX to ADC1
+        AdcValue0 = ADC;
+        ADMUX = (1 << REFS0) | (1 << MUX0);
+        break;
+
+    case 3:
+        // Start conversion
+        ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+        break;
+    }
+
+    AdcState = (AdcState + 1) & 3;
+
+}
+
+
+uint16_t hal_adcGetValue_ISR(uint8_t channel)
+{
+    uint16_t ret = 0;
+
+    if (channel == 0)
+    {
+        ret = AdcValue0;
+    }
+    else if (channel == 1)
+    {
+        ret = AdcValue1;
+    }
+
+    return ret;
+}
+
+uint16_t hal_adcGetValue_MAIN(uint8_t channel)
+{
+    uint16_t ret = 0;
+
+    if (channel == 0)
+    {
+        hal_interruptsDisable();
+        ret = AdcValue0;
+        hal_interruptsEnable();
+    }
+    else if (channel == 1)
+    {
+        hal_interruptsDisable();
+        ret = AdcValue1;
+        hal_interruptsEnable();
+    }
+
+    return ret;
+}
+
+
+
 // 100 HZ tick implementation
 
 static void tickIsrSetup(void)
@@ -262,9 +404,9 @@ static void tickIsrSetup(void)
     // (WGM = 4), with an 1/8 prescaler and a OCR register value of:
     //
     //   OCR   = f(clk) / (N * f(OCR)) - 1
-    //         = 20e6 / (8 * 100) - 1 = 24999
+    //         = 20E6 / (8 * 100) - 1 = 24999
 
-    tickCount = 0;
+    TickCount = 0;
 
     TCCR1A = 0;
     TCCR1B = (1<<WGM12) | (1<<CS11);
@@ -275,23 +417,23 @@ static void tickIsrSetup(void)
 // TICK ISR. Executes with 100 Hz
 ISR(TIMER1_COMPA_vect)
 {
-    tickCount++;
+    TickCount++;
     COMP_HOOKS_TICK_ISR();
 }
 
-uint16_t Hal_tickCountGet_ISR(void)
+uint16_t hal_tickCountGet_ISR(void)
 {
-    return tickCount;
+    return TickCount;
 }
 
 
-uint16_t Hal_tickCountGet_MAIN(void)
+uint16_t hal_tickCountGet_MAIN(void)
 {
     uint16_t tc;
 
-    Hal_interruptsDisable(); // TODO check if this inlines
-    tc = tickCount;
-    Hal_interruptsEnable();
+    hal_interruptsDisable(); // TODO check if this inlines
+    tc = TickCount;
+    hal_interruptsEnable();
 
     return tc;
 }

@@ -168,7 +168,7 @@ static const char NoteNames[12][3] PROGMEM =
 };
 
 
-uint8_t Midi_getDataCount(uint8_t midi_status)
+uint8_t midi_getDataCount(uint8_t midi_status)
 {
     uint8_t count = 0;
 
@@ -201,7 +201,7 @@ uint8_t Midi_getDataCount(uint8_t midi_status)
 }
 
 
-uint8_t Midi_getDataType(uint8_t x)
+uint8_t midi_getDataType(uint8_t x)
 {
     uint8_t type;
 
@@ -242,23 +242,23 @@ uint8_t Midi_getDataType(uint8_t x)
 
 
 
-char *Midi_writeControllerName(char *dest, uint8_t ctrl)
+char *midi_writeControllerName(char *dest, uint8_t ctrl)
 {
     if (ctrl < 32)
     {
         // First range of controllers
-        dest = Util_copyString_P(dest, MidiCtrlNames1[ctrl]);
+        dest = util_copyString_P(dest, MidiCtrlNames1[ctrl]);
     }
     else if (ctrl < 64)
     {
         // LSB of first range
-        dest = Util_copyString_P(dest, MidiCtrlNames1[ctrl - 32]);
-        dest = Util_copyString_P(dest, PSTR("LSB"));
+        dest = util_copyString_P(dest, MidiCtrlNames1[ctrl - 32]);
+        dest = util_copyString_P(dest, PSTR("LSB"));
     }
     else
     {
         // Second range
-        dest = Util_copyString_P(dest, MidiCtrlNames2[ctrl - 64]);
+        dest = util_copyString_P(dest, MidiCtrlNames2[ctrl - 64]);
     }
 
     return dest;
@@ -266,30 +266,30 @@ char *Midi_writeControllerName(char *dest, uint8_t ctrl)
 
 
 
-char *Midi_writeNoteName(char *dest, uint8_t note_number)
+char *midi_writeNoteName(char *dest, uint8_t note_number)
 {
-    dest = Util_copyString_P(dest, NoteNames[(note_number % 12)]);
-    dest = Util_writeInt8LA(dest, (int8_t)(note_number / 12) - (int8_t)5);
+    dest = util_copyString_P(dest, NoteNames[(note_number % 12)]);
+    dest = util_writeInt8LA(dest, (int8_t)(note_number / 12) - (int8_t)5);
     return dest;
 }
 
-char *Midi_writeStatusName(char *dest, uint8_t status)
+char *midi_writeStatusName(char *dest, uint8_t status)
 {
     if (status >= 0xF0)
     {
         // Its a system status
-        dest = Util_copyString_P(dest, MidiSysStatusNames[status - 0xF0]);
+        dest = util_copyString_P(dest, MidiSysStatusNames[status - 0xF0]);
     }
     else
     {
-        dest = Util_copyString_P(dest, MidiStatusNames[(status >> 4u) - 8]);
+        dest = util_copyString_P(dest, MidiStatusNames[(status >> 4u) - 8]);
     }
 
     return dest;
 }
 
 
-bool_t Midi_isKeyBlack(uint8_t key)
+bool_t midi_isKeyBlack(uint8_t key)
 {
     bool_t ret = FALSE;
 

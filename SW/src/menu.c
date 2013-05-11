@@ -67,33 +67,33 @@ static void renderRow(uint8_t row, uint8_t component, uint8_t subitem)
     // Ask component to write into linebuffer at some offset
     if (subitem == 0u)
     {
-        MenuEnts_getText(component, (char*) &(LineBuffer[1u]), subitem);
+        menuents_getText(component, (char*) &(LineBuffer[1u]), subitem);
     }
     else
     {
         LineBuffer[1u] = MENU_INDENT_CHAR;
-        MenuEnts_getText(component, (char*) &(LineBuffer[2u]), subitem);
+        menuents_getText(component, (char*) &(LineBuffer[2u]), subitem);
     }
 
-    Lcd_setCursor(row, 1u);
+    lcd_setCursor(row, 1u);
 
     for (i = 1u; i < LCD_COLUMNS; i++)
     {
         if (LineBuffer[i] != 0)
         {
-            Lcd_write(LineBuffer[i]);
+            lcd_write(LineBuffer[i]);
         }
         else
         {
-            Lcd_write(' ');
+            lcd_write(' ');
         }
     }
 }
 
 static void writeBlankRow(uint8_t row)
 {
-    Lcd_setCursor(row, 1u);
-    Lcd_writeRepeat(' ', LCD_COLUMNS - 1);
+    lcd_setCursor(row, 1u);
+    lcd_writeRepeat(' ', LCD_COLUMNS - 1);
 }
 
 static bool_t getPreviousMenuItem(uint8_t *comp, uint8_t *subitem)
@@ -108,7 +108,7 @@ static bool_t getPreviousMenuItem(uint8_t *comp, uint8_t *subitem)
     else if (*comp >= 1)
     {
         (*comp)--;
-        *subitem = MenuEnts_getSubCount(*comp);
+        *subitem = menuents_getSubCount(*comp);
         success = TRUE;
     }
     else
@@ -124,7 +124,7 @@ static bool_t getNextMenuItem(uint8_t *comp, uint8_t *subitem)
     bool_t success;
     uint8_t subitemcount;
 
-    subitemcount = MenuEnts_getSubCount(*comp);
+    subitemcount = menuents_getSubCount(*comp);
 
     if (*subitem < subitemcount)
     {
@@ -153,7 +153,7 @@ static void render(bool_t render_all)
 
     // Start with current row. Is the menu item even existing?
 
-    subitemcount = MenuEnts_getSubCount(CurrentComponent);
+    subitemcount = menuents_getSubCount(CurrentComponent);
 
     if (subitemcount < CurrentSubItem)
     {
@@ -215,7 +215,7 @@ static void render(bool_t render_all)
             else if (comp >= 1)
             {
                 comp--;
-                subitemcount = MenuEnts_getSubCount(comp);
+                subitemcount = menuents_getSubCount(comp);
                 subitem = subitemcount;
                 renderRow(row, comp, subitem);
             }
@@ -235,25 +235,25 @@ static void setCursor(uint8_t row, uint8_t column)
 
     for (i = 0u; i < LCD_ROWS; i++)
     {
-        Lcd_setCursor(i, 0u);
+        lcd_setCursor(i, 0u);
         if (i == row)
         {
-            Lcd_write(MENU_CURSOR_CHAR);
+            lcd_write(MENU_CURSOR_CHAR);
         }
         else
         {
-            Lcd_write(' ');
+            lcd_write(' ');
         }
     }
 
     // Set cursor at requested spot
-    Lcd_setCursor(row, column);
+    lcd_setCursor(row, column);
 }
 
 //////////// IMPLEMENTATION PUBLIC FUNCTIONS
 
 
-void Menu_initialize(void)
+void menu_initialize(void)
 {
     ComponentExclusive = FALSE;
     CurrentRow = 1;
@@ -270,12 +270,12 @@ void Menu_initialize(void)
 }
 
 
-void Menu_notifyRefresh_SAFE(void)
+void menu_notifyRefresh_SAFE(void)
 {
     RefreshRequested = TRUE;
 }
 
-void Menu_handleMainLoop(void)
+void menu_handleMainLoop(void)
 {
     if (RefreshRequested == TRUE)
     {
@@ -286,7 +286,7 @@ void Menu_handleMainLoop(void)
     }
 }
 
-void Menu_handleUserTurns(int8_t delta, bool_t pushed)
+void menu_handleUserTurns(int8_t delta, bool_t pushed)
 {
     uint8_t event;
 
@@ -295,7 +295,7 @@ void Menu_handleUserTurns(int8_t delta, bool_t pushed)
     if (ComponentExclusive)
     {
         // Let component handle event
-        MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode, event, delta);
+        menuents_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode, event, delta);
     }
     else
     {
@@ -345,10 +345,10 @@ void Menu_handleUserTurns(int8_t delta, bool_t pushed)
             uint8_t ret;
 
             // Editing stuff, let component handle event
-            ret = MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode, event, delta);
+            ret = menuents_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode, event, delta);
 
             // Notify presets module that component may have changed its configuration
-            Presets_notifyConfigMayChange(CurrentComponent);
+            presets_notifyConfigMayChange(CurrentComponent);
 
             // Update this line or all
             render(ret & MENU_UPDATE_ALL);
@@ -368,12 +368,12 @@ void Menu_handleUserTurns(int8_t delta, bool_t pushed)
     }
 }
 
-void Menu_handleUserSelects(void)
+void menu_handleUserSelects(void)
 {
     if (ComponentExclusive)
     {
         // Let component handle event
-        MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode,
+        menuents_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode,
                         MENU_EVENT_SELECT, 0u);
     }
     else
@@ -381,7 +381,7 @@ void Menu_handleUserSelects(void)
         uint8_t ret;
 
         // Send the select command to component
-        ret = MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode,
+        ret = menuents_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode,
                               MENU_EVENT_SELECT, 0u);
 
         // We advance edit mode if this is accepted by component
@@ -420,10 +420,10 @@ void Menu_handleUserSelects(void)
 }
 
 
-void Menu_handleUserBacks(void)
+void menu_handleUserBacks(void)
 {
     // Let component know back was pushed
-    MenuEnts_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode,
+    menuents_handleEvent(CurrentComponent, CurrentSubItem, CurrentEditMode,
                     MENU_EVENT_BACK, 0u);
 
     // Back button means we exit the exclusive mode
