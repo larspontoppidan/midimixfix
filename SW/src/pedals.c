@@ -407,11 +407,16 @@ void pedals_handleTick_ISR(void)
             index = midiio_msgNew_ISR(MIDIMSG_SOURCE_GENERATED | MIDIMSG_FLAG_MSG_OK,
                                       MIDI_STATUS_CTRL_CHANGE | PedalSetup[1].Channel);
 
+            // TODO the message won't get processed by filters?
+
             midiio_msgAddData_ISR(index, PedalSetup[1].Controller);
             midiio_msgAddData_ISR(index, new_value);
             midiio_msgFinish_ISR(index, 0u);
         }
     }
+
+    // Profiling. Analog pedal processing, min: 9.6 us, max: 31.6 us
+    // Profiling. Digital pedal processing, min: 4.8 us, max: 26.4 us
 
 }
 

@@ -208,6 +208,8 @@ void curveflt_handleMidiMsg_ISR(midiMsg_t *msg)
         }
     }
 
+    // Profiling: Inactive filter cost: 2.84 us
+    //            Transforming black keys: 14 us  (worst case)
 }
 
 void curveflt_handleMainLoop(void)

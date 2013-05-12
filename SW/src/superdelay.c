@@ -763,7 +763,7 @@ void superdly_handleMidiMsg_ISR(midiMsg_t *msg)
 {
     if (FilterEnabled)
     {
-        if ((msg->Flags & DelaySetup.Source) != 0)
+        if ((msg->Flags & (DelaySetup.Source | MIDIMSG_SOURCE_GENERATED)) != 0)
         {
             // TODO also check if message is OK
 
@@ -836,6 +836,8 @@ void superdly_handleMidiMsg_ISR(midiMsg_t *msg)
             }
         }
     }
+
+    // Profiling: Typical load about 33 us. Worst case about 87 us.
 }
 
 
@@ -852,6 +854,8 @@ void superdly_handleTick_ISR(void)
     {
         handleTick(i, tick_now);
     }
+
+    // Profiling. Typical worst case 0.26 ms, may hit 0.3 ms
 }
 
 

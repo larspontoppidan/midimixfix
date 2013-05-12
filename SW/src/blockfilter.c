@@ -414,6 +414,10 @@ void blockflt_handleMidiMsg_ISR(midiMsg_t *msg)
 
         } // END: for (i = 0; i < ruleCount; i++)
     }
+
+    // Profiling: Mapping CC to CC may take 4 us.
+    //            Channel block: worst case 2.6 us.
+    //            Channel map:   worst case 3.5 us
 }
 
 void blockflt_handleTick_ISR(void)
