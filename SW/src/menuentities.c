@@ -12,6 +12,7 @@
 
 #include "mainmenu.h"
 #include "midilogger.h"
+#include "pedals.h"
 #include "generatemsg.h"
 #include "blockfilter.h"
 #include "curvefilter.h"
@@ -23,6 +24,8 @@ enum
     ENTITY_MAINTITLE = 0,
     ENTITY_PRESETS,
     ENTITY_MAINSETUP,
+    ENTITY_PEDAL1,
+    ENTITY_PEDAL2,
     ENTITY_GENERATEMSG,
     ENTITY_BLOCKFILTER,
     ENTITY_CURVEFILTER,
@@ -44,6 +47,12 @@ uint8_t menuents_getSubCount(uint8_t entity)
         break;
     case ENTITY_MAINSETUP:
         ret = mainmenu_setupGetSubCount();
+        break;
+    case ENTITY_PEDAL1:
+        ret = pedals_menuGetSubCount(0);
+        break;
+    case ENTITY_PEDAL2:
+        ret = pedals_menuGetSubCount(1);
         break;
     case ENTITY_GENERATEMSG:
         ret = genmsg_menuGetSubCount();
@@ -81,6 +90,12 @@ void menuents_getText(uint8_t entity, char *dest, uint8_t item)
     case ENTITY_MAINSETUP:
         mainmenu_setupGetText(dest, item);
         break;
+    case ENTITY_PEDAL1:
+        pedals_menuGetText(0, dest, item);
+        break;
+    case ENTITY_PEDAL2:
+        pedals_menuGetText(1, dest, item);
+        break;
     case ENTITY_GENERATEMSG:
         genmsg_menuGetText(dest, item);
         break;
@@ -117,6 +132,12 @@ uint8_t menuents_handleEvent(uint8_t entity, uint8_t item, uint8_t edit_mode,
         break;
     case ENTITY_MAINSETUP:
         ret = mainmenu_setupHandleEvent(item, edit_mode, user_event, knob_delta);
+        break;
+    case ENTITY_PEDAL1:
+        ret = pedals_menuHandleEvent(0, item, edit_mode, user_event, knob_delta);
+        break;
+    case ENTITY_PEDAL2:
+        ret = pedals_menuHandleEvent(1, item, edit_mode, user_event, knob_delta);
         break;
     case ENTITY_GENERATEMSG:
         ret = genmsg_menuHandleEvent(item, edit_mode, user_event, knob_delta);
@@ -157,6 +178,9 @@ uint8_t menuents_configGetSize(uint8_t entity)
     case ENTITY_MAINSETUP:
         ret = mainmenu_configGetSize();
         break;
+    case ENTITY_PEDAL1:
+        ret = pedals_configGetSize();
+        break;
     case ENTITY_GENERATEMSG:
         ret = genmsg_configGetSize();
         break;
@@ -191,6 +215,9 @@ void menuents_configSave(uint8_t entity, uint8_t *dest)
     case ENTITY_MAINSETUP:
         mainmenu_configSave(dest);
         break;
+    case ENTITY_PEDAL1:
+        pedals_configSave(dest);
+        break;
     case ENTITY_GENERATEMSG:
         genmsg_configSave(dest);
         break;
@@ -221,6 +248,9 @@ void menuents_configLoad(uint8_t entity, uint8_t *dest)
         break;
     case ENTITY_MAINSETUP:
         mainmenu_configLoad(dest);
+        break;
+    case ENTITY_PEDAL1:
+        pedals_configLoad(dest);
         break;
     case ENTITY_GENERATEMSG:
         genmsg_configLoad(dest);

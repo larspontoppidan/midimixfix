@@ -5,8 +5,15 @@
  *      Author: lars
  */
 
+#include "common.h"
+#include "hal.h"
+#include "midiio.h"
+#include "midimessage.h"
+#include "midigenerics.h"
+#include "menu.h"
+#include "util.h"
 #include <avr/pgmspace.h>
-
+#include <string.h>
 
 // DATA PROCESSING
 //
@@ -46,7 +53,35 @@
 // array(a).reshape(-1,8)
 
 
+#define MODE_ENABLED       0x01
+#define MODE_DIGITAL       0x02
+#define MODE_INVERTED      0x04
+
+typedef struct
+{
+    uint8_t Mode;
+    uint8_t Gain;
+    int8_t  Offset;
+    uint8_t Controller;
+    uint8_t Channel;
+} pedalSetup_t;
+
+typedef struct
+{
+    uint8_t State; // The state of the digital / analog processing
+    uint8_t Value; // The latest output value for this pedal
+} pedalState_t;
+
+
+#define DIGITAL_HIGH_TRIGGER  683u  // 2/3 of full ADC gain
+#define DIGITAL_LOW_TRIGGER   341u  // 1/3 of full ADC gain
+
+#define ANALOG_STICKY 1
+
 #define INVERT_TABLE_MAX 1024
+
+pedalSetup_t PedalSetup[2];
+pedalState_t PedalState[2];
 
 static uint16_t InvertTable[INVERT_TABLE_MAX] PROGMEM =
 {
@@ -181,7 +216,12 @@ static uint16_t InvertTable[INVERT_TABLE_MAX] PROGMEM =
 };
 
 
-uint8_t ProcessAdcValue(int8_t offset, uint8_t gain, uint16_t adc_value)
+
+static uint8_t ProcessAdcValue(int8_t offset, uint8_t gain, uint16_t adc_value);
+
+
+
+static uint8_t ProcessAdcValue(int8_t offset, uint8_t gain, uint16_t adc_value)
 {
     uint16_t x;
 
@@ -223,20 +263,340 @@ uint8_t ProcessAdcValue(int8_t offset, uint8_t gain, uint16_t adc_value)
 
 void pedals_initialize(void)
 {
+    memset(&PedalSetup, 0, sizeof(pedalSetup_t) * 2);
+}
+
+// The digital pedal processing includes a schmitt triggering function of the ADC value
+static uint8_t handleDigitalPedal_ISR(uint8_t p)
+{
+    uint16_t value = hal_adcGetValue_ISR(p);
+
+    // Implement 1/3, 2/3 schmitt trigger digital mode
+    if (PedalState[p].State < 64)
+    {
+        PedalState[p].State = (value < DIGITAL_HIGH_TRIGGER) ? 0 : 127;
+    }
+    else
+    {
+        PedalState[p].State = (value < DIGITAL_LOW_TRIGGER) ? 0 : 127;
+    }
+
+    if (PedalSetup[p].Mode & MODE_INVERTED)
+    {
+        return 127 - PedalState[p].State;
+    }
+    else
+    {
+        return PedalState[p].State;
+    }
+}
+
+// The analog processing first transforms the ADC value including gain / offset.
+// The processed value is compared to the last value and a "sticky" algorithm checks
+// if the new value should be adopted or not. The purpose is to avoid unnecessary midi
+// transmissions toggling back and forth between two adjacent controller values.
+static uint8_t handleAnalogPedal_ISR(uint8_t p)
+{
+    uint8_t new_value;
+    uint8_t state;
+    int8_t diff;
+
+    // Apply gain / offset analog transformation
+    new_value = ProcessAdcValue(PedalSetup[p].Offset, PedalSetup[p].Gain, hal_adcGetValue_ISR(p));
+
+    // CurrentState encode the last value, and if we are considered stable:
+    state = PedalState[p].State;
+
+    diff = (int8_t)new_value - (int8_t)(state & 127u);
+
+    if (diff == 0)
+    {
+        // No change, make sure stable flag is set
+        state |= 128;
+    }
+    else
+    {
+        if (state & 128)
+        {
+            // There is a change, and we are supposed to be stable, is change large enough?
+
+            if (diff < 0)
+            {
+                diff = -diff;
+            }
+
+            if (diff > ANALOG_STICKY)
+            {
+                // Yes. Set new state and don't set stable bit
+                state = new_value;
+            }
+            else
+            {
+                // Change not large enough. Don't do anything.
+            }
+        }
+        else
+        {
+            // We are not stable, simply adopt new value
+            state = new_value;
+        }
+    }
+
+    // Write back new state
+    PedalState[p].State = state;
+
+    if (PedalSetup[p].Mode & MODE_INVERTED)
+    {
+        return 127 - (state & 127);
+    }
+    else
+    {
+        return (state & 127);
+    }
+}
+
+void pedals_handleTick_ISR(void)
+{
+    uint8_t new_value;
+
+    if (PedalSetup[0].Mode & MODE_ENABLED)
+    {
+        if (PedalSetup[0].Mode & MODE_DIGITAL)
+        {
+            new_value = handleDigitalPedal_ISR(0);
+        }
+        else
+        {
+            new_value = handleAnalogPedal_ISR(0);
+        }
+
+        if (new_value != PedalState[0].Value)
+        {
+            uint8_t index;
+
+            PedalState[0].Value = new_value;
+
+            // Generate midi message
+            index = midiio_msgNew_ISR(MIDIMSG_SOURCE_GENERATED | MIDIMSG_FLAG_MSG_OK,
+                                      MIDI_STATUS_CTRL_CHANGE | PedalSetup[0].Channel);
+
+            midiio_msgAddData_ISR(index, PedalSetup[0].Controller);
+            midiio_msgAddData_ISR(index, new_value);
+            midiio_msgFinish_ISR(index, 0u);
+        }
+    }
+
+    if (PedalSetup[1].Mode & MODE_ENABLED)
+    {
+        if (PedalSetup[1].Mode & MODE_DIGITAL)
+        {
+            new_value = handleDigitalPedal_ISR(1);
+        }
+        else
+        {
+            new_value = handleAnalogPedal_ISR(1);
+        }
+
+        if (new_value != PedalState[1].Value)
+        {
+            uint8_t index;
+
+            PedalState[1].Value = new_value;
+
+            // Generate midi message
+            index = midiio_msgNew_ISR(MIDIMSG_SOURCE_GENERATED | MIDIMSG_FLAG_MSG_OK,
+                                      MIDI_STATUS_CTRL_CHANGE | PedalSetup[1].Channel);
+
+            midiio_msgAddData_ISR(index, PedalSetup[1].Controller);
+            midiio_msgAddData_ISR(index, new_value);
+            midiio_msgFinish_ISR(index, 0u);
+        }
+    }
 
 }
 
-void    pedals_handleTick_ISR(void);
-void    pedals_handleMainLoop(void);
+void pedals_handleMainLoop(void)
+{
+
+}
 
 
+uint8_t pedals_menuGetSubCount(uint8_t pedal)
+{
+    uint8_t ret = 0;
 
-uint8_t pedals_menuGetSubCount(void);
-void    pedals_menuGetText(char *dest, uint8_t item);
-uint8_t pedals_menuHandleEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta);
+    if (PedalSetup[pedal].Mode & MODE_ENABLED)
+    {
+        if (PedalSetup[pedal].Mode & MODE_DIGITAL)
+        {
+            ret = 2;
+        }
+        else
+        {
+            ret = 3;
+        }
+    }
 
-uint8_t pedals_configGetSize(void);
-void    pedals_configSave(uint8_t *dest);
-void    pedals_configLoad(uint8_t *dest);
+    return ret;
+}
+
+void pedals_menuGetText(uint8_t pedal, char *dest, uint8_t item)
+{
+    if (item == 0)
+    {
+        // Pedal-1       (OFF)
+        // Pedal-1   (DIGITAL)
+        // Pedal-1    (ANALOG)
+
+        util_writeFormat_P(dest, PSTR("Pedal-%i"), pedal + 1);
+
+        // Lookup pedal mode in mode string table:
+        switch (PedalSetup[pedal].Mode & (MODE_ENABLED | MODE_DIGITAL))
+        {
+        case 0:
+            util_copyString_P(dest + 14, PSTR("(OFF)"));
+            break;
+
+        case MODE_ENABLED:
+            util_copyString_P(dest + 11, PSTR("(ANALOG)"));
+            break;
+
+        case (MODE_ENABLED | MODE_DIGITAL):
+            util_copyString_P(dest + 10, PSTR("(DIGITAL)"));
+            break;
+        }
+    }
+    else if (item == 1)
+    {
+        //  Ch1 CC: SustainP
+        dest = util_writeFormat_P(dest, PSTR("Ch%i "), PedalSetup[pedal].Channel + 1);
+        dest = util_writeFormat_P(dest, PSTR("CC: %c"), PedalSetup[pedal].Controller);
+
+    }
+    else if (item == 2)
+    {
+        //  Invert:1 Outp:XXX
+        dest = util_writeFormat_P(dest, PSTR("Invert:%i "),
+                (PedalSetup[pedal].Mode & MODE_INVERTED) ? 1 : 0);
+
+        dest = util_writeFormat_P(dest, PSTR("Outp:%i "), PedalState[pedal].Value);
+
+    }
+    else if (item == 3)
+    {
+        //  Gain:XXX Offs:XXXX
+        dest = util_writeFormat_P(dest, PSTR("Gain:%U "), PedalSetup[pedal].Gain);
+        dest = util_writeFormat_P(dest, PSTR("Offs:%I "), PedalSetup[pedal].Offset);
+    }
+}
+
+uint8_t pedals_menuHandleEvent(uint8_t pedal, uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+{
+    uint8_t ret;
+    int8_t knob_gained;
+
+    // Are we changing the edit_mode level?
+    if (user_event == MENU_EVENT_SELECT)
+    {
+        edit_mode++;
+        knob_delta = 0;
+    }
+    else if (user_event == MENU_EVENT_BACK)
+    {
+        edit_mode--;
+        knob_delta = 0;
+    }
+
+    if (user_event == MENU_EVENT_TURN_PUSH)
+    {
+        knob_gained = knob_delta * 10;
+    }
+    else
+    {
+        knob_gained = knob_delta;
+    }
+
+
+    // Deal with edit_mode combined with item
+    switch (item * 4 + edit_mode)
+    {
+    case 1:  // 0 * 4 + 1:
+        // We are editing pedal mode
+        if (knob_delta > 0)
+        {
+            // Successively set MODE_ENABLED, then MODE_DIGITAL flags:
+            PedalSetup[pedal].Mode |= (PedalSetup[pedal].Mode & MODE_ENABLED) ? MODE_DIGITAL : MODE_ENABLED;
+        }
+        else if (knob_delta < 0)
+        {
+            // Successively remove MODE_DIGITAL, then MODE_ENABLED flags:
+            PedalSetup[pedal].Mode &= ~((PedalSetup[pedal].Mode & MODE_DIGITAL) ? MODE_DIGITAL : MODE_ENABLED);
+        }
+
+        ret = 17 | MENU_UPDATE_ALL;
+        break;
+
+    case 5:  // 1 * 4 + 1
+        // Channel
+        PedalSetup[pedal].Channel = util_boundedAddUint8(PedalSetup[pedal].Channel, 0, 15, knob_gained);
+        ret = 2;
+        break;
+
+    case 6:  // 1 * 4 + 2
+        // Controller
+        PedalSetup[pedal].Controller = util_boundedAddUint8(PedalSetup[pedal].Controller, 0, 127, knob_gained);
+        ret = 8;
+        break;
+
+    case 9: // 2 * 4 + 1
+        // Invert
+        if (knob_delta > 0)
+        {
+            PedalSetup[pedal].Mode |= MODE_INVERTED;
+        }
+        else if (knob_delta < 0)
+        {
+            PedalSetup[pedal].Mode &= ~MODE_INVERTED;
+        }
+
+        ret = 7 | MENU_UPDATE_ALL;
+        break;
+
+    case 13: // 3 * 4 + 1
+        // Gain
+        PedalSetup[pedal].Gain = util_boundedAddUint8(PedalSetup[pedal].Gain, 0, 255, knob_gained);
+        ret = 5 | MENU_UPDATE_ALL;
+        break;
+
+    case 14: // 3 * 4 + 2
+        // Offset
+        PedalSetup[pedal].Offset = util_boundedAddInt8(PedalSetup[pedal].Offset, -128, 127, knob_gained);
+        ret = 10 | MENU_UPDATE_ALL;
+        break;
+
+    default:
+        // We don't support this edit mode
+        ret = MENU_EDIT_MODE_UNAVAIL;
+    }
+
+
+    return ret;
+}
+
+
+uint8_t pedals_configGetSize(void)
+{
+    return sizeof(pedalSetup_t) * 2;
+}
+
+void pedals_configSave(uint8_t *dest)
+{
+    memcpy(dest, &(PedalSetup[0]), sizeof(pedalSetup_t) * 2);
+}
+
+void pedals_configLoad(uint8_t *dest)
+{
+    memcpy(&(PedalSetup[0]), dest, sizeof(pedalSetup_t) * 2);
+}
 
 

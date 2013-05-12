@@ -50,6 +50,8 @@ static uint8_t AdcState = 0;
 static uint16_t AdcValue0;
 static uint16_t AdcValue1;
 
+static uint16_t AdcTemp;
+
 /////////////////////////   Prototypes   /////////////////////////
 
 
@@ -314,42 +316,63 @@ static void adcSetup(void)
     TIMSK0 = (1 << OCF0A);
 
     AdcState = 0;
+    AdcTemp = 0;
 
     // Initial configuration of ADC. Use VCC as reference.
 
     ADMUX = (1 << REFS0);
     ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+
+    // TODO turn off input drivers of ADC!
 }
 
 // ADC TICK ISR. Executes with 976.6 Hz
 ISR(TIMER0_COMPA_vect)
 {
-    switch (AdcState)
+    if (AdcState == 0)
     {
-    case 0:
-        // Store ADC1 result and set MUX to ADC0
-        AdcValue1 = ADC;
+        // First save result from ADC1
+        AdcTemp += ADC;
+        AdcValue1 = AdcTemp >> 2;
+
+        // Setup sampling ADC0
+        AdcTemp = 0;
         ADMUX = (1 << REFS0);
-        break;
 
-    case 1:
-        // Start conversion
+        // Start first conversion
         ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
-        break;
 
-    case 2:
-        // Store ADC0 result and set MUX to ADC1
-        AdcValue0 = ADC;
-        ADMUX = (1 << REFS0) | (1 << MUX0);
-        break;
-
-    case 3:
-        // Start conversion
-        ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
-        break;
+        AdcState++;
     }
+    else if (AdcState == 4)
+    {
+        // First save result from ADC0
+        AdcTemp += ADC;
+        AdcValue0 = AdcTemp >> 2;
 
-    AdcState = (AdcState + 1) & 3;
+        // Setup sampling ADC0
+        AdcTemp = 0;
+        ADMUX = (1 << REFS0) | (1 << MUX0);
+
+        // Start first conversion
+        ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+
+        AdcState++;
+    }
+    else
+    {
+        // AdcState 1, 2, 3 or
+        // AdcState 5, 6, 7
+
+        // Add last result to sum
+        AdcTemp += ADC;
+
+        // Start next conversion
+        ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+
+        // Increment with wraparound
+        AdcState = (AdcState + 1) & 7;
+    }
 
 }
 

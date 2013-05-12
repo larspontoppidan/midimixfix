@@ -107,8 +107,6 @@ int main(void)
     // Turn on display
     hal_lcdBacklightSet(TRUE);
 
-    uint8_t pre = 0;
-
     while(TRUE)
     {
 
@@ -120,22 +118,6 @@ int main(void)
 
         // Check if user did something on the controls
         handleUi();
-
-
-        // Blit latest ADC values
-        if (((pre++) & 15) == 0u)
-        {
-            uint8_t x;
-            err_debugPrintInt16(hal_adcGetValue_MAIN(0));
-
-            hal_debugSignalSet(TRUE);
-            x = ProcessAdcValue(-3, 55, hal_adcGetValue_MAIN(1));
-            hal_debugSignalSet(FALSE);
-
-            err_debugPrintInt16(x);
-            err_debugPrintInt16(0u);
-        }
-
     }
 
     return 0;

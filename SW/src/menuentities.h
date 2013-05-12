@@ -9,7 +9,7 @@
 #define MENUENTITIES_H_
 
 
-#define MENUE_ENTITY_COUNT  8u
+#define MENUE_ENTITY_COUNT  10u
 
 
 uint8_t menuents_getSubCount(uint8_t entity);

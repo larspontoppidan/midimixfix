@@ -14,6 +14,7 @@
 #include "midilogger.h"
 #include "blockfilter.h"
 #include "curvefilter.h"
+#include "pedals.h"
 #include "superdelay.h"
 #include "presets.h"
 
@@ -25,6 +26,7 @@
     midilog_initialize();        \
     blockflt_initialize();       \
     curveflt_initialize();       \
+    pedals_initialize();         \
     genmsg_initialize();         \
     superdly_initialize();       \
     presets_initialize();        \
@@ -54,6 +56,7 @@
 // For hooking up to the tick interrupt
 #define COMP_HOOKS_TICK_ISR()   \
     do {                        \
+    pedals_handleTick_ISR();    \
     midilog_handleTick_ISR();   \
     blockflt_handleTick_ISR();  \
     superdly_handleTick_ISR();  \
@@ -62,6 +65,7 @@
 // For hooking up to the main loop idle loop
 #define COMP_HOOKS_MAIN_LOOP()  \
     do {                        \
+    pedals_handleMainLoop();    \
     midilog_handleMainLoop();   \
     blockflt_handleMainLoop();  \
     curveflt_handleMainLoop();  \
