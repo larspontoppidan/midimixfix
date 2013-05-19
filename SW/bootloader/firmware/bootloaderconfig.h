@@ -95,7 +95,7 @@ these macros are defined, the boot loader usees them.
 /* If this macro is defined to 1, the boot loader will exit shortly after the
  * programmer closes the connection to the device. Costs ~36 bytes.
  */
-#define HAVE_CHIP_ERASE             1
+#define HAVE_CHIP_ERASE             0
 /* If this macro is defined to 1, the boot loader implements the Chip Erase
  * ISP command. Otherwise pages are erased on demand before they are written.
  */
@@ -133,7 +133,8 @@ these macros are defined, the boot loader usees them.
 
 #ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
 
-/* jumper is connected to this, active low */
+// MidiMixFix bootloader detection uses PA4, the select button. This must be held
+// down on power up or reset, to enter bootloader:
 #define JUMPER_BIT   4
 #define JUMPER_PORT  PORTA
 #define JUMPER_PIN   PINA
@@ -157,7 +158,7 @@ static inline void  bootLoaderExit(void)
 	JUMPER_PORT &= ~(1 << JUMPER_BIT);                      /* undo bootLoaderInit() changes */
 }
 
-#define bootLoaderCondition()   ((JUMPER_PIN & (1 << JUMPER_BIT)) != 0)
+#define bootLoaderCondition()   ((JUMPER_PIN & (1 << JUMPER_BIT)) == 0)
 
 #endif /* __ASSEMBLER__ */
 
