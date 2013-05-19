@@ -5,7 +5,7 @@
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt)
- * This Revision: $Id: bootloaderconfig.h 729 2009-03-20 09:03:58Z cs $
+ * This Revision: $Id$
  */
 
 #ifndef __bootloaderconfig_h_included__
@@ -112,7 +112,7 @@ these macros are defined, the boot loader usees them.
  */
 #if USE_AUTOCONFIG
 #   undef HAVE_EEPROM_PAGED_ACCESS
-#   define HAVE_EEPROM_PAGED_ACCESS     (USB_CFG_CLOCK_KHZ >= 16000)
+#   define HAVE_EEPROM_PAGED_ACCESS     (USB_CFG_CLOCK_KHZ != 15000)
 #   undef HAVE_EEPROM_BYTE_ACCESS
 #   define HAVE_EEPROM_BYTE_ACCESS      1
 #   undef BOOTLOADER_CAN_EXIT

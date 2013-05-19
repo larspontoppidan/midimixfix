@@ -5,7 +5,7 @@
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt)
- * This Revision: $Id: main.c 786 2010-05-30 20:41:40Z cs $
+ * This Revision: $Id$
  */
 
 #include <avr/io.h>
@@ -142,7 +142,7 @@ usbRequest_t    *rq = (void *)data;
 uchar           len = 0;
 static uchar    replyBuffer[4];
 
-    usbMsgPtr = replyBuffer;
+    usbMsgPtr = (usbMsgPtr_t)replyBuffer;
     if(rq->bRequest == USBASP_FUNC_TRANSMIT){   /* emulate parts of ISP protocol */
         uchar rval = 0;
         usbWord_t address;
