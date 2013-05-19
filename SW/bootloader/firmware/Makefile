@@ -17,7 +17,7 @@
 F_CPU = 20000000
 DEVICE = atmega644p
 BOOTLOADER_ADDRESS = F000
-FUSEOPT = $(FUSEOPT_644)
+FUSEOPT = $(FUSEOPT_644) -B 8
 LOCKOPT =
 # LOCKOPT = -U lock:w:0x2f:m
 
@@ -172,7 +172,7 @@ all: main.hex
 	$(CC) $(CFLAGS) -S $< -o $@
 
 flash:	all
-	$(AVRDUDE) -U flash:w:main.hex:i
+	$(AVRDUDE) -U flash:w:main.hex:i -B 1
 
 readflash:
 	$(AVRDUDE) -U flash:r:read.hex:i

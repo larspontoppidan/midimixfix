@@ -36,6 +36,7 @@ names BOOTLOADER_INIT and BOOTLOADER_CONDITION for this functionality. If
 these macros are defined, the boot loader usees them.
 */
 
+
 /* ---------------------------- Hardware Config ---------------------------- */
 
 #define USB_CFG_IOPORTNAME      B

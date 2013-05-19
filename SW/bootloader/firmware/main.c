@@ -8,6 +8,7 @@
  * This Revision: $Id: main.c 786 2010-05-30 20:41:40Z cs $
  */
 
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -34,6 +35,9 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #define USBASP_FUNC_READEEPROM      7
 #define USBASP_FUNC_WRITEEEPROM     8
 #define USBASP_FUNC_SETLONGADDRESS  9
+
+
+#define BOOTLOADER_SIZE  4096
 
 /* ------------------------------------------------------------------------ */
 
@@ -164,7 +168,7 @@ static uchar    replyBuffer[4];
 #if HAVE_CHIP_ERASE
         }else if(rq->wValue.bytes[0] == 0xac && rq->wValue.bytes[1] == 0x80){  /* chip erase */
             addr_t addr;
-            for(addr = 0; addr < FLASHEND + 1 - 2048; addr += SPM_PAGESIZE) {
+            for(addr = 0; addr < FLASHEND + 1 - BOOTLOADER_SIZE; addr += SPM_PAGESIZE) {
                 /* wait and erase page */
                 DBG1(0x33, 0, 0);
 #   ifndef NO_FLASH_WRITE
@@ -174,6 +178,8 @@ static uchar    replyBuffer[4];
                 sei();
 #   endif
             }
+
+        // TODO, also erase EEPROM??
 #endif
         }else{
             /* ignore all others, return default value == 0 */
