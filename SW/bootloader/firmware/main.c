@@ -8,6 +8,7 @@
  * This Revision: $Id$
  */
 
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -34,6 +35,9 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #define USBASP_FUNC_READEEPROM      7
 #define USBASP_FUNC_WRITEEEPROM     8
 #define USBASP_FUNC_SETLONGADDRESS  9
+
+
+#define BOOTLOADER_SIZE  4096
 
 /* ------------------------------------------------------------------------ */
 
@@ -108,6 +112,10 @@ static const uchar  signatureBytes[4] = {
     0x1e, 0x94, 0x06, 0
 #elif defined (__AVR_ATmega328P__)
     0x1e, 0x95, 0x0f, 0
+#elif defined (__AVR_ATmega32__)
+    0x1e, 0x95, 0x02, 0
+#elif defined (__AVR_ATmega644P__) || defined (__AVR_ATmega644PA__)
+    0x1e, 0x96, 0x0A, 0
 #else
 #   error "Device signature is not known, please edit main.c!"
 #endif
@@ -160,7 +168,7 @@ static uchar    replyBuffer[4];
 #if HAVE_CHIP_ERASE
         }else if(rq->wValue.bytes[0] == 0xac && rq->wValue.bytes[1] == 0x80){  /* chip erase */
             addr_t addr;
-            for(addr = 0; addr < FLASHEND + 1 - 2048; addr += SPM_PAGESIZE) {
+            for(addr = 0; addr < FLASHEND + 1 - BOOTLOADER_SIZE; addr += SPM_PAGESIZE) {
                 /* wait and erase page */
                 DBG1(0x33, 0, 0);
 #   ifndef NO_FLASH_WRITE
@@ -170,6 +178,8 @@ static uchar    replyBuffer[4];
                 sei();
 #   endif
             }
+
+        // TODO, also erase EEPROM??
 #endif
         }else{
             /* ignore all others, return default value == 0 */
@@ -285,6 +295,7 @@ uchar   i = 0;
 
     usbInit();
     /* enforce USB re-enumerate: */
+    cli();
     usbDeviceDisconnect();  /* do this while interrupts are disabled */
     while(--i){         /* fake USB disconnect for > 250 ms */
         wdt_reset();
@@ -297,7 +308,7 @@ uchar   i = 0;
 int __attribute__((noreturn)) main(void)
 {
     /* initialize  */
-    wdt_disable();      /* main app may have enabled watchdog */
+    //wdt_disable();      /* main app may have enabled watchdog */
     bootLoaderInit();
     odDebugInit();
     DBG1(0x00, 0, 0);
@@ -308,6 +319,10 @@ int __attribute__((noreturn)) main(void)
     if(bootLoaderCondition()){
         uchar i = 0, j = 0;
         initForUsbConnectivity();
+
+        DDRB |= (1 << 4u);
+        PORTB &= ~(1 << 4u);
+
         do{
             usbPoll();
 #if BOOTLOADER_CAN_EXIT
@@ -317,7 +332,10 @@ int __attribute__((noreturn)) main(void)
                         break;
                 }
             }
+            
 #endif
+            
+            wdt_reset(); /* Reset the watchdog */
         }while(bootLoaderCondition());  /* main event loop */
     }
     leaveBootloader();
