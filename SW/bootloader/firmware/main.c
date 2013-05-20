@@ -336,7 +336,7 @@ int __attribute__((noreturn)) main(void)
 #endif
             
             wdt_reset(); /* Reset the watchdog */
-        }while(bootLoaderCondition());  /* main event loop */
+        }while(1);  /* main event loop */
     }
     leaveBootloader();
 }
