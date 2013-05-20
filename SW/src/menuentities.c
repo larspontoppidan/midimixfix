@@ -181,6 +181,8 @@ uint8_t menuents_configGetSize(uint8_t entity)
     case ENTITY_PEDAL1:
         ret = pedals_configGetSize();
         break;
+    case ENTITY_PEDAL2:
+        break;
     case ENTITY_GENERATEMSG:
         ret = genmsg_configGetSize();
         break;
@@ -218,6 +220,8 @@ void menuents_configSave(uint8_t entity, uint8_t *dest)
     case ENTITY_PEDAL1:
         pedals_configSave(dest);
         break;
+    case ENTITY_PEDAL2:
+        break;
     case ENTITY_GENERATEMSG:
         genmsg_configSave(dest);
         break;
@@ -251,6 +255,8 @@ void menuents_configLoad(uint8_t entity, uint8_t *dest)
         break;
     case ENTITY_PEDAL1:
         pedals_configLoad(dest);
+        break;
+    case ENTITY_PEDAL2:
         break;
     case ENTITY_GENERATEMSG:
         genmsg_configLoad(dest);
