@@ -142,6 +142,27 @@ static void leaveBootloader()
     nullVector();
 }
 
+#define FILTER_SAMPLES 4
+
+// Sample bootloader condition a number of times to filter glitches and
+// avoid false positive
+static uint8_t filteredBootLoaderCondition(void)
+{
+    uint8_t count = 0;
+    uint8_t i;
+
+    for (i = 0; i < FILTER_SAMPLES; i++)
+    {
+        _delay_ms(1);
+        if (bootLoaderCondition())
+        {
+            count++;
+        }
+    }
+
+    return count == FILTER_SAMPLES;
+}
+
 /* ------------------------------------------------------------------------ */
 
 uchar   usbFunctionSetup(uchar data[8])
@@ -316,7 +337,8 @@ int __attribute__((noreturn)) main(void)
     GICR = (1 << IVCE);  /* enable change of interrupt vectors */
     GICR = (1 << IVSEL); /* move interrupts to boot flash section */
 #endif
-    if(bootLoaderCondition()){
+
+    if(filteredBootLoaderCondition()){
         uchar i = 0, j = 0;
         initForUsbConnectivity();
 
