@@ -5,12 +5,12 @@
  *      Author: lars
  */
 
-#ifndef HT_MAIN_H_
-#define HT_MAIN_H_
+#ifndef HARDWARETEST_H_
+#define HARDWARETEST_H_
 
 #include "../common.h"
 
-void htmain_enterIfTestmode(void);
+void hwtest_enterIfTestMode(void);
 
 
 

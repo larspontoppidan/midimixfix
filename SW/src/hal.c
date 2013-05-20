@@ -350,7 +350,7 @@ ISR(TIMER0_COMPA_vect)
         AdcTemp += ADC;
         AdcValue0 = AdcTemp >> 2;
 
-        // Setup sampling ADC0
+        // Setup sampling ADC1
         AdcTemp = 0;
         ADMUX = (1 << REFS0) | (1 << MUX0);
 
