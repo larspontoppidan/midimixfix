@@ -12,6 +12,7 @@
 #include <util/delay.h>
 #include <avr/pgmspace.h>
 
+#include "hardwaretest/ht_main.h"
 #include "hal.h"
 #include "lcd.h"
 #include "quaddecode.h"
@@ -87,6 +88,9 @@ static void handleUi(void)
 
 int main(void)
 {
+    // Hardware test mode?
+    htmain_enterIfTestmode();
+
     // Initialize basic modules
     err_initialize();
     hal_initialize();
