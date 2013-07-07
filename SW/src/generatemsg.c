@@ -79,7 +79,7 @@
 typedef struct
 {
     uint8_t MidiStatus;
-    uint8_t MidiParam[2];
+    uint8_t MidiParam[3];
 } message_t;
 
 #define MESSAGES_MAX 20
@@ -98,7 +98,7 @@ typedef struct
 static uint8_t   MessageCount;
 static message_t Messages[MESSAGES_MAX];
 
-static char TitleString[] PROGMEM = "Generate msg. ";
+static char const TitleString[] PROGMEM = "Generate msg. ";
 
 // ---------------------
 //   PRIVATE FUNCTIONS
@@ -175,6 +175,7 @@ static void EditType(uint8_t msg, int8_t delta)
         case MIDI_STATUS_CHAN_ATOUCH:
             status = MIDI_STATUS_PROG_CHANGE;
             Messages[msg].MidiParam[0] = 0;
+
         }
 
         delta++;

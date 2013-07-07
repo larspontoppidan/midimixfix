@@ -14,7 +14,7 @@
 
 // Strings for decoding midi messages
 
-static char MidiCtrlNames1[32][10] PROGMEM =
+static char const MidiCtrlNames1[32][10] PROGMEM =
 {
         {"Bank.Sel"},  // 0
         {"Modulat."},  // 1
@@ -51,7 +51,7 @@ static char MidiCtrlNames1[32][10] PROGMEM =
 };
 
 
-static char MidiCtrlNames2[64][10] PROGMEM =
+static char const MidiCtrlNames2[64][10] PROGMEM =
 {
         {"SustainP"},  // 64
         {"Portam.P"},  // 65
@@ -119,7 +119,7 @@ static char MidiCtrlNames2[64][10] PROGMEM =
         {"PolyOn"}     // 127
 };
 
-static char MidiStatusNames[8][9] PROGMEM =
+static char const MidiStatusNames[8][9] PROGMEM =
 {
         {"N.Off "},    // 0x80
         {"N.On  "},     // 0x90
@@ -131,7 +131,7 @@ static char MidiStatusNames[8][9] PROGMEM =
         {"System "}    // 0xF0
 };
 
-static char MidiSysStatusNames[16][13] PROGMEM =
+static char const MidiSysStatusNames[16][13] PROGMEM =
 {
         {"SysexStart"},   //  0xF0
         {"Sys.TimeCode"}, //  0xF1

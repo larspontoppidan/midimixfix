@@ -63,6 +63,17 @@ static void adcSetup(void);
 
 void hal_initialize(void)
 {
+    // Set unconfigured defaults on all IO to pull-up enabled inputs, except for
+    // USB control signals, which should be high impedance to disable USB.
+    PORTA = 0xFF;
+    DDRA = 0;
+    PORTB = ~(0x07);
+    DDRB = 0;
+    PORTC = 0xFF;
+    DDRC = 0;
+    PORTD = 0xFF;
+    DDRD = 0;
+
     // Status led
     PORTB |= (1u << 4);
     DDRB |= (1u << 4);
@@ -323,7 +334,8 @@ static void adcSetup(void)
     ADMUX = (1 << REFS0);
     ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 
-    // TODO turn off input drivers of ADC!
+    // Turn off input drivers of ADC0 and ADC1
+    DIDR0 = (1 << ADC0D) | (1 << ADC1D);
 }
 
 // ADC TICK ISR. Executes with 976.6 Hz

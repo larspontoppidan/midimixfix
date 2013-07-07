@@ -61,7 +61,7 @@
 
 #define FILTER_MODES          7
 
-static char FilterModeNames[FILTER_MODES][15] PROGMEM =
+static char const FilterModeNames[FILTER_MODES][15] PROGMEM =
 {
     {"N.On"},           // 0
     {"N.On BlackKeys"}, // 1
@@ -72,7 +72,7 @@ static char FilterModeNames[FILTER_MODES][15] PROGMEM =
     {"CC:"},            // 6
 };
 
-static uint8_t FilterModeStatusses[FILTER_MODES] PROGMEM =
+static uint8_t const FilterModeStatusses[FILTER_MODES] PROGMEM =
 {
         MIDI_STATUS_NOTE_ON,
         MIDI_STATUS_NOTE_ON,
@@ -103,7 +103,7 @@ typedef struct
 
 // Variables
 
-static char   TitleString[]  PROGMEM = "Curve filter ";
+static char const TitleString[] PROGMEM = "Curve filter ";
 
 #define FILTER_COUNT_MAX 8
 

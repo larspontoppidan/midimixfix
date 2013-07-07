@@ -13,7 +13,7 @@
 
 // Curve type names
 
-static char CurveNames[CURVEMATH_TYPES][4] PROGMEM =
+static char const CurveNames[CURVEMATH_TYPES][4] PROGMEM =
 {
     {"Lin"},  // 0
     {"0.6"},  // 1
@@ -45,7 +45,7 @@ static char CurveNames[CURVEMATH_TYPES][4] PROGMEM =
 // array(a).reshape(-1,8)
 
 
-static uint8_t CurveTables[CURVEMATH_TYPES][128] PROGMEM =
+static uint8_t const CurveTables[CURVEMATH_TYPES][128] PROGMEM =
 {
     // Linear
     {   0,   2,   4,   6,   8,  10,  12,  14,

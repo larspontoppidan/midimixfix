@@ -181,7 +181,7 @@ static bool_t TapSpeedValid;
 static bool_t DynamicEnable;
 
 
-static menuItem_t MenuItems[MENU_ITEMS] PROGMEM =
+static menuItem_t const MenuItems[MENU_ITEMS] PROGMEM =
 {
     {"Midi delay    %O",  17, &(FilterEnabled) },
     {"Input: %i",          7, &(DelaySetup.Source) },

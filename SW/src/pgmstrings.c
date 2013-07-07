@@ -10,22 +10,22 @@
 #include "pgmstrings.h"
 
 
-char pstr_On[]  PROGMEM = "On";
-char pstr_Off[] PROGMEM = "Off";
+char const pstr_On[]  PROGMEM = "On";
+char const pstr_Off[] PROGMEM = "Off";
 
-char pstr_PlusParentheses[]  PROGMEM = "(+)";
-char pstr_MinusParentheses[] PROGMEM = "(-)";
-char pstr_OnParentheses[]  PROGMEM = " (ON)";
-char pstr_OffParentheses[] PROGMEM = "(OFF)";
+char const pstr_PlusParentheses[]  PROGMEM = "(+)";
+char const pstr_MinusParentheses[] PROGMEM = "(-)";
+char const pstr_OnParentheses[]  PROGMEM = " (ON)";
+char const pstr_OffParentheses[] PROGMEM = "(OFF)";
 
-char pstr_Discard[] PROGMEM = "Discard";
-char pstr_Through[] PROGMEM = "Through";
-char pstr_Use[]     PROGMEM = "Use";
+char const pstr_Discard[] PROGMEM = "Discard";
+char const pstr_Through[] PROGMEM = "Through";
+char const pstr_Use[]     PROGMEM = "Use";
 
-char pstr_Chan[]   PROGMEM = "Chan";
+char const pstr_Chan[]   PROGMEM = "Chan";
 
 
-static char StrInSources[4] = "X12*";
+static char const StrInSources[4] = "X12*";
 
 
 // Write "InX", "In1, In2, In*

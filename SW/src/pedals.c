@@ -83,7 +83,7 @@ typedef struct
 pedalSetup_t PedalSetup[2];
 pedalState_t PedalState[2];
 
-static uint16_t InvertTable[INVERT_TABLE_MAX] PROGMEM =
+static uint16_t const InvertTable[INVERT_TABLE_MAX] PROGMEM =
 {
        0u,   0u,   0u,   0u,   1u,   1u,   1u,   1u,
        1u,   1u,   2u,   2u,   2u,   2u,   2u,   2u,

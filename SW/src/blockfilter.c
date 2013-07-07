@@ -104,7 +104,7 @@ typedef struct
 #define TARGET_PROG_CHANGE  19
 #define TARGET_PITCH_WHEEL  20
 
-static uint8_t targetStatusMap[4] PROGMEM =
+static uint8_t const targetStatusMap[4] PROGMEM =
 {
         MIDI_STATUS_KEY_ATOUCH,
         MIDI_STATUS_CHAN_ATOUCH,
@@ -131,7 +131,7 @@ typedef struct
 } ruleConfig_t;
 
 
-static char TitleString[] PROGMEM = "Block and map";
+static char const TitleString[] PROGMEM = "Block and map";
 
 
 

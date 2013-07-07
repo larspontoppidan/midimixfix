@@ -17,21 +17,21 @@
 
 #include "midiio.h"
 
-static char TitleString0[] PROGMEM = "- MIDIMIXFIX ";
-static char TitleString1[] PROGMEM = __DATE__;
-static char TitleString2[] PROGMEM = "Error: ";
+static char const TitleString0[] PROGMEM = "- MIDIMIXFIX ";
+static char const TitleString1[] PROGMEM = __DATE__;
+//static char const TitleString2[] PROGMEM = "Error: ";
 
-static char SetupString0[] PROGMEM = "IO setup ";
-static char SetupString1[] PROGMEM = "In1       :";
-static char SetupString2[] PROGMEM = "In1 rt.msg:";
-static char SetupString3[] PROGMEM = "In2       :";
-static char SetupString4[] PROGMEM = "In2 rt.msg:";
-static char SetupString5[] PROGMEM = "Send runn.st.:";
+static char const SetupString0[] PROGMEM = "IO setup ";
+static char const SetupString1[] PROGMEM = "In1       :";
+static char const SetupString2[] PROGMEM = "In1 rt.msg:";
+static char const SetupString3[] PROGMEM = "In2       :";
+static char const SetupString4[] PROGMEM = "In2 rt.msg:";
+static char const SetupString5[] PROGMEM = "Send runn.st.:";
 
 static uint8_t CursorPositions[6] = {0, 11, 11, 11, 11, 14};
 
 
-static char *ModeStrings[3] = {pstr_Discard, pstr_Through, pstr_Use};
+static char const *ModeStrings[3] = {pstr_Discard, pstr_Through, pstr_Use};
 
 static bool_t SetupMenuVisible = FALSE;
 

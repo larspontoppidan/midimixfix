@@ -77,7 +77,7 @@ uint8_t WindowBuffer[LCD_ROWS][BUFFER_MAX];
 
 // Strings
 
-static char PStrTitle[] PROGMEM =  "Show midi log (...)";
+static char const PStrTitle[] PROGMEM = "Show midi log (...)";
 
 // The user can toggle the different modes with the select button
 //   "*Log. In *"
@@ -85,9 +85,9 @@ static char PStrTitle[] PROGMEM =  "Show midi log (...)";
 //   "*Stop In *"
 //   "*Stop Out*"
 
-static char PStrOFF[] PROGMEM = "OFF";
-static char PStrIn[]  PROGMEM = "In";
-static char PStrOut[] PROGMEM = "Ou";
+static char const PStrOFF[] PROGMEM = "OFF";
+static char const PStrIn[]  PROGMEM = "In";
+static char const PStrOut[] PROGMEM = "Ou";
 
 ///////////
 

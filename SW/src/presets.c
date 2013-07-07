@@ -25,12 +25,12 @@
 //     hexdump -C -v data.eep
 
 
-static char StrTitle[] PROGMEM = "Preset";
-static char StrMod[]   PROGMEM = "mod.";
-static char StrSave[]  PROGMEM = "Save ";
-static char StrLoad[]  PROGMEM = "Load ";
+static char const StrTitle[] PROGMEM = "Preset";
+static char const StrMod[]   PROGMEM = "mod.";
+static char const StrSave[]  PROGMEM = "Save ";
+static char const StrLoad[]  PROGMEM = "Load ";
 
-static char StrBackAborts[]  PROGMEM = "back aborts";
+// static char const StrBackAborts[]  PROGMEM = "back aborts";
 
 // Total number of preset slots in EEPROM
 #define PRESET_SLOTS_COUNT  12
@@ -48,7 +48,7 @@ static uint8_t MenuSelected;
 
 
 // Buffer for saving / loading config
-#define PRESETS_BUFFER_SIZE 70
+#define PRESETS_BUFFER_SIZE 82
 static uint8_t PresetsBuffer[PRESETS_BUFFER_SIZE];
 
 static uint16_t PresetRecordSize;
@@ -75,7 +75,7 @@ typedef struct
 #define SIG_1   'M'
 #define SIG_2   'M'
 #define SIG_3   'F'
-#define SIG_4   0
+#define SIG_4   1
 
 // Directly after the header comes the preset slots
 // Each preset slot takes RecordSize bytes + one byte checksum

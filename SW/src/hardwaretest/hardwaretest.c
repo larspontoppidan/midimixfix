@@ -6,6 +6,32 @@
  */
 
 
+//
+// Hardware bring up test:
+//
+// 1. Using ISP interface program fuses on avr (easy way, make fuse in USPaspLoader project)
+//
+// 2. Using ISP program midimixfix software release
+//
+// 3. Remove all connectors, place jumper between 3 and 4 in ISP connector
+//
+// 4. Plugin usb power. Observe status led blinking.
+//    5 blinks first indicates test mode is entered
+//    2 blinks, 8 blinks
+//    2 blinks, 6 blinks indicates short between PORTB7 and PORTB5 (no problem, it's the jumper)
+//    (other blinked codes IS a problem, investigate)
+//
+// 5. Power off, connect everything: display, buttons, optocouplers, pedals
+//
+// 6. Power on, (keep jumper between 3 and 4), after the blinking, display driven tests now start
+//
+//    - Knob idle: 00 03, clockwise 01, 00, 02 back to 03
+//    - Push select: 10, back: 08, knob: 20
+//    - Yamaha pedal forward ~25, back ~855
+//    - Patch midi-out to midi-in1. Push select should generate 55, push back for AA
+//    - Patch midi-out to midi-in2. Push select should generate 55, push back for AA
+
+
 #include "../common.h"
 #include "hardwaretest.h"
 #include "../util.h"
@@ -32,16 +58,19 @@
 #define FLASH_ON_MS     250
 #define FLASH_OFF_MS    250
 
-
+// Jumper between pin 3 and 4 in ISP connector enables hardware test:
 #define TESTJUMPER_PORT  PORTB
 #define TESTJUMPER_DDR   DDRB
 #define TESTJUMPER_PIN   PINB
 #define TESTJUMPER_1     (1u << 7)
 #define TESTJUMPER_2     (1u << 5)
 
+#define CHECK_SAMPLES    4
+
 static bool_t checkTestModeJumper(void)
 {
-    bool_t ret;
+    uint8_t i;
+    uint8_t count = 0;
 
     // Set one pin pull up input
     TESTJUMPER_DDR  &= ~TESTJUMPER_1;
@@ -51,16 +80,25 @@ static bool_t checkTestModeJumper(void)
     TESTJUMPER_DDR  |=  TESTJUMPER_2;
     TESTJUMPER_PORT &= ~TESTJUMPER_2;
 
-    _delay_ms(1);
+    // If TESTJUMPER_1 pin went low, there's a jumper.
+    // Since this is a high impedance, over sample and
+    // only accept if all samples are low.
 
-    // If first pin went down, there's a jumper
-    ret = ((TESTJUMPER_PIN & TESTJUMPER_1) == 0) ? TRUE : FALSE;
+    for (i = 0; i < CHECK_SAMPLES; i++)
+    {
+        _delay_ms(1);
+
+        if ((TESTJUMPER_PIN & TESTJUMPER_1) == 0)
+        {
+            count++;
+        }
+    }
 
     // Reset IO states
     TESTJUMPER_DDR  &= ~(TESTJUMPER_1 | TESTJUMPER_2);
     TESTJUMPER_PORT &= ~(TESTJUMPER_1 | TESTJUMPER_2);
 
-    return ret;
+    return (count == CHECK_SAMPLES);
 }
 
 static void flashLed(uint8_t flashes)
@@ -166,7 +204,7 @@ static void testMode(void)
 {
     char buffer[20];
     char *p;
-    bool_t alt;
+    bool_t alt = FALSE;
     uint16_t adc1 = 0, adc2 = 0;
     uint8_t midi_in;
 
