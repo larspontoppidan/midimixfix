@@ -793,6 +793,7 @@ void superdly_handleMidiMsg_ISR(midiMsg_t *msg)
                         // Discard all NoteOn/Off/Aftertouch messages regarding this key
                         msg->Flags |= MIDIMSG_FLAG_DISCARD;
                         done_with_msg = TRUE;
+                        break;
                     }
                 }
 

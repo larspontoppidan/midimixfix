@@ -295,6 +295,11 @@ uint8_t midiio_msgNew_MAIN(uint8_t flags, uint8_t midi_status)
     return msg_index;
 }
 
+midiMsg_t* midiio_msgGetPtr(uint8_t msg_index)
+{
+    return &(MsgBuffer[msg_index]);
+}
+
 // Add data to message
 void midiio_msgAddData_ISR(uint8_t msg_index, uint8_t midi_data)
 {
@@ -401,11 +406,11 @@ void midiio_outputTxComplete_ISR(void)
         {
             // Yes, send next byte
             // TODO implement running status if configured to do such
-            hal_midiTxSend_ISR(midimsg_getByte(OutputMessage, OutputTransmitIndex));
+            hal_midiTxSend_ISR(midimsg_getRawByte(OutputMessage, OutputTransmitIndex));
             OutputTransmitIndex++;
 
             // More bytes left of this message?
-            if (OutputTransmitIndex >= midimsg_getLength(OutputMessage))
+            if (OutputTransmitIndex >= midimsg_getRawLength(OutputMessage))
             {
                 // No, clear message pointer
                 OutputMessage = NULL;
@@ -429,14 +434,14 @@ void midiio_outputTxComplete_ISR(void)
                 {
                     // We found a message to transmit
                     OutputMessage = &(MsgBuffer[BufferTail]);
-                    hal_midiTxSend_ISR(midimsg_getByte(OutputMessage, 0));
+                    hal_midiTxSend_ISR(midimsg_getRawByte(OutputMessage, 0));
                     OutputTransmitIndex = 1;
 
                     // Let output loggers peek at the message
                     COMP_HOOKS_MIDI_MSG_OUT_ISR(OutputMessage);
 
                     // More bytes left of this message?
-                    if (OutputTransmitIndex >= midimsg_getLength(OutputMessage))
+                    if (OutputTransmitIndex >= midimsg_getRawLength(OutputMessage))
                     {
                         // No, clear message pointer
                         OutputMessage = NULL;

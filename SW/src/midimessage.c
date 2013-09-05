@@ -14,7 +14,7 @@
 #include <avr/pgmspace.h>
 
 
-uint8_t midimsg_getLength(midiMsg_t *msg)
+uint8_t midimsg_getRawLength(midiMsg_t *msg)
 {
     uint8_t ret;
 
@@ -29,7 +29,7 @@ uint8_t midimsg_getLength(midiMsg_t *msg)
 }
 
 
-uint8_t midimsg_getByte(midiMsg_t *msg, uint8_t index)
+uint8_t midimsg_getRawByte(midiMsg_t *msg, uint8_t index)
 {
     uint8_t ret;
 

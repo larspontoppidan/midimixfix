@@ -27,6 +27,9 @@ uint8_t midiio_msgNew_MAIN(uint8_t flags, uint8_t midi_status);
 // Add data to message
 void midiio_msgAddData_ISR(uint8_t msg_index, uint8_t midi_data);
 
+// Direct access to a message
+midiMsg_t* midiio_msgGetPtr(uint8_t msg_index);
+
 // Indicate message is complete, and should be processed
 void midiio_msgFinish_ISR(uint8_t msg_index, uint8_t flags);
 

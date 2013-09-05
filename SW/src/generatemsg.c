@@ -175,6 +175,7 @@ static void EditType(uint8_t msg, int8_t delta)
         case MIDI_STATUS_CHAN_ATOUCH:
             status = MIDI_STATUS_PROG_CHANGE;
             Messages[msg].MidiParam[0] = 0;
+            break;
 
         }
 
@@ -217,7 +218,7 @@ static void SendMessage(uint8_t msg)
     // Put in the data
     for (i = 0; i < len; i++)
     {
-        midiio_msgAddData_ISR(msg_index, Messages[msg].MidiParam[i]);
+        midiio_msgAddData_ISR(msg_index, Messages[msg].MidiParam[i]);   // TODO MAIN ISR conflict here!!
     }
 
     // Finish so it will be sent

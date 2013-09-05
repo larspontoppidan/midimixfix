@@ -582,6 +582,7 @@ uint8_t pedals_menuHandleEvent(uint8_t pedal, uint8_t item, uint8_t edit_mode, u
     default:
         // We don't support this edit mode
         ret = MENU_EDIT_MODE_UNAVAIL;
+        break;
     }
 
 

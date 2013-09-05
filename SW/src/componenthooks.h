@@ -16,6 +16,7 @@
 #include "curvefilter.h"
 #include "pedals.h"
 #include "superdelay.h"
+#include "polysplit.h"
 #include "presets.h"
 
 // Components can hook up functions to be called at different points in the program flow.
@@ -30,6 +31,7 @@
     genmsg_initialize();         \
     superdly_initialize();       \
     presets_initialize();        \
+    psplit_initialize();         \
     } while (0)
 
 // For processing normal incoming messages
@@ -39,6 +41,7 @@
     blockflt_handleMidiMsg_ISR(x);    \
     curveflt_handleMidiMsg_ISR(x);    \
     superdly_handleMidiMsg_ISR(x);    \
+    psplit_handleMidiMsg_ISR(x);      \
     } while (0)
 
 // For processing incoming realtime messages
@@ -53,13 +56,14 @@
     midilog_handleMidiMsgOut_ISR(x);   \
     } while (0)
 
-// For hooking up to the tick interrupt
+// For hooking up to the tick interrupt (100 Hz)
 #define COMP_HOOKS_TICK_ISR()   \
     do {                        \
     pedals_handleTick_ISR();    \
     midilog_handleTick_ISR();   \
     blockflt_handleTick_ISR();  \
     superdly_handleTick_ISR();  \
+    psplit_handleTick_ISR();    \
     } while (0)
 
 // For hooking up to the main loop idle loop

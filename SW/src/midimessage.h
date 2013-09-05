@@ -34,13 +34,35 @@ typedef struct
 
 
 // Accessing the raw bytes of a message:
-uint8_t midimsg_getLength(midiMsg_t *msg);
-uint8_t midimsg_getByte(midiMsg_t *msg, uint8_t index);
+uint8_t midimsg_getRawLength(midiMsg_t *msg);
+uint8_t midimsg_getRawByte(midiMsg_t *msg, uint8_t index);
 
 // Converting message to text
 char *midimsg_writeRaw(char *dest, midiMsg_t *msg);
 char *midimsg_writeParsed(char *dest, midiMsg_t *msg);
 
 
+// TODO consider this nicely encapsulated interface to the midi message:
+//
+//// Accessing features of a message
+//uint8_t midimsg_getChan(midiMsg_t *msg);
+//uint8_t midimsg_getKey(midiMsg_t *msg);
+//uint8_t midimsg_getVelocity(midiMsg_t *msg);
+//
+//// Modifying midi messages
+//void midimsg_setChan(midiMsg_t *msg, uint8_t chan);
+//void midimsg_setKey(midiMsg_t *msg, uint8_t key);
+//void midimsg_setVelocity(midiMsg_t *msg, uint8_t velocity);
+//
+//// Constructing midi messages
+//void midimsg_newNoteOn(midiMsg_t *msg, uint8_t chan, uint8_t key, uint8_t velocity);
+//void midimsg_newNoteOff(midiMsg_t *msg, uint8_t chan, uint8_t key, uint8_t velocity);
+//void midimsg_newKeyAfterTouch(midiMsg_t *msg, uint8_t chan, uint8_t key, uint8_t pressure);
+//void midimsg_newChanAfterTouch(midiMsg_t *msg, uint8_t chan, uint8_t pressure);
+//void midimsg_newPitchWheel(midiMsg_t *msg, uint8_t chan, int16_t pitch_wheel);
+//void midimsg_newProgramChange(midiMsg_t *msg, uint8_t chan, uint8_t part);
+//void midimsg_newContinuousCtrl(midiMsg_t *msg, uint8_t chan, uint8_t cc, uint8_t value);
+//
+//
 
 #endif /* MIDIMESSAGE_H_ */
