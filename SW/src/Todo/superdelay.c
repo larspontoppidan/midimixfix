@@ -85,6 +85,7 @@
 #include "pgmstrings.h"
 #include "errors.h"
 #include <string.h>
+#include <avr/pgmspace.h>
 
 /////////////////////////    Defines     /////////////////////////
 

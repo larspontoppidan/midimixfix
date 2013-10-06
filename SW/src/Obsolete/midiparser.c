@@ -43,6 +43,8 @@ typedef struct
 {
     bool_t  Receiving;
 
+    midiMsg_t Msg;
+
     uint8_t MsgIndex; // For referring in midiio
 
     uint8_t DataCount;
@@ -96,6 +98,8 @@ void midiparser_handleInput1_ISR(uint8_t x)
                     // Yes, we'll use it for status, create new message
                     Input1State.MsgIndex = midiio_msgNew_ISR(MIDIMSG_SOURCE_INPUT1, x);
                     Input1State.MidiStatus = x;
+                    midimsg_newSetStatus(Input1State.Msg, x);
+
                     x_used = TRUE;
 
                     // Predict expected length

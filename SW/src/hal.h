@@ -49,13 +49,11 @@ void hal_interruptsEnable(void);
 uint16_t hal_tickCountGet_ISR(void);
 uint16_t hal_tickCountGet_MAIN(void);
 
-bool_t hal_midiTxGetActive_ISR(void);
-void   hal_midiTxSend_ISR(uint8_t x);
-void   hal_midiTxEnableIsr_ISR(bool_t en);
-
+void   hal_midiTxEnqueue_ISR(uint8_t x);
 
 uint16_t hal_adcGetValue_ISR(uint8_t channel);
 uint16_t hal_adcGetValue_MAIN(uint8_t channel);
 
+void hal_jumpBootloader(void);
 
 #endif /* HAL_H_ */

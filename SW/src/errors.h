@@ -22,7 +22,7 @@ enum
     ERR_MODULE_ERR,     // 6
     ERR_MODULE_GENMSG,  // 7
     ERR_MODULE_MMENU,   // 8
-    ERR_MODULE_MENU,    // 9
+    ERR_MODULE_UI,      // 9
     ERR_MODULE_MENUE,   // 10
     ERR_MODULE_MIDIIO,  // 11
     ERR_MODULE_MLOG,    // 12
@@ -32,11 +32,16 @@ enum
     ERR_MODULE_PRESETS, // 16
     ERR_MODULE_QD,      // 17
     ERR_MODULE_UTIL,    // 18
-    ERR_MODULE_SDELAY   // 19
+    ERR_MODULE_SDELAY,  // 19
+    ERR_MODULE_MIDIPROC,
+    ERR_MODULE_FILTERS,
+    ERR_MODULE_MIDIINPUT,
 };
 
 void err_initialize(void);
-void err_raise(uint8_t module, uint16_t line_number);
+void err_raise(uint8_t module, uint16_t line_number); // TODO Obsolete! Use _INT or _MAIN
+void err_raise_ISR(uint8_t module, uint16_t line_number);
+void err_raise_MAIN(uint8_t module, uint16_t line_number);
 
 void err_debugPrint(uint8_t x);
 void err_debugPrintBlock(const void *src, uint8_t size);

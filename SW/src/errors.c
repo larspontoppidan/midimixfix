@@ -34,7 +34,7 @@ void err_initialize(void)
 
 void err_raise(uint8_t module, uint16_t line_number)
 {
-    //hal_InterruptsDisable();  TODO critical section
+    //hal_InterruptsDisable();  TODO obsolete this function
 
     if (ErrorCount < ERROR_BUFFER_SIZE)
     {
@@ -47,6 +47,37 @@ void err_raise(uint8_t module, uint16_t line_number)
     else
     {
         //hal_InterruptsEnable();
+    }
+}
+
+
+void err_raise_ISR(uint8_t module, uint16_t line_number)
+{
+    if (ErrorCount < ERROR_BUFFER_SIZE)
+    {
+        ErrorCount++;
+
+        ErrorBuffer[ErrorCount-1].Module = module;
+        ErrorBuffer[ErrorCount-1].LineNumber = line_number;
+    }
+}
+
+
+void err_raise_MAIN(uint8_t module, uint16_t line_number)
+{
+    hal_interruptsDisable();
+
+    if (ErrorCount < ERROR_BUFFER_SIZE)
+    {
+        ErrorCount++;
+        hal_interruptsEnable();
+
+        ErrorBuffer[ErrorCount-1].Module = module;
+        ErrorBuffer[ErrorCount-1].LineNumber = line_number;
+    }
+    else
+    {
+        hal_interruptsEnable();
     }
 }
 

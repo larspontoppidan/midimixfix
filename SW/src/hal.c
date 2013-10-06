@@ -9,12 +9,11 @@
 
 #include "hal.h"
 #include "errors.h"
-#include "midiio.h"
-#include "midiparser.h"
-#include "componenthooks.h"
+#include "filterhooks.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <avr/wdt.h>
 #include "quaddecode.h"
 
 /////////////////////////    Defines     /////////////////////////
@@ -42,6 +41,20 @@
 #define DEBUG_SIG_PORT PORTB
 #define DEBUG_SIG_DDR  DDRB
 
+
+#define TX_BUFFER_MAX  30
+
+
+// USB Hardware
+
+#define USB_PORT         PORTB
+#define USB_DDR          DDRB
+
+#define USB_PULLUP_MASK  (1u << 1)
+#define USB_DPLUS_MASK   (1u << 2)
+#define USB_DMINUS_MASK  (1u << 0)
+
+
 /////////////////////////   Variables    /////////////////////////
 
 static uint16_t TickCount;
@@ -52,6 +65,11 @@ static uint16_t AdcValue1;
 
 static uint16_t AdcTemp;
 
+// Midi transmit buffer
+static uint8_t TxBuffer[TX_BUFFER_MAX];
+static uint8_t TxBufferHead;
+static uint8_t TxBufferTail;
+
 /////////////////////////   Prototypes   /////////////////////////
 
 
@@ -59,10 +77,14 @@ static void midiIoSetup(void);
 static void tickIsrSetup(void);
 static void adcSetup(void);
 
+static void outputTxComplete_ISR();
+
 ///////////////////////// Implementation /////////////////////////
 
 void hal_initialize(void)
 {
+    wdt_disable();
+
     // Set unconfigured defaults on all IO to pull-up enabled inputs, except for
     // USB control signals, which should be high impedance to disable USB.
     PORTA = 0xFF;
@@ -109,6 +131,7 @@ void hal_initialize(void)
     tickIsrSetup();
     adcSetup();
 }
+
 
 void hal_statusLedSet(bool_t on)
 {
@@ -216,6 +239,10 @@ static void midiIoSetup(void)
     // Set frame format: 8 data, 1 stop bit
     UCSR0C = (1u << UCSZ01) | (1u << UCSZ00);
 
+    // Reset TX buffer
+    TxBufferHead = 0;
+    TxBufferTail = 0;
+
     // Setup USART1 for Input2 (only)
     ////////
 
@@ -230,9 +257,7 @@ static void midiIoSetup(void)
 
     // Set frame format: 8 data, 1 stop bit
     UCSR1C = (1u << UCSZ11) | (1u << UCSZ10);
-
 }
-
 
 ISR(USART0_RX_vect)
 {
@@ -240,7 +265,7 @@ ISR(USART0_RX_vect)
 
     hal_statusLedSet(TRUE);
     x = UDR0;
-    midiparser_handleInput1_ISR(x);
+    midiin_handleInput1_ISR(x);
     hal_statusLedSet(FALSE);
 }
 
@@ -250,7 +275,7 @@ ISR(USART1_RX_vect)
 
     hal_statusLedSet(TRUE);
     x = UDR1;
-    midiparser_handleInput2_ISR(x);
+    midiin_handleInput2_ISR(x);
     hal_statusLedSet(FALSE);
 }
 
@@ -259,36 +284,70 @@ ISR(USART1_RX_vect)
 ISR(USART0_UDRE_vect)
 {
     hal_statusLedSet(TRUE);
-    midiio_outputTxComplete_ISR();
+    outputTxComplete_ISR();
     hal_statusLedSet(FALSE);
 }
 
-
-// Return true if Uart Data Register Empty bit is not set
-bool_t hal_midiTxGetActive_ISR(void)
+static void outputTxComplete_ISR()
 {
-    return ((UCSR0A & (1u << UDRE0)) == 0u);
-}
-
-
-void hal_midiTxSend_ISR(uint8_t x)
-{
-    UDR0 = x;
-}
-
-void hal_midiTxEnableIsr_ISR(bool_t en)
-{
-
-    if (en)
+    if ((UCSR0A & (1u << UDRE0)) != 0u)
     {
-        // Enable the USART0_UDRE_vect interrupt
-        UCSR0B |= (1u << UDRIE0);
+        // We are done transmitting, more bytes to send?
+
+        if (TxBufferTail != TxBufferHead)
+        {
+            // Yes, send next byte
+            UDR0 = TxBuffer[TxBufferTail];
+
+            if (TxBufferTail >= (TX_BUFFER_MAX - 1))
+            {
+                TxBufferTail = 0;
+            }
+            else
+            {
+                TxBufferTail++;
+            }
+        }
+        else
+        {
+            // We didn't find anything to send, or are already finished
+            // Turn off this interrupt
+            UCSR0B &= ~(1u << UDRIE0);
+        }
+    }
+}
+
+
+void hal_midiTxEnqueue_ISR(uint8_t x)
+{
+    uint8_t index;
+
+    // Grab a location in tx buffer and increment head
+
+    index = TxBufferHead;
+
+    if (TxBufferHead >= (TX_BUFFER_MAX - 1))
+    {
+        TxBufferHead = 0;
     }
     else
     {
-        UCSR0B &= ~(1u << UDRIE0);
+        TxBufferHead++;
     }
 
+    if (TxBufferTail == TxBufferHead)
+    {
+        // Oops, buffer overflow. Roll back and don't do anything
+        TxBufferHead = index;
+    }
+    else
+    {
+        // Place byte in buffer
+        TxBuffer[index] = x;
+    }
+
+    // Make sure the transmit interrupt system is running in any case
+    UCSR0B |= (1u << UDRIE0);
 }
 
 
@@ -453,7 +512,7 @@ static void tickIsrSetup(void)
 ISR(TIMER1_COMPA_vect)
 {
     TickCount++;
-    COMP_HOOKS_TICK_ISR();
+    FILTER_HOOKS_TICK_ISR();
 }
 
 uint16_t hal_tickCountGet_ISR(void)
@@ -473,3 +532,15 @@ uint16_t hal_tickCountGet_MAIN(void)
     return tc;
 }
 
+void hal_jumpBootloader(void)
+{
+    wdt_enable(WDTO_500MS);
+
+    hal_interruptsDisable();
+
+    while(1)
+    {
+
+    }
+
+}

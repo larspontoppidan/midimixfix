@@ -100,6 +100,30 @@ static uint8_t BufferTail;
 //
 
 
+
+
+// New concept!
+
+//
+// Midiparser constructs the message itself, no individual adding of bytes here anymore.
+//
+// Midiio handles new midi messages. They are queued on the midi message queue.
+//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Currently transmitting status
 
 static midiMsg_t *OutputMessage;

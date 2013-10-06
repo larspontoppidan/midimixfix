@@ -14,28 +14,33 @@
 
 #define MIDIMSG_DATA_MAX 5
 
-#define MIDIMSG_SOURCE_INPUT1        0x01
-#define MIDIMSG_SOURCE_INPUT2        0x02
-#define MIDIMSG_SOURCE_GENERATED     0x04
-#define MIDIMSG_FLAG_RAW             0x08   // If the raw flag is set, it means data without status!
-#define MIDIMSG_FLAG_MSG_OK          0x10   // If set, the message had expected length
-#define MIDIMSG_FLAG_RUNNING_STATUS  0x20   // If set, running status was used by transmitter
-#define MIDIMSG_FLAG_MODIFIED        0x40   // If set, filters have modified this message
-#define MIDIMSG_FLAG_DISCARD         0x80   // If set, filters have decided to discard the message
+// Some routes have predefined meanings:
+#define MIDIMSG_ROUTE_INACTIVE   0   // Used for non existing or deleted messages
+#define MIDIMSG_ROUTE_ALL        255 // The wildcard of routes
+
+// The flags give information on how parsing went:
+#define MIDIMSG_FLAG_PARSE_OK    1   // OK message
+#define MIDIMSG_FLAG_RUNN_STATUS 2   // Indicates running status was used (which is ok)
+#define MIDIMSG_FLAG_NO_STATUS   4   // No status to use
+#define MIDIMSG_FLAG_TOO_SHORT   8   // All required bytes didn't arrive
+
+// Data locations in a well formed MIDI message:
+// (May not be true for SYSEX or invalid messages)
+#define MIDIMSG_STATUS 0
+#define MIDIMSG_DATA1  1
+#define MIDIMSG_DATA2  2
+
+
 
 typedef struct
 {
     uint16_t ReceivedTick;
-    uint8_t Flags;
-    uint8_t MidiStatus;
-    uint8_t DataLen; // 0 to data_max
-    uint8_t Data[MIDIMSG_DATA_MAX];
+    uint8_t  Route;
+    uint8_t  Flags;
+    uint8_t  DataLen; // 0 to data_max
+    uint8_t  Data[MIDIMSG_DATA_MAX];
 } midiMsg_t;
 
-
-// Accessing the raw bytes of a message:
-uint8_t midimsg_getRawLength(midiMsg_t *msg);
-uint8_t midimsg_getRawByte(midiMsg_t *msg, uint8_t index);
 
 // Converting message to text
 char *midimsg_writeRaw(char *dest, midiMsg_t *msg);
@@ -63,6 +68,10 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg);
 //void midimsg_newProgramChange(midiMsg_t *msg, uint8_t chan, uint8_t part);
 //void midimsg_newContinuousCtrl(midiMsg_t *msg, uint8_t chan, uint8_t cc, uint8_t value);
 //
-//
+
+//// Constructing midi messages byte by byte
+void midimsg_newSetStatus(midiMsg_t * msg, uint8_t status);
+void midimsg_addByte(midiMsg_t * msg, uint8_t value);
+
 
 #endif /* MIDIMESSAGE_H_ */

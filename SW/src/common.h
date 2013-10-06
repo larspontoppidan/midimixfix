@@ -40,4 +40,19 @@ typedef uint8_t bool_t;
 #define BUILD_VERSION_MINOR  1
 
 
+// Generic function pointers
+
+typedef uint8_t (*fptrUint8Uint8_t)(uint8_t);
+typedef uint8_t (*fptrUint8Void_t)(void);
+typedef void (*fptrVoidUint8_t)(uint8_t);
+typedef void (*fptrVoidVoid_t)(void);
+
+typedef void (*fptrVoidUint8Voidptr_t)(uint8_t, void*);
+
+
+
+
+
+
+
 #endif /* COMMON_H_ */
