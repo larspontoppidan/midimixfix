@@ -1,7 +1,7 @@
 
 //
-// Filename    : mainmenu.c
-// Code module : Main midimixfix menu implementation implementation
+// Filename    : midilogmenu.c
+// Code module : Midilog menu implementation
 // Project     : Midimixfix
 // URL         : http://larsee.dk
 //
@@ -41,18 +41,13 @@
 
 #include "../common.h"
 #include "../errors.h"
+#include "../midilog.h"
 #include "../util.h"
 #include "../hal.h"
 #include "../filters.h"
 #include "../ui.h"
-#include "../lcd.h"
 #include <avr/pgmspace.h>
 
-#include "presetsmenu.h"
-#include "addfiltermenu.h"
-#include "reofiltermenu.h"
-#include "filtermenu.h"
-#include "midilogmenu.h"
 
 // ------------------------------  PROTOTYPES  ----------------------------------
 
@@ -67,7 +62,7 @@ static void handleMoveEvent(uint8_t uiEvent);
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
 // Menu self declaration struct
-menu_t MainMenu =
+menu_t MlogMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -76,24 +71,22 @@ menu_t MainMenu =
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
+
 // Menu items enumeration
 enum
 {
     ITEM_TITLE = 0,
-    ITEM_FILTERS,
-    ITEM_LOAD_PRESET,
-    ITEM_SAVE_PRESET,
-    ITEM_ADD_FILT,
-    ITEM_REMOVE_FILT,
-    ITEM_REORG_FILT,
-    ITEM_MIDILOG,
-    ITEM_BOOTLOADER,
-    ITEM_ABOUT,
+    ITEM_INPUT1,
+    ITEM_INPUT1_ALL,
+    ITEM_INPUT2,
+    ITEM_INPUT2_ALL,
+    ITEM_OUTPUT,
+    ITEM_OUTPUT_ALL,
     ITEM_COUNT
 };
 
 // Menu item texts:
-#define MENUITEM_MAX 21
+#define MENUITEM_MAX 19
 
 typedef struct
 {
@@ -102,18 +95,15 @@ typedef struct
 
 // Main menu:
 
-static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
+static const menuItem_t MlogItem[ITEM_COUNT] PROGMEM =
 {
-    {"**** MIDIMIXFIX ****"},
-    {" Setup filters"},
-    {" Load preset"},
-    {" Save preset"},
-    {" Add filter"},
-    {" Remove filter"},
-    {" Reorder filters"},
-    {" Show midi log"},
-    {" Bootloader"},
-    {" About"}
+    {"--- SHOW MIDI LOG:"},
+    {"Input 1 no rt/sysx"},
+    {"Input 1 all"},
+    {"Input 2 no rt/sysx"},
+    {"Input 2 all"},
+    {"Output no rt/sysx"},
+    {"Output all"},
 };
 
 
@@ -122,46 +112,45 @@ static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
 // Current cursor position
 static uint8_t cursorItem = 1;
 
+
+static bool_t logActive = FALSE;
+
 // ---------------------------  PRIVATE FUNCTIONS  -------------------------------
 
 static void handleSelectEvent(void)
 {
     switch(cursorItem)
     {
-    case ITEM_FILTERS:
-        ui_menuEnter(filtermenu_getMenu());
+    case ITEM_INPUT1:
+        midilog_configure(MIDILOG_SOURCE_IN1, TRUE);
+        logActive = TRUE;
         break;
-    case ITEM_LOAD_PRESET:
-        ui_menuEnter(presetsmenu_getLoadMenu());
+    case ITEM_INPUT1_ALL:
+        midilog_configure(MIDILOG_SOURCE_IN1, FALSE);
+        logActive = TRUE;
         break;
-    case ITEM_SAVE_PRESET:
-        ui_menuEnter(presetsmenu_getSaveMenu());
+    case ITEM_INPUT2:
+        midilog_configure(MIDILOG_SOURCE_IN2, TRUE);
+        logActive = TRUE;
         break;
-    case ITEM_ADD_FILT:
-        ui_menuEnter(addfiltermenu_getMenu());
+    case ITEM_INPUT2_ALL:
+        midilog_configure(MIDILOG_SOURCE_IN2, FALSE);
+        logActive = TRUE;
         break;
-    case ITEM_REMOVE_FILT:
-        ui_menuEnter(reofiltermenu_getRemoveMenu());
+    case ITEM_OUTPUT:
+        midilog_configure(MIDILOG_SOURCE_OUT, TRUE);
+        logActive = TRUE;
         break;
-    case ITEM_REORG_FILT:
-        ui_menuEnter(reofiltermenu_getReorderMenu());
-        break;
-    case ITEM_MIDILOG:
-        ui_menuEnter(midilogmenu_getMenu());
-        break;
-    case ITEM_BOOTLOADER:
-        lcd_clear();
-        lcd_writeString_P(PSTR("Bootloader activated"));
-        hal_lcdBacklightSet(FALSE);
-        hal_jumpBootloader();
-        break;
-    case ITEM_ABOUT:
+    case ITEM_OUTPUT_ALL:
+        midilog_configure(MIDILOG_SOURCE_OUT, FALSE);
+        logActive = TRUE;
         break;
     }
 }
 
 static void handleMoveEvent(uint8_t uiEvent)
 {
+
     switch (uiEvent)
     {
     case UI_EVENT_MOVE_UP:
@@ -188,10 +177,10 @@ static void handleMoveEvent(uint8_t uiEvent)
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
-menu_t * mainmenu_getMenu(void)
+menu_t * midilogmenu_getMenu(void)
 {
     // Register "manifest" of this menu
-    return &MainMenu;
+    return &MlogMenu;
 }
 
 
@@ -201,6 +190,8 @@ menu_t * mainmenu_getMenu(void)
 static uint8_t initGetCursor(void)
 {
     // We are about to enter this menu. Just return cursor position
+    logActive = FALSE;
+
     return cursorItem;
 }
 
@@ -212,28 +203,47 @@ static uint8_t getItemCount(void)
 
 static void drawItem(uint8_t item)
 {
-    // We are instructed to draw an item.
-    // Since everything is progmem strings for this menu, this is simple:
-    ui_menuDrawItemP(item, MainItem[item].Text);
+    if (logActive == FALSE)
+    {
+        // We are instructed to draw an item.
+        // Since everything is progmem strings for this menu, this is simple:
+        ui_menuDrawItemP(item, MlogItem[item].Text);
+    }
 }
 
 static void handleUiEvent(uint8_t uiEvent)
 {
-    if (uiEvent == UI_EVENT_BACK)
+    if (logActive)
     {
-        // User tries to back out of main menu. Not going to happen...
-    }
-    else if (uiEvent == UI_EVENT_SELECT)
-    {
-        // Selecting stuff in main menu:
-        handleSelectEvent();
+        if (uiEvent == UI_EVENT_BACK)
+        {
+            midilog_stop();
+            logActive = FALSE;
+            ui_menuBackOut();
+        }
+        else
+        {
+            midilog_handleUi(uiEvent);
+        }
     }
     else
     {
-        // Moving cursor
-        handleMoveEvent(uiEvent);
+        if (uiEvent == UI_EVENT_BACK)
+        {
+            ui_menuBackOut();
+        }
+        else if (uiEvent == UI_EVENT_SELECT)
+        {
+            // Selecting stuff in main menu:
+            handleSelectEvent();
+        }
+        else
+        {
+            // Moving cursor
+            handleMoveEvent(uiEvent);
 
-        // Let ui know we moved cursor
-        ui_menuMoveCursor(cursorItem, 0);
+            // Let ui know we moved cursor
+            ui_menuMoveCursor(cursorItem, 0);
+        }
     }
 }

@@ -9,5 +9,8 @@
 #define MIDILOGMENU_H_
 
 
+#include "../ui.h"
+
+menu_t * midilogmenu_getMenu(void);
 
 #endif /* MIDILOGMENU_H_ */

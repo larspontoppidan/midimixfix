@@ -40,6 +40,7 @@
 // -------------------------------  INCLUDES  -----------------------------------
 
 #include "midiout.h"
+#include "../midilog.h"
 #include "../common.h"
 #include "../midimessage.h"
 #include "../errors.h"
@@ -138,6 +139,8 @@ void midiout_processMidiMsg(filter_t* self, midiMsg_t *msg)
     uint8_t i;
 
     (void)(self);
+
+    midilog_handleMidiOut_ISR(msg);
 
     if (ConfigUseRunningStatus && (msg->Data[MIDIMSG_STATUS] == LastStatus))
     {

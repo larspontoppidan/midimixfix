@@ -54,7 +54,7 @@
 #include "filterhooks.h"
 #include "filtersteps.h"
 #include "midiprocessing.h"
-
+#include "midilog.h"
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
@@ -156,6 +156,7 @@ int main(void)
     quaddecode_initialize();
     midiproc_initialize();
     fsteps_initialize();
+    midilog_initialize();
 
     // Initialize components
     FILTER_HOOKS_INITIALIZE();
@@ -179,6 +180,8 @@ int main(void)
 
         // Check if user did something on the controls
         handleUi();
+
+        midilog_handleMainLoop();
     }
 
     return 0;

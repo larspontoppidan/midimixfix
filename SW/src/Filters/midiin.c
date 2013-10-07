@@ -40,6 +40,7 @@
 // -------------------------------  INCLUDES  -----------------------------------
 
 #include "midiin.h"
+#include "../midilog.h"
 #include "../common.h"
 #include "../midimessage.h"
 #include "../midigenerics.h"
@@ -264,6 +265,8 @@ void midiin_handleInput1_ISR(uint8_t x)
 
             midimsg_newSetStatus(&rt_msg, x);
             rt_msg.Route = Input1State.RealtimeMsgRoute;
+
+            midilog_handleMidiIn1RtSysx_ISR(&rt_msg);
             midiproc_addMessage_ISR(&rt_msg, Input1State.RealtimeMsgStep);
         }
     }
@@ -338,6 +341,7 @@ void midiin_handleInput1_ISR(uint8_t x)
                     Input1State.Msg.Flags |= MIDIMSG_FLAG_PARSE_OK;
 
                     // Send for processing
+                    midilog_handleMidiIn1_ISR(&(Input1State.Msg));
                     midiproc_addMessage_ISR(&(Input1State.Msg), Input1State.NormalMsgStep);
 
                     Input1State.Receiving = FALSE;
@@ -360,6 +364,7 @@ void midiin_handleInput1_ISR(uint8_t x)
                         Input1State.Msg.Flags |= MIDIMSG_FLAG_PARSE_OK;
 
                         // Send for processing
+                        midilog_handleMidiIn1_ISR(&(Input1State.Msg));
                         midiproc_addMessage_ISR(&(Input1State.Msg), Input1State.NormalMsgStep);
 
                         Input1State.Receiving = FALSE;
@@ -415,6 +420,8 @@ void midiin_handleInput2_ISR(uint8_t x)
 
             midimsg_newSetStatus(&rt_msg, x);
             rt_msg.Route = Input2State.RealtimeMsgRoute;
+
+            midilog_handleMidiIn2RtSysx_ISR(&rt_msg);
             midiproc_addMessage_ISR(&rt_msg, Input2State.RealtimeMsgStep);
         }
     }
@@ -489,6 +496,7 @@ void midiin_handleInput2_ISR(uint8_t x)
                     Input2State.Msg.Flags |= MIDIMSG_FLAG_PARSE_OK;
 
                     // Send for processing
+                    midilog_handleMidiIn2_ISR(&(Input2State.Msg));
                     midiproc_addMessage_ISR(&(Input2State.Msg), Input2State.NormalMsgStep);
 
                     Input2State.Receiving = FALSE;
@@ -511,6 +519,7 @@ void midiin_handleInput2_ISR(uint8_t x)
                         Input2State.Msg.Flags |= MIDIMSG_FLAG_PARSE_OK;
 
                         // Send for processing
+                        midilog_handleMidiIn2_ISR(&(Input2State.Msg));
                         midiproc_addMessage_ISR(&(Input2State.Msg), Input2State.NormalMsgStep);
 
                         Input2State.Receiving = FALSE;

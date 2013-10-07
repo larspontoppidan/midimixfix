@@ -81,7 +81,7 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg)
     {
         dest = util_copyString_P(dest, PSTR("BAD:No status"));
     }
-    else if ((msg->Flags & MIDIMSG_FLAG_TOO_SHORT) == 0u)
+    else if (msg->Flags & MIDIMSG_FLAG_TOO_SHORT)
     {
         dest = util_copyString_P(dest, PSTR("BAD:Too short"));
     }

@@ -10,6 +10,7 @@
 
 #include "../ui.h"
 
+// reofilter is short for REmove & reOrder Filter menu
 
 menu_t * reofiltermenu_getRemoveMenu(void);
 menu_t * reofiltermenu_getReorderMenu(void);
