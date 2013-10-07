@@ -149,8 +149,12 @@ static void handleUiEvent(uint8_t uiEvent)
 {
     if (uiEvent == UI_EVENT_SELECT)
     {
-        // Load preset: MenuSelected
+        // Add filter
         fsteps_addFilter_MAIN(addCursorItem - 1, NULL);
+
+        // Now the filter is in the last position, reorder so midiout is still
+        // the last filter:
+        fsteps_swapFilter_MAIN(fsteps_getCount_SAFE() - 1, fsteps_getCount_SAFE() - 2);
 
         // Back out of menu
         ui_menuBackOut();

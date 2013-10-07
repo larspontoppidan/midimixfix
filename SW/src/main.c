@@ -65,12 +65,9 @@
 static bool_t UiSelectPushed = FALSE;
 static bool_t UiBackPushed = FALSE;
 
-
 // ------------------------------  PROTOTYPES  ----------------------------------
 
-
 static void handleUi(void);
-
 
 // ---------------------------  PRIVATE FUNCTIONS  ------------------------------
 
@@ -138,6 +135,13 @@ static void handleUi(void)
 }
 
 
+void loadDefaultFilters(void)
+{
+    fsteps_addFilter_MAIN(FILTER_MIDIIN1, NULL);
+    fsteps_addFilter_MAIN(FILTER_MIDIIN2, NULL);
+    fsteps_addFilter_MAIN(FILTER_MIDIOUT, NULL);
+}
+
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 int main(void)
@@ -164,6 +168,9 @@ int main(void)
 
     // Turn on display
     hal_lcdBacklightSet(TRUE);
+
+    // Load default setup
+    loadDefaultFilters();
 
     while(TRUE)
     {

@@ -50,7 +50,8 @@
 
 #include "presetsmenu.h"
 #include "addfiltermenu.h"
-#include "orgfiltermenu.h"
+#include "reofiltermenu.h"
+#include "filtermenu.h"
 
 // ------------------------------  PROTOTYPES  ----------------------------------
 
@@ -129,6 +130,7 @@ static void handleSelectEvent(void)
     switch(cursorItem)
     {
     case ITEM_FILTERS:
+        ui_menuEnter(filtermenu_getMenu());
         break;
     case ITEM_LOAD_PRESET:
         ui_menuEnter(presetsmenu_getLoadMenu());
@@ -140,10 +142,10 @@ static void handleSelectEvent(void)
         ui_menuEnter(addfiltermenu_getMenu());
         break;
     case ITEM_REMOVE_FILT:
-        ui_menuEnter(orgfiltermenu_getRemoveMenu());
+        ui_menuEnter(reofiltermenu_getRemoveMenu());
         break;
     case ITEM_REORG_FILT:
-        ui_menuEnter(orgfiltermenu_getReorderMenu());
+        ui_menuEnter(reofiltermenu_getReorderMenu());
         break;
     case ITEM_MIDILOG_IN:
         break;

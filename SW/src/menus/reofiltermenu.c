@@ -1,6 +1,6 @@
 
 //
-// Filename    : orgfiltermenu.c
+// Filename    : reofiltermenu.c
 // Code module : Remove/Reorder filter menus implementation
 // Project     : Midimixfix
 // URL         : http://larsee.dk
@@ -58,16 +58,14 @@
 // ------------------------------  PROTOTYPES  ----------------------------------
 
 
-// These functions are common for remove / reorganize menus:
-static uint8_t remInitGetCursor(void);    // Initialize removing filters
-static uint8_t orgInitGetCursor(void);    // Initialize removing filters
-
+// The remove / reorder menus interface functions:
+static uint8_t reInitGetCursor(void);  // Initialize removing filters
+static uint8_t oInitGetCursor(void);   // Initialize re ordering filters
 static uint8_t getItemCount(void);     // Get item count when removing or reordering (all loaded filters)
-
-// The drawing and ui events are different
 static void    drawItem(uint8_t item); // Write item from list of all loaded filters
 static void    handleUiEvent(uint8_t uiEvent);
 
+// Private helper functions:
 static void    handleMoveEvent(uint8_t uiEvent);
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
@@ -75,63 +73,63 @@ static void    handleMoveEvent(uint8_t uiEvent);
 
 // Organize filter menus:
 
-static const char RemTitle[] PROGMEM = "--- REMOVE Filter: -";
-static const char OrgTitle[] PROGMEM = "--- REORDER Filters:";
+static const char ReMenuTitle[] PROGMEM = "--- REMOVE Filter: -";
+static const char OMenuTitle[] PROGMEM = "--- REORDER Filters:";
 
 // Remove filter menu
-menu_t RemMenu =
+menu_t RemoveMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
-        remInitGetCursor,    // fptrUint8Void_t  enterGetCursor;
+        reInitGetCursor,  // fptrUint8Void_t  enterGetCursor;
         getItemCount,     // fptrUint8Void_t  getItemCount;
-        drawItem,      // fptrVoidUint8_t  drawItem;
-        handleUiEvent  // fptrVoidUint8_t  handleUiEvent;
+        drawItem,         // fptrVoidUint8_t  drawItem;
+        handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
 // Reorder filter menu
-menu_t OrgMenu =
+menu_t ReorderMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
-        orgInitGetCursor,    // fptrUint8Void_t  enterGetCursor;
+        oInitGetCursor,   // fptrUint8Void_t  enterGetCursor;
         getItemCount,     // fptrUint8Void_t  getItemCount;
-        drawItem,      // fptrVoidUint8_t  drawItem;
-        handleUiEvent  // fptrVoidUint8_t  handleUiEvent;
+        drawItem,         // fptrVoidUint8_t  drawItem;
+        handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------
 
-static uint8_t cursorItem = 1;
+static uint8_t selectedItem = 1;
 
-static bool_t movingMode = FALSE;
-static bool_t remNotOrg = FALSE;  // True if remove mode
+static bool_t movingFilterMode = FALSE;
+static bool_t removeNotReorderMenu = FALSE;  // True if remove mode
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
-menu_t * orgfiltermenu_getRemoveMenu(void)
+menu_t * reofiltermenu_getRemoveMenu(void)
 {
-    return &RemMenu;
+    return &RemoveMenu;
 }
 
-menu_t * orgfiltermenu_getReorderMenu(void)
+menu_t * reofiltermenu_getReorderMenu(void)
 {
-    return &OrgMenu;
+    return &ReorderMenu;
 }
 
-static uint8_t remInitGetCursor(void)
+static uint8_t reInitGetCursor(void)
 {
-    movingMode = FALSE;
-    remNotOrg = TRUE;
-    return cursorItem;
+    movingFilterMode = FALSE;
+    removeNotReorderMenu = TRUE;
+    return selectedItem;
 }
 
 
-static uint8_t orgInitGetCursor(void)
+static uint8_t oInitGetCursor(void)
 {
-    movingMode = FALSE;
-    remNotOrg = FALSE;
-    return cursorItem;
+    movingFilterMode = FALSE;
+    removeNotReorderMenu = FALSE;
+    return selectedItem;
 }
 
 static void drawItem(uint8_t item)
@@ -139,7 +137,8 @@ static void drawItem(uint8_t item)
     if (item == 0)
     {
         // Title
-        ui_menuDrawItemP(item, (uint8_t *)(remNotOrg ? RemTitle : OrgTitle));
+        ui_menuDrawItemP(item,
+                (uint8_t *)(removeNotReorderMenu ? ReMenuTitle : OMenuTitle));
     }
     else
     {
@@ -149,7 +148,7 @@ static void drawItem(uint8_t item)
 
         if (filter != NULL)
         {
-            if ((movingMode) && (item == cursorItem))
+            if ((movingFilterMode) && (item == selectedItem))
             {
                 // We are currently moving this filter, indent one space
                 buffer[0] = ' ';
@@ -169,25 +168,44 @@ static void handleUiEvent(uint8_t uiEvent)
 {
     if (uiEvent == UI_EVENT_SELECT)
     {
-        if (remNotOrg)
+        if (removeNotReorderMenu)
         {
-            // Remove the filter step
-            fsteps_removeFilter_MAIN(cursorItem - 1);
+            // Remove filter menu and select is pushed,
 
-            // Back out of menu
-            ui_menuBackOut();
+            // this filter needs to go, unless it's the final midi out filter
+            if ((selectedItem - 1) < (fsteps_getCount_SAFE() - 1))
+            {
+                fsteps_removeFilter_MAIN(selectedItem - 1);
+
+                // Back out of menu
+                ui_menuBackOut();
+            }
         }
         else
         {
-            // Toggle moving mode
-            movingMode = !movingMode;
+            // Reorder filter menu and select is pushed,
+            // Go into moving mode, unless its the last filter
+            if ((movingFilterMode == FALSE) &&
+                    ((selectedItem - 1) != (fsteps_getCount_SAFE() - 1)))
+            {
+                movingFilterMode = TRUE;
 
-            // We need to redraw this line
-            drawItem(cursorItem);
+                // We need to redraw this line
+                drawItem(selectedItem);
 
-            // With cursor indent
-            ui_menuMoveCursor(cursorItem, 3);
+                // With correct cursor indent
+                ui_menuMoveCursor(selectedItem, 2);
+            }
+            else
+            {
+                movingFilterMode = FALSE;
 
+                // We need to redraw this line
+                drawItem(selectedItem);
+
+                // With correct cursor indent
+                ui_menuMoveCursor(selectedItem, 0);
+            }
         }
     }
     else if (uiEvent == UI_EVENT_BACK)
@@ -196,34 +214,46 @@ static void handleUiEvent(uint8_t uiEvent)
     }
     else
     {
-        if (movingMode)
+        if (movingFilterMode)
         {
-            // Record currently selected
-            uint8_t oldItem = cursorItem;
+            // Reorder menu mode, currently moving a filter:
 
-            //
+            // Record currently selected
+            uint8_t oldItem = selectedItem;
+
+            // Update according to user move
             handleMoveEvent(uiEvent);
 
-            // Any change, then swap around and draw both
-            if (cursorItem != oldItem)
+            // Did we get to final midi out filter?
+            if ((selectedItem - 1) == (fsteps_getCount_SAFE() - 1))
             {
-                fsteps_swapFilter_MAIN(oldItem - 1, cursorItem - 1);
+                // Then we must abort this
+                selectedItem = oldItem;
+            }
+            else
+            {
+                // Ok, if cursor changed swap around and draw both
+                if (selectedItem != oldItem)
+                {
+                    fsteps_swapFilter_MAIN(oldItem - 1, selectedItem - 1);
 
-                // Draw both
-                drawItem(oldItem);
-                drawItem(cursorItem);
+                    // Draw both
+                    drawItem(oldItem);
+                    drawItem(selectedItem);
 
-                // Set cursor with indent
-                ui_menuMoveCursor(cursorItem, 3);
+                    // Set cursor with indent
+                    ui_menuMoveCursor(selectedItem, 2);
+                }
             }
 
         }
         else
         {
-            // Move cursor
-            handleMoveEvent(uiEvent);
+            // Reorder or remove filter menu, not currently moving a filter,
+            // just move cursor
 
-            ui_menuMoveCursor(cursorItem, 0);
+            handleMoveEvent(uiEvent);
+            ui_menuMoveCursor(selectedItem, 0);
         }
     }
 
@@ -239,22 +269,22 @@ static void handleMoveEvent(uint8_t uiEvent)
     switch (uiEvent)
     {
     case UI_EVENT_MOVE_UP:
-        if (cursorItem < (fsteps_getCount_SAFE()))
+        if (selectedItem < fsteps_getCount_SAFE())
         {
-            cursorItem++;
+            selectedItem++;
         }
         break;
     case UI_EVENT_MOVE_DOWN:
-        if (cursorItem > 1)
+        if (selectedItem > 1)
         {
-            cursorItem--;
+            selectedItem--;
         }
         break;
     case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        cursorItem = fsteps_getCount_SAFE();
+        selectedItem = fsteps_getCount_SAFE();
         break;
     case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
-        cursorItem = 1;
+        selectedItem = 1;
         break;
     }
 }

@@ -121,7 +121,7 @@ uint8_t midiout_request(filter_t* self, uint8_t request)
         ret = 1;
         break;
     case FILTER_REQ_MENU_INDENT:
-        ret = 14;
+        ret = 15;
         break;
     case FILTER_REQ_UPDATE_SELF:
         // Just enforce the route out setting

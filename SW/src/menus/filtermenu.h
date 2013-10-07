@@ -9,5 +9,7 @@
 #define FILTERMENU_H_
 
 
+menu_t * filtermenu_getMenu(void);
+
 
 #endif /* FILTERMENU_H_ */
