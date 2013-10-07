@@ -171,7 +171,7 @@ void ui_initialize(void)
     MenuParentParent = NULL;
 
     // We want main menu hooked up initially
-    ui_menuEnter(mainmenu_getSelf());
+    ui_menuEnter(mainmenu_getMenu());
 }
 
 

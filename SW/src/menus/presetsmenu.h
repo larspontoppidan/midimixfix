@@ -8,6 +8,7 @@
 #ifndef PRESETSMENU_H_
 #define PRESETSMENU_H_
 
+#include "../ui.h"
 
 menu_t * presetsmenu_getLoadMenu(void);
 menu_t * presetsmenu_getSaveMenu(void);

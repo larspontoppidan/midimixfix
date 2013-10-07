@@ -121,6 +121,9 @@ void fsteps_removeFilter_MAIN(uint8_t step)
 {
     uint8_t i;
 
+    // Send the destroy message to filter
+    filter_request(&(FilterStep[step]), FILTER_REQ_DESTROY);
+
     if (step < FilterStepCount)
     {
         FilterStepCount--;

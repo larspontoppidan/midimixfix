@@ -1,7 +1,7 @@
 
 //
-// Filename    : mainmenu.c
-// Code module : Main midimixfix menu implementation implementation
+// Filename    : addfiltermenu.c
+// Code module : Add filter menu implementation
 // Project     : Midimixfix
 // URL         : http://larsee.dk
 //
@@ -36,6 +36,8 @@
 //
 // ------------------------------  DESCRIPTION  ---------------------------------
 
+// The add filter menu presents a list of all available filters for adding to
+// filtersteps
 
 // -------------------------------  INCLUDES  -----------------------------------
 
@@ -44,28 +46,28 @@
 #include "../util.h"
 #include "../hal.h"
 #include "../filters.h"
+#include "../filtersteps.h"
 #include "../ui.h"
-#include "../lcd.h"
 #include <avr/pgmspace.h>
-
-#include "presetsmenu.h"
-#include "addfiltermenu.h"
-#include "orgfiltermenu.h"
+#include <string.h>
 
 // ------------------------------  PROTOTYPES  ----------------------------------
 
-static uint8_t initGetCursor(void);
-static uint8_t getItemCount(void);
-static void    drawItem(uint8_t item);
+
+static uint8_t initGetCursor(void);    // Initialize adding filters
+static uint8_t getItemCount(void);     // Get item count when adding (all filters)
+static void    drawItem(uint8_t item); // Write item from list of all filters
 static void    handleUiEvent(uint8_t uiEvent);
 
-static void handleSelectEvent(void);
-static void handleMoveEvent(uint8_t uiEvent);
+static void    handleMoveEvent(uint8_t uiEvent);
+
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
-// Menu self declaration struct
-menu_t MainMenu =
+static const char AddTitle[] PROGMEM = "--- ADD Filter: ----";
+
+// Add filter menu
+menu_t AddMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -74,166 +76,97 @@ menu_t MainMenu =
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
-// Menu items enumeration
-enum
-{
-    ITEM_TITLE = 0,
-    ITEM_FILTERS,
-    ITEM_LOAD_PRESET,
-    ITEM_SAVE_PRESET,
-    ITEM_ADD_FILT,
-    ITEM_REMOVE_FILT,
-    ITEM_REORG_FILT,
-    ITEM_MIDILOG_IN,
-    ITEM_MIDILOG_OUT,
-    ITEM_BOOTLOADER,
-    ITEM_ABOUT,
-    ITEM_COUNT
-};
-
-// Menu item texts:
-#define MENUITEM_MAX 21
-
-typedef struct
-{
-    uint8_t Text[MENUITEM_MAX];
-} menuItem_t;
-
-// Main menu:
-
-static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
-{
-    {"**** MIDIMIXFIX ****"},
-    {"Setup filters"},
-    {"Load preset"},
-    {"Save preset"},
-    {"Add filter"},
-    {"Remove filter"},
-    {"Reorder filters"},
-    {"Midilog input"},
-    {"Midilog output"},
-    {"Bootloader"},
-    {"About"}
-};
-
-
 // ----------------------------  LOCAL VARIABLES  -------------------------------
 
-// Current cursor position
-static uint8_t cursorItem = 1;
+static uint8_t addCursorItem = 1;
 
-// ---------------------------  PRIVATE FUNCTIONS  -------------------------------
+// ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
-static void handleSelectEvent(void)
+menu_t * addfiltermenu_getMenu(void)
 {
-    switch(cursorItem)
-    {
-    case ITEM_FILTERS:
-        break;
-    case ITEM_LOAD_PRESET:
-        ui_menuEnter(presetsmenu_getLoadMenu());
-        break;
-    case ITEM_SAVE_PRESET:
-        ui_menuEnter(presetsmenu_getSaveMenu());
-        break;
-    case ITEM_ADD_FILT:
-        ui_menuEnter(addfiltermenu_getMenu());
-        break;
-    case ITEM_REMOVE_FILT:
-        ui_menuEnter(orgfiltermenu_getRemoveMenu());
-        break;
-    case ITEM_REORG_FILT:
-        ui_menuEnter(orgfiltermenu_getReorderMenu());
-        break;
-    case ITEM_MIDILOG_IN:
-        break;
-    case ITEM_MIDILOG_OUT:
-        break;
-    case ITEM_BOOTLOADER:
-        lcd_clear();
-        lcd_writeString_P(PSTR("Bootloader activated"));
-        hal_lcdBacklightSet(FALSE);
-        hal_jumpBootloader();
-        break;
-    case ITEM_ABOUT:
-        break;
-    }
+    return &AddMenu;
 }
+
+// move cursor
 
 static void handleMoveEvent(uint8_t uiEvent)
 {
     switch (uiEvent)
     {
     case UI_EVENT_MOVE_UP:
-        if (cursorItem < (ITEM_COUNT - 1))
+        if (addCursorItem < FILTER_TYPE_COUNT)
         {
-            cursorItem++;
+            addCursorItem++;
         }
         break;
     case UI_EVENT_MOVE_DOWN:
-        if (cursorItem > 1)
+        if (addCursorItem > 1)
         {
-            cursorItem--;
+            addCursorItem--;
         }
         break;
     case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        cursorItem = ITEM_COUNT - 1;
+        addCursorItem = FILTER_TYPE_COUNT;
         break;
     case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
-        cursorItem = 1;
+        addCursorItem = 1;
         break;
     }
 }
 
-// ---------------------------  PUBLIC FUNCTIONS  -------------------------------
-
-
-menu_t * mainmenu_getMenu(void)
-{
-    // Register "manifest" of this menu
-    return &MainMenu;
-}
-
-
-// ---------------------------  MENU CALLBACKS ------------------------------
-
+// ADD menu
 
 static uint8_t initGetCursor(void)
 {
-    // We are about to enter this menu. Just return cursor position
-    return cursorItem;
+    return addCursorItem;
 }
 
 static uint8_t getItemCount(void)
 {
-    // This menu always have the same number of items
-    return ITEM_COUNT;
+    return FILTER_TYPE_COUNT+1;
 }
 
 static void drawItem(uint8_t item)
 {
-    // We are instructed to draw an item.
-    // Since everything is progmem strings for this menu, this is simple:
-    ui_menuDrawItemP(item, MainItem[item].Text);
+    if (item == 0)
+    {
+        // Title
+        ui_menuDrawItemP(0, (uint8_t*)AddTitle);
+    }
+    else
+    {
+        // Menu item
+        uint8_t buffer[21];
+        memset(buffer, 0, 21);
+
+        filter_getTitle(item - 1, (char*)(buffer));
+
+        ui_menuDrawItem(item, buffer);
+    }
 }
 
 static void handleUiEvent(uint8_t uiEvent)
 {
-    if (uiEvent == UI_EVENT_BACK)
+    if (uiEvent == UI_EVENT_SELECT)
     {
-        // User tries to back out of main menu. Not going to happen...
+        // Load preset: MenuSelected
+        fsteps_addFilter_MAIN(addCursorItem - 1, NULL);
+
+        // Back out of menu
+        ui_menuBackOut();
     }
-    else if (uiEvent == UI_EVENT_SELECT)
+    else if (uiEvent == UI_EVENT_BACK)
     {
-        // Selecting stuff in main menu:
-        handleSelectEvent();
+        ui_menuBackOut();
     }
     else
     {
-        // Moving cursor
+        // Move cursor
         handleMoveEvent(uiEvent);
 
         // Let ui know we moved cursor
-        ui_menuMoveCursor(cursorItem, 0);
+        ui_menuMoveCursor(addCursorItem, 0);
     }
+
 }
+
