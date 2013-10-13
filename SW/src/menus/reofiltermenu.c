@@ -77,7 +77,7 @@ static const char ReMenuTitle[] PROGMEM = "--- REMOVE Filter: -";
 static const char OMenuTitle[] PROGMEM = "--- REORDER Filters:";
 
 // Remove filter menu
-menu_t RemoveMenu =
+const menuInterface_t PROGMEM RemoveMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         reInitGetCursor,  // fptrUint8Void_t  enterGetCursor;
@@ -87,7 +87,7 @@ menu_t RemoveMenu =
 };
 
 // Reorder filter menu
-menu_t ReorderMenu =
+const menuInterface_t PROGMEM ReorderMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         oInitGetCursor,   // fptrUint8Void_t  enterGetCursor;
@@ -107,12 +107,12 @@ static bool_t removeNotReorderMenu = FALSE;  // True if remove mode
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
-menu_t * reofiltermenu_getRemoveMenu(void)
+const menuInterface_t * reofiltermenu_getRemoveMenu(void)
 {
     return &RemoveMenu;
 }
 
-menu_t * reofiltermenu_getReorderMenu(void)
+const menuInterface_t * reofiltermenu_getReorderMenu(void)
 {
     return &ReorderMenu;
 }
@@ -144,7 +144,7 @@ static void drawItem(uint8_t item)
     {
         uint8_t buffer[21];
         memset(buffer, 0, 21);
-        filter_t *filter = fsteps_getFilter_SAFE(item - 1);
+        filterInstance_t *filter = fsteps_getFilter_SAFE(item - 1);
 
         if (filter != NULL)
         {

@@ -11,7 +11,7 @@
 #include "common.h"
 #include "midimessage.h"
 
-// The filters module defines a common interface to all filters in the system: filter_t
+// The filters module defines a common interface to all filters in the system: filterInstance_t
 //
 // Also acts as a filter factory and wraps function calls to filter instances.
 
@@ -31,10 +31,10 @@
 // filter_getTitle(uint8_t filter_type, char *dest)
 // Must write a static title in dest, example "Map and Block", max 15 chars
 //
-// filter_getMenuText(filter_t* instance, char *dest, uint8_t item)
+// filter_getMenuText(filterInstance_t* instance, char *dest, uint8_t item)
 // Must write a line in the menu. Item 0 is first line, example : "From : Chan 2"
 //
-// filter_handleUiEvent(filter_t* instance, uint8_t item, uint8_t user_event)
+// filter_handleUiEvent(filterInstance_t* instance, uint8_t item, uint8_t user_event)
 // When user increments or decrements an item in the menu with or without fast.
 // The filter just changes it's values and when getMenuText is called the next
 // time, the new value must be shown.
@@ -74,7 +74,7 @@ typedef struct
     // This has to be handled internally by the filter module using this struct
     uint8_t Instance;
 
-} filter_t;
+} filterInstance_t;
 
 
 // Construct new filter.
@@ -83,12 +83,12 @@ typedef struct
 //
 // The function must return true if successfull. It may fail if there are no
 // resources available or the filter can only be initiated once.
-bool_t  filter_new(uint8_t filter_type, uint8_t *config, filter_t* instance);
+bool_t  filter_new(uint8_t filter_type, uint8_t *config, filterInstance_t* instance);
 
-void    filter_saveConfig(filter_t* instance, uint8_t *dest);
+void    filter_saveConfig(filterInstance_t* instance, uint8_t *dest);
 
 // Mechanism for both requests and queries to a filter:
-uint8_t filter_request(filter_t* instance, uint8_t request);
+uint8_t filter_request(filterInstance_t* instance, uint8_t request);
 
 #define FILTER_REQ_DESTROY      1  // Release this filter instance
 #define FILTER_REQ_UPDATE_SELF  2  // Notify that self struct has updated. Filter can revert illegal changes
@@ -98,16 +98,16 @@ uint8_t filter_request(filter_t* instance, uint8_t request);
 
 
 // Process midi msg
-void filter_processMidiMsg(filter_t* instance, midiMsg_t *msg);
+void filter_processMidiMsg(filterInstance_t* instance, midiMsg_t *msg);
 
 // Name of filter
 void filter_getTitle(uint8_t filter_type, char *dest);
 
 // Menu integration
-void filter_getMenuText(filter_t* instance, char *dest, uint8_t item);
+void filter_getMenuText(filterInstance_t* instance, char *dest, uint8_t item);
 
 // In normal mode only UI_EVENT_MOVE_UP, DOWN and FAST are possible
-void filter_handleUiEvent(filter_t* instance, uint8_t item, uint8_t user_event);
+void filter_handleUiEvent(filterInstance_t* instance, uint8_t item, uint8_t user_event);
 
 
 

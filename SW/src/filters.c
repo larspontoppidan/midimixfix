@@ -10,7 +10,7 @@
 #include "Filters/midiin.h"
 #include "Filters/midiout.h"
 
-bool_t filter_new(uint8_t filter_type, uint8_t *config, filter_t* instance)
+bool_t filter_new(uint8_t filter_type, uint8_t *config, filterInstance_t* instance)
 {
     bool_t ret = FALSE;
 
@@ -36,7 +36,7 @@ bool_t filter_new(uint8_t filter_type, uint8_t *config, filter_t* instance)
 }
 
 
-uint8_t filter_request(filter_t* instance, uint8_t request)
+uint8_t filter_request(filterInstance_t* instance, uint8_t request)
 {
     uint8_t ret = 0;
 
@@ -61,7 +61,7 @@ uint8_t filter_request(filter_t* instance, uint8_t request)
     return ret;
 }
 
-void filter_saveConfig(filter_t* instance, uint8_t *dest)
+void filter_saveConfig(filterInstance_t* instance, uint8_t *dest)
 {
     switch (instance->FilterType)
     {
@@ -75,7 +75,7 @@ void filter_saveConfig(filter_t* instance, uint8_t *dest)
 
 // Process midi msg
 
-void filter_processMidiMsg(filter_t* instance, midiMsg_t *msg)
+void filter_processMidiMsg(filterInstance_t* instance, midiMsg_t *msg)
 {
     switch (instance->FilterType)
     {
@@ -109,7 +109,7 @@ void filter_getTitle(uint8_t filter_type, char *dest)
 }
 
 // Menu integration
-void filter_getMenuText(filter_t* instance, char *dest, uint8_t item)
+void filter_getMenuText(filterInstance_t* instance, char *dest, uint8_t item)
 {
     switch (instance->FilterType)
     {
@@ -122,7 +122,7 @@ void filter_getMenuText(filter_t* instance, char *dest, uint8_t item)
     }
 }
 
-void filter_handleUiEvent(filter_t* instance, uint8_t item, uint8_t user_event)
+void filter_handleUiEvent(filterInstance_t* instance, uint8_t item, uint8_t user_event)
 {
     switch (instance->FilterType)
     {

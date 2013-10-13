@@ -77,7 +77,7 @@ void midiout_initialize(void)
     LastStatus = 0xFF;
 }
 
-bool_t midiout_new(uint8_t filter_type, uint8_t *config, filter_t* self)
+bool_t midiout_new(uint8_t filter_type, uint8_t *config, filterInstance_t* self)
 {
     bool_t ret = FALSE;
 
@@ -106,7 +106,7 @@ bool_t midiout_new(uint8_t filter_type, uint8_t *config, filter_t* self)
     return ret;
 }
 
-uint8_t midiout_request(filter_t* self, uint8_t request)
+uint8_t midiout_request(filterInstance_t* self, uint8_t request)
 {
     uint8_t ret = 0;
 
@@ -134,7 +134,7 @@ uint8_t midiout_request(filter_t* self, uint8_t request)
 }
 
 // Process midi msg
-void midiout_processMidiMsg(filter_t* self, midiMsg_t *msg)
+void midiout_processMidiMsg(filterInstance_t* self, midiMsg_t *msg)
 {
     uint8_t i;
 
@@ -171,7 +171,7 @@ void midiout_getMenuTitle(uint8_t filter_type, char *dest)
 }
 
 // Menu integration
-void midiout_getMenuText(filter_t* self, char *dest, uint8_t item)
+void midiout_getMenuText(filterInstance_t* self, char *dest, uint8_t item)
 {
     (void)(self);
 
@@ -181,7 +181,7 @@ void midiout_getMenuText(filter_t* self, char *dest, uint8_t item)
     }
 }
 
-void midiout_handleUiEvent(filter_t* self, uint8_t item, uint8_t user_event)
+void midiout_handleUiEvent(filterInstance_t* self, uint8_t item, uint8_t user_event)
 {
     (void)(self);
 
@@ -200,7 +200,7 @@ void midiout_handleUiEvent(filter_t* self, uint8_t item, uint8_t user_event)
     }
 }
 
-void midiout_saveConfig(filter_t* self, uint8_t *dest)
+void midiout_saveConfig(filterInstance_t* self, uint8_t *dest)
 {
     (void)(self);
 

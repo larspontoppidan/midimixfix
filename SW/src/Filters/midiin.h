@@ -33,8 +33,8 @@ void midiin_handleInput1_ISR(uint8_t x);
 void midiin_handleInput2_ISR(uint8_t x);
 
 
-bool_t  midiin_new(uint8_t filter_type, uint8_t *config, filter_t* self);
-uint8_t midiin_request(filter_t* self, uint8_t request);
+bool_t  midiin_new(uint8_t filter_type, uint8_t *config, filterInstance_t* self);
+uint8_t midiin_request(filterInstance_t* self, uint8_t request);
 
 // Menu integration
 void midiin_getMenuTitle(uint8_t filter_type, char *dest);

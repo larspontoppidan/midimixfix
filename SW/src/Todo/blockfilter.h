@@ -8,8 +8,23 @@
 #ifndef BLOCKFILTER_H_
 #define BLOCKFILTER_H_
 
-#include "common.h"
-#include "midimessage.h"
+#include "../common.h"
+#include "../midimessage.h"
+
+
+
+bool_t  blockflt_new(uint8_t filter_type, uint8_t *config, filter_t* self);
+void    blockflt_saveConfig(filter_t* self, uint8_t *dest);
+uint8_t blockflt_request(filter_t* self, uint8_t request);
+void    blockflt_processMidiMsg(filter_t* self, midiMsg_t *msg);
+void    blockflt_getMenuTitle(uint8_t filter_type, char *dest);
+void    blockflt_getMenuText(filter_t* self, char *dest, uint8_t item);
+void    blockflt_handleUiEvent(filter_t* self, uint8_t item, uint8_t user_event);
+
+
+
+
+
 
 void    blockflt_initialize(void);
 

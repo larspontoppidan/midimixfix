@@ -67,7 +67,7 @@ static void handleMoveEvent(uint8_t uiEvent);
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
 // Menu self declaration struct
-menu_t MainMenu =
+const menuInterface_t PROGMEM MainMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -188,7 +188,7 @@ static void handleMoveEvent(uint8_t uiEvent)
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
-menu_t * mainmenu_getMenu(void)
+const menuInterface_t * mainmenu_getMenu(void)
 {
     // Register "manifest" of this menu
     return &MainMenu;

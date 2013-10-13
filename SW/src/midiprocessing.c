@@ -43,7 +43,7 @@ static void processMessages_ISR(void)
     {
         while (BufferMsg[BufferTail].Route != MIDIMSG_ROUTE_INACTIVE)
         {
-            filter_t *filter;
+            filterInstance_t *filter;
 
             filter = fsteps_getFilter_SAFE(BufferFilterStep[BufferTail]);
 

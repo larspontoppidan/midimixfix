@@ -12,8 +12,8 @@
 
 // reofilter is short for REmove & reOrder Filter menu
 
-menu_t * reofiltermenu_getRemoveMenu(void);
-menu_t * reofiltermenu_getReorderMenu(void);
+const menuInterface_t * reofiltermenu_getRemoveMenu(void);
+const menuInterface_t * reofiltermenu_getReorderMenu(void);
 
 
 

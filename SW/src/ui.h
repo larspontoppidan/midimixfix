@@ -26,7 +26,7 @@ typedef struct
     fptrUint8Void_t getItemCount;   // Returns number of menu items, including line 0
     fptrVoidUint8_t drawItem;       // Draw one line of menu. Line 0 may be title or first entry
     fptrVoidUint8_t handleUiEvent;  // Handle the ui event
-} menu_t;
+} menuInterface_t;
 
 
 // UI events
@@ -42,7 +42,7 @@ typedef struct
 
 // When entering a menu, ui_menuEnter must be called with the new menu manifest.
 // This will make ui render the menu.
-void ui_menuEnter(menu_t *menu);
+void ui_menuEnter(menuInterface_t const *menu);
 
 // Leave current menu
 void ui_menuBackOut(void);

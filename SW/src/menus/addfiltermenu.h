@@ -10,7 +10,7 @@
 
 #include "../ui.h"
 
-menu_t * addfiltermenu_getMenu(void);
+const menuInterface_t * addfiltermenu_getMenu(void);
 
 
 #endif /* ADDFILTERMENU_H_ */

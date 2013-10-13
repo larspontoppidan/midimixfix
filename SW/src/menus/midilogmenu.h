@@ -11,6 +11,6 @@
 
 #include "../ui.h"
 
-menu_t * midilogmenu_getMenu(void);
+const menuInterface_t * midilogmenu_getMenu(void);
 
 #endif /* MIDILOGMENU_H_ */

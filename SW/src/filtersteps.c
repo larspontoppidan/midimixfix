@@ -56,7 +56,7 @@
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------
 
-filter_t FilterStep[FILTERSTEPS_MAX];
+filterInstance_t FilterStep[FILTERSTEPS_MAX];
 uint8_t FilterStepCount;
 
 // ------------------------------  PROTOTYPES  ----------------------------------
@@ -77,9 +77,9 @@ uint8_t fsteps_getCount_SAFE(void)
     return FilterStepCount;
 }
 
-filter_t* fsteps_getFilter_SAFE(uint8_t step)
+filterInstance_t* fsteps_getFilter_SAFE(uint8_t step)
 {
-    filter_t *ret = NULL;
+    filterInstance_t *ret = NULL;
 
     if (step < FilterStepCount)
     {
@@ -95,10 +95,10 @@ bool_t fsteps_addFilter_MAIN(uint8_t filter_type, uint8_t *config)
 
     if (FilterStepCount < FILTERSTEPS_MAX)
     {
-        filter_t *newfilter = &(FilterStep[FilterStepCount]);
+        filterInstance_t *newfilter = &(FilterStep[FilterStepCount]);
 
         // Prepare new filter step. Clean data struct
-        memset(newfilter, 0, sizeof(filter_t));
+        memset(newfilter, 0, sizeof(filterInstance_t));
 
         // Set Instantiate
         newfilter->StepNumber = FilterStepCount;
@@ -130,7 +130,7 @@ void fsteps_removeFilter_MAIN(uint8_t step)
 
         for (i = step; i < FilterStepCount; i++)
         {
-            memcpy(&(FilterStep[i]), &(FilterStep[i+1]), sizeof(filter_t));
+            memcpy(&(FilterStep[i]), &(FilterStep[i+1]), sizeof(filterInstance_t));
 
             // Update stepnumber variable
             FilterStep[i].StepNumber = i;
@@ -144,14 +144,14 @@ void fsteps_removeFilter_MAIN(uint8_t step)
 
 void fsteps_swapFilter_MAIN(uint8_t step1, uint8_t step2)
 {
-    filter_t tmp;
+    filterInstance_t tmp;
 
 
-    memcpy(&tmp, &(FilterStep[step1]), sizeof(filter_t));
+    memcpy(&tmp, &(FilterStep[step1]), sizeof(filterInstance_t));
 
-    memcpy(&(FilterStep[step1]), &(FilterStep[step2]), sizeof(filter_t));
+    memcpy(&(FilterStep[step1]), &(FilterStep[step2]), sizeof(filterInstance_t));
 
-    memcpy(&(FilterStep[step2]), &tmp, sizeof(filter_t));
+    memcpy(&(FilterStep[step2]), &tmp, sizeof(filterInstance_t));
 
 
     // Update stepnumber variables

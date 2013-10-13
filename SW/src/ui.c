@@ -80,11 +80,11 @@
 
 // State:
 
-static menu_t *Menu;
+static const menuInterface_t *Menu;
 
 // Two levels of menu parent
-static menu_t *MenuParent;
-static menu_t *MenuParentParent;
+static const menuInterface_t *MenuParent;
+static const menuInterface_t *MenuParentParent;
 
 static int8_t MenuOffset;
 static int8_t MenuCursorItem;
@@ -95,8 +95,43 @@ static int8_t MenuCursorItem;
 static void drawAll(void);
 static void drawCursor(uint8_t row, uint8_t col);
 
+// Wrappers for accessing progmem stuff in menuInterface:
+static inline bool_t  menuHasStaticTitle(const menuInterface_t *Menu);
+static inline uint8_t menuInitGetCursor(const menuInterface_t *Menu);
+static inline uint8_t menuGetItemCount(const menuInterface_t *Menu);
+static inline void    menuDrawItem(const menuInterface_t *Menu, uint8_t item);
+static inline void    menuHandleUiEvent(const menuInterface_t *Menu, uint8_t uiEvent);
 
 // --------------------------  PRIVATE FUNCTIONS  -------------------------------
+
+static inline bool_t menuHasStaticTitle(const menuInterface_t *Menu)
+{
+    return (bool_t)(pgm_read_byte(&(Menu->hasStaticTitle)));
+}
+
+static inline uint8_t menuInitGetCursor(const menuInterface_t *Menu)
+{
+    fptrUint8Void_t initGetCursor = (fptrUint8Void_t)pgm_read_word(&(Menu->initGetCursor));
+    return (initGetCursor)();
+}
+
+static inline uint8_t menuGetItemCount(const menuInterface_t *Menu)
+{
+    fptrUint8Void_t getItemCount = (fptrUint8Void_t)pgm_read_word(&(Menu->getItemCount));
+    return (getItemCount)();
+}
+
+static inline void menuDrawItem(const menuInterface_t *Menu, uint8_t item)
+{
+    fptrVoidUint8_t drawItem = (fptrVoidUint8_t)pgm_read_word(&(Menu->drawItem));
+    (drawItem)(item);
+}
+
+static inline void menuHandleUiEvent(const menuInterface_t *Menu, uint8_t uiEvent)
+{
+    fptrVoidUint8_t handleUiEvent = (fptrVoidUint8_t)pgm_read_word(&(Menu->handleUiEvent));
+    (handleUiEvent)(uiEvent);
+}
 
 
 static void drawAll(void)
@@ -114,10 +149,10 @@ static void drawAll(void)
 
     // Cursor position refers to menu_item being pointed at
 
-    if (Menu->hasStaticTitle)
+    if (menuHasStaticTitle(Menu))
     {
         // Title row is fixed
-        (Menu->drawItem)(0);
+        menuDrawItem(Menu, 0);
 
         i = 1;
     }
@@ -128,7 +163,7 @@ static void drawAll(void)
 
     for (; i < LCD_ROWS; i++)
     {
-        (Menu->drawItem)(i + MenuOffset);
+        menuDrawItem(Menu, i + MenuOffset);
     }
 }
 
@@ -136,7 +171,7 @@ static void drawCursor(uint8_t row, uint8_t col)
 {
     uint8_t i;
 
-    if (Menu->hasStaticTitle)
+    if (menuHasStaticTitle(Menu))
     {
         i = 1;
     }
@@ -181,7 +216,7 @@ void ui_handleUserEvent(uint8_t user_event)
 
     if (Menu != NULL)
     {
-        (Menu->handleUiEvent)(user_event);
+        menuHandleUiEvent(Menu, user_event);
     }
     else
     {
@@ -193,7 +228,7 @@ void ui_handleUserEvent(uint8_t user_event)
 
 // When entering a menu, ui_menuEnter must be called with the new menu manifest.
 // This will make ui render the menu.
-void ui_menuEnter(menu_t *menu)
+void ui_menuEnter(menuInterface_t const *menu)
 {
     // Store pointer to menu, keeping two parents
 
@@ -211,7 +246,7 @@ void ui_menuEnter(menu_t *menu)
     MenuOffset = -1;
 
     // MoveCursor function will fix everything and redraw current view now
-    ui_menuMoveCursor((Menu->initGetCursor)(), 0);
+    ui_menuMoveCursor(menuInitGetCursor(Menu), 0);
 }
 
 // Leave current menu. Let parent menu get in focus
@@ -226,7 +261,7 @@ void ui_menuBackOut(void)
     MenuOffset = -1;
 
     // MoveCursor function will fix everything anMenuCursorItemd redraw current view now
-    ui_menuMoveCursor((Menu->initGetCursor)(), 0);
+    ui_menuMoveCursor(menuInitGetCursor(Menu), 0);
 }
 
 // Make sure cursorItem is visible, and place cursor correctly
@@ -236,7 +271,7 @@ void ui_menuMoveCursor(uint8_t cursorItem, uint8_t cursorIndent)
     bool_t needRedraw = FALSE;
 
     // Get number of items
-    itemCount = (Menu->getItemCount)();
+    itemCount = menuGetItemCount(Menu);
 
     // Bounds check cursor position
     if (cursorItem >= itemCount)
@@ -260,7 +295,7 @@ void ui_menuMoveCursor(uint8_t cursorItem, uint8_t cursorIndent)
 
     // Is cursorItem visible?
 
-    if (Menu->hasStaticTitle)
+    if (menuHasStaticTitle(Menu))
     {
         if (cursorItem < (MenuOffset+1))
         {
@@ -304,7 +339,7 @@ void ui_menuDrawItem(uint8_t item, uint8_t const *data)
     uint8_t col;
 
     // A what LCD row is this?
-    if ((Menu->hasStaticTitle) && (item == 0))
+    if (menuHasStaticTitle(Menu) && (item == 0))
     {
         row = 0;
         col = 0;
@@ -349,7 +384,7 @@ void ui_menuDrawItemP(uint8_t item, uint8_t const *data)
     uint8_t row, col;
 
     // A what LCD row is this?
-    if ((Menu->hasStaticTitle) && (item == 0))
+    if (menuHasStaticTitle(Menu) && (item == 0))
     {
         row = 0;
         col = 0;

@@ -15,7 +15,7 @@
 void fsteps_initialize(void);
 
 uint8_t fsteps_getCount_SAFE(void);
-filter_t* fsteps_getFilter_SAFE(uint8_t step);
+filterInstance_t* fsteps_getFilter_SAFE(uint8_t step);
 
 bool_t fsteps_addFilter_MAIN(uint8_t filter_type, uint8_t *config);
 

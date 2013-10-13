@@ -122,8 +122,8 @@ static char const MidiCtrlNames2[64][10] PROGMEM =
 static char const MidiStatusNames[8][9] PROGMEM =
 {
         {"N.Off "},    // 0x80
-        {"N.On  "},     // 0x90
-        {"KeyAT "},   // 0xA0
+        {"N.On  "},    // 0x90
+        {"KeyAT "},    // 0xA0
         {""},          // 0xB0   // Control change, don't write name of this status
         {"ProgChg "},  // 0xC0
         {"ChanAT "},   // 0xD0

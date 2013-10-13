@@ -68,8 +68,7 @@ static void setCurrentCursor(void);
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
 
-// Menu self declaration struct
-menu_t FilterMenu =
+const menuInterface_t PROGMEM FilterMenu =
 {
         FALSE,            // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -92,7 +91,7 @@ uint8_t mode;
 #define MODE_EDIT_OUT     3 // Editing output of filter
 
 uint8_t currentFilterMenu;  // TITLE_MENU, otherwise menu item
-filter_t *currentFilter;
+filterInstance_t *currentFilter;
 
 // --------------------------  PRIVATE FUNCTIONS  -------------------------------
 
@@ -259,7 +258,7 @@ static void setCurrentCursor(void)
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
-menu_t * filtermenu_getMenu(void)
+const menuInterface_t * filtermenu_getMenu(void)
 {
     return &FilterMenu;
 }

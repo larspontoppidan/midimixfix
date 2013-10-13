@@ -10,8 +10,8 @@
 
 #include "../ui.h"
 
-menu_t * presetsmenu_getLoadMenu(void);
-menu_t * presetsmenu_getSaveMenu(void);
+const menuInterface_t * presetsmenu_getLoadMenu(void);
+const menuInterface_t * presetsmenu_getSaveMenu(void);
 
 
 #endif /* PRESETSMENU_H_ */

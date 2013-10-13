@@ -190,7 +190,7 @@ void midiin_initialize(void)
     Input2State.SysexMsgRoute = MIDIMSG_ROUTE_INACTIVE;
 }
 
-bool_t midiin_new(uint8_t filter_type, uint8_t *config, filter_t* self)
+bool_t midiin_new(uint8_t filter_type, uint8_t *config, filterInstance_t* self)
 {
     bool_t success = FALSE;
 
@@ -211,7 +211,7 @@ bool_t midiin_new(uint8_t filter_type, uint8_t *config, filter_t* self)
     return success;
 }
 
-uint8_t midiin_request(filter_t* self, uint8_t request)
+uint8_t midiin_request(filterInstance_t* self, uint8_t request)
 {
     uint8_t ret = 0;
 

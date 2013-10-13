@@ -62,7 +62,7 @@ static void handleMoveEvent(uint8_t uiEvent);
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
 // Menu self declaration struct
-menu_t MlogMenu =
+const menuInterface_t PROGMEM MlogMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -177,7 +177,7 @@ static void handleMoveEvent(uint8_t uiEvent)
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
-menu_t * midilogmenu_getMenu(void)
+const menuInterface_t * midilogmenu_getMenu(void)
 {
     // Register "manifest" of this menu
     return &MlogMenu;

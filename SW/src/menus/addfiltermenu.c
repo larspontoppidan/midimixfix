@@ -67,7 +67,7 @@ static void    handleMoveEvent(uint8_t uiEvent);
 static const char AddTitle[] PROGMEM = "--- ADD Filter: ----";
 
 // Add filter menu
-menu_t AddMenu =
+const menuInterface_t PROGMEM AddMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -82,7 +82,7 @@ static uint8_t addCursorItem = 1;
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
-menu_t * addfiltermenu_getMenu(void)
+const menuInterface_t * addfiltermenu_getMenu(void)
 {
     return &AddMenu;
 }

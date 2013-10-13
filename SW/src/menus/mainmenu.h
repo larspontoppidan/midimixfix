@@ -10,7 +10,7 @@
 
 #include "../ui.h"
 
-menu_t * mainmenu_getMenu(void);
+const menuInterface_t * mainmenu_getMenu(void);
 
 
 #endif /* MAINMENU_H_ */
