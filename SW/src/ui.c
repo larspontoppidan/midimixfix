@@ -206,7 +206,7 @@ void ui_initialize(void)
     MenuParentParent = NULL;
 
     // We want main menu hooked up initially
-    ui_menuEnter(mainmenu_getMenu());
+    ui_menuEnter(&mainmenu_Menu);
 }
 
 
@@ -228,7 +228,7 @@ void ui_handleUserEvent(uint8_t user_event)
 
 // When entering a menu, ui_menuEnter must be called with the new menu manifest.
 // This will make ui render the menu.
-void ui_menuEnter(menuInterface_t const *menu)
+void ui_menuEnter(const menuInterface_t *menu)
 {
     // Store pointer to menu, keeping two parents
 

@@ -8,13 +8,14 @@
 #ifndef REOFILTERMENU_H_
 #define REOFILTERMENU_H_
 
+#include "../common.h"
 #include "../ui.h"
+#include <avr/pgmspace.h>
 
 // reofilter is short for REmove & reOrder Filter menu
 
-const menuInterface_t * reofiltermenu_getRemoveMenu(void);
-const menuInterface_t * reofiltermenu_getReorderMenu(void);
-
+extern const menuInterface_t PROGMEM reofiltermenu_RemoveMenu;
+extern const menuInterface_t PROGMEM reofiltermenu_ReorderMenu;
 
 
 #endif /* REOFILTERMENU_H_ */

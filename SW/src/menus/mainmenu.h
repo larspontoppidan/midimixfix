@@ -8,10 +8,11 @@
 #ifndef MAINMENU_H_
 #define MAINMENU_H_
 
+#include "../common.h"
 #include "../ui.h"
+#include <avr/pgmspace.h>
 
-const menuInterface_t * mainmenu_getMenu(void);
-
+extern const menuInterface_t PROGMEM mainmenu_Menu;
 
 #endif /* MAINMENU_H_ */
 

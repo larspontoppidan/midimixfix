@@ -42,7 +42,7 @@ typedef struct
 
 // When entering a menu, ui_menuEnter must be called with the new menu manifest.
 // This will make ui render the menu.
-void ui_menuEnter(menuInterface_t const *menu);
+void ui_menuEnter(const menuInterface_t *menu);
 
 // Leave current menu
 void ui_menuBackOut(void);

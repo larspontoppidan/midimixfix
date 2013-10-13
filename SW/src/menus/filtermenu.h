@@ -8,8 +8,11 @@
 #ifndef FILTERMENU_H_
 #define FILTERMENU_H_
 
+#include "../common.h"
+#include "../ui.h"
+#include <avr/pgmspace.h>
 
-const menuInterface_t * filtermenu_getMenu(void);
+extern const menuInterface_t PROGMEM filtermenu_Menu;
 
 
 #endif /* FILTERMENU_H_ */

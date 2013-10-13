@@ -9,8 +9,10 @@
 #define MIDILOGMENU_H_
 
 
+#include "../common.h"
 #include "../ui.h"
+#include <avr/pgmspace.h>
 
-const menuInterface_t * midilogmenu_getMenu(void);
+extern const menuInterface_t PROGMEM midilogmenu_Menu;
 
 #endif /* MIDILOGMENU_H_ */

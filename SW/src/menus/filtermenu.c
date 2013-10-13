@@ -68,7 +68,7 @@ static void setCurrentCursor(void);
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
 
-const menuInterface_t PROGMEM FilterMenu =
+const menuInterface_t PROGMEM filtermenu_Menu =
 {
         FALSE,            // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -256,12 +256,6 @@ static void setCurrentCursor(void)
 
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
-
-
-const menuInterface_t * filtermenu_getMenu(void)
-{
-    return &FilterMenu;
-}
 
 static uint8_t initGetCursor(void)
 {

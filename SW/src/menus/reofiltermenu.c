@@ -77,7 +77,7 @@ static const char ReMenuTitle[] PROGMEM = "--- REMOVE Filter: -";
 static const char OMenuTitle[] PROGMEM = "--- REORDER Filters:";
 
 // Remove filter menu
-const menuInterface_t PROGMEM RemoveMenu =
+const menuInterface_t PROGMEM reofiltermenu_RemoveMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         reInitGetCursor,  // fptrUint8Void_t  enterGetCursor;
@@ -87,7 +87,7 @@ const menuInterface_t PROGMEM RemoveMenu =
 };
 
 // Reorder filter menu
-const menuInterface_t PROGMEM ReorderMenu =
+const menuInterface_t PROGMEM reofiltermenu_ReorderMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         oInitGetCursor,   // fptrUint8Void_t  enterGetCursor;
@@ -106,16 +106,6 @@ static bool_t removeNotReorderMenu = FALSE;  // True if remove mode
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
-
-const menuInterface_t * reofiltermenu_getRemoveMenu(void)
-{
-    return &RemoveMenu;
-}
-
-const menuInterface_t * reofiltermenu_getReorderMenu(void)
-{
-    return &ReorderMenu;
-}
 
 static uint8_t reInitGetCursor(void)
 {

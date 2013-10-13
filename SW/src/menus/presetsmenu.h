@@ -8,10 +8,12 @@
 #ifndef PRESETSMENU_H_
 #define PRESETSMENU_H_
 
+#include "../common.h"
 #include "../ui.h"
+#include <avr/pgmspace.h>
 
-const menuInterface_t * presetsmenu_getLoadMenu(void);
-const menuInterface_t * presetsmenu_getSaveMenu(void);
+extern const menuInterface_t PROGMEM presetsmenu_LoadMenu;
+extern const menuInterface_t PROGMEM presetsmenu_SaveMenu;
 
 
 #endif /* PRESETSMENU_H_ */

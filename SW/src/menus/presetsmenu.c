@@ -64,7 +64,7 @@ static void handleMoveEvent(uint8_t uiEvent);
 
 #define PRESET_COUNT 10
 
-const menuInterface_t PROGMEM LoadMenu =
+const menuInterface_t PROGMEM presetsmenu_LoadMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         loadInitGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -73,7 +73,7 @@ const menuInterface_t PROGMEM LoadMenu =
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
-const menuInterface_t PROGMEM SaveMenu =
+const menuInterface_t PROGMEM presetsmenu_SaveMenu =
 {
         TRUE,             // bool_t hasStaticTitle;
         saveInitGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -134,16 +134,6 @@ static void handleMoveEvent(uint8_t uiEvent)
 
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
-
-const menuInterface_t * presetsmenu_getLoadMenu(void)
-{
-    return &LoadMenu;
-}
-
-const menuInterface_t * presetsmenu_getSaveMenu(void)
-{
-    return &SaveMenu;
-}
 
 
 static uint8_t saveInitGetCursor(void)

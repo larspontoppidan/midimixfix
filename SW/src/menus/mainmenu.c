@@ -67,7 +67,7 @@ static void handleMoveEvent(uint8_t uiEvent);
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
 // Menu self declaration struct
-const menuInterface_t PROGMEM MainMenu =
+const menuInterface_t PROGMEM mainmenu_Menu =
 {
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -129,25 +129,25 @@ static void handleSelectEvent(void)
     switch(cursorItem)
     {
     case ITEM_FILTERS:
-        ui_menuEnter(filtermenu_getMenu());
+        ui_menuEnter(&filtermenu_Menu);
         break;
     case ITEM_LOAD_PRESET:
-        ui_menuEnter(presetsmenu_getLoadMenu());
+        ui_menuEnter(&presetsmenu_LoadMenu);
         break;
     case ITEM_SAVE_PRESET:
-        ui_menuEnter(presetsmenu_getSaveMenu());
+        ui_menuEnter(&presetsmenu_SaveMenu);
         break;
     case ITEM_ADD_FILT:
-        ui_menuEnter(addfiltermenu_getMenu());
+        ui_menuEnter(&addfiltermenu_AddMenu);
         break;
     case ITEM_REMOVE_FILT:
-        ui_menuEnter(reofiltermenu_getRemoveMenu());
+        ui_menuEnter(&reofiltermenu_RemoveMenu);
         break;
     case ITEM_REORG_FILT:
-        ui_menuEnter(reofiltermenu_getReorderMenu());
+        ui_menuEnter(&reofiltermenu_ReorderMenu);
         break;
     case ITEM_MIDILOG:
-        ui_menuEnter(midilogmenu_getMenu());
+        ui_menuEnter(&midilogmenu_Menu);
         break;
     case ITEM_BOOTLOADER:
         lcd_clear();
@@ -186,13 +186,6 @@ static void handleMoveEvent(uint8_t uiEvent)
 }
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
-
-
-const menuInterface_t * mainmenu_getMenu(void)
-{
-    // Register "manifest" of this menu
-    return &MainMenu;
-}
 
 
 // ---------------------------  MENU CALLBACKS ------------------------------
