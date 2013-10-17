@@ -23,6 +23,7 @@
 #define MIDIMSG_FLAG_RUNN_STATUS 2   // Indicates running status was used (which is ok)
 #define MIDIMSG_FLAG_NO_STATUS   4   // No status to use
 #define MIDIMSG_FLAG_TOO_SHORT   8   // All required bytes didn't arrive
+#define MIDIMSG_FLAG_RAW         16  // Didn't understand contents of message
 
 // Data locations in a well formed MIDI message:
 // (May not be true for SYSEX or invalid messages)
@@ -34,7 +35,7 @@
 
 typedef struct
 {
-    uint16_t ReceivedTick;
+    uint16_t ReceivedTick;  // TODO this
     uint8_t  Flags;
     uint8_t  DataLen; // 0 to data_max
     uint8_t  Data[MIDIMSG_DATA_MAX];

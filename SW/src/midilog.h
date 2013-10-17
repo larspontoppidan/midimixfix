@@ -31,6 +31,7 @@ void midilog_handleMidiIn2RtSysx_ISR(midiMsg_t *msg);
 void midilog_handleMidiIn2_ISR(midiMsg_t *msg);
 
 void midilog_handleMidiOut_ISR(midiMsg_t *msg);
+void midilog_handleMidiOutRtSysx_ISR(midiMsg_t *msg);
 
 void midilog_handleMainLoop(void);
 

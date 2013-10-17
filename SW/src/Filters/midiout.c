@@ -43,6 +43,7 @@
 #include "../midilog.h"
 #include "../common.h"
 #include "../midimessage.h"
+#include "../midigenerics.h"
 #include "../errors.h"
 #include "../util.h"
 #include "../hal.h"
@@ -167,23 +168,40 @@ static uint8_t midiout_ProcessMidiMsg(uint8_t instance, midiMsg_t *msg)
 
     (void)(instance);
 
-    midilog_handleMidiOut_ISR(msg);
-
-    if (ConfigUseRunningStatus && (msg->Data[MIDIMSG_STATUS] == LastStatus))
+    if (midi_getDataType(msg->Data[MIDIMSG_STATUS]) == MIDI_TYPE_SYS_REALTIME)
     {
-        // Do running status, which means not sending it
+        // Handle this separately to avoid affecting running status
+        for (i = 0; i < msg->DataLen; i++)
+        {
+            hal_midiTxEnqueue_ISR(msg->Data[i]);
+        }
+
+        midilog_handleMidiOutRtSysx_ISR(msg);
     }
     else
     {
-        // Send status
-        hal_midiTxEnqueue_ISR(msg->Data[MIDIMSG_STATUS]);
-        LastStatus = msg->Data[MIDIMSG_STATUS];
+        if (ConfigUseRunningStatus && (msg->Data[MIDIMSG_STATUS] == LastStatus))
+        {
+            // Do running status, which means not sending it
+            msg->Flags |= MIDIMSG_FLAG_RUNN_STATUS;
+        }
+        else
+        {
+            // Send status
+            msg->Flags &= ~MIDIMSG_FLAG_RUNN_STATUS;
+
+            hal_midiTxEnqueue_ISR(msg->Data[MIDIMSG_STATUS]);
+            LastStatus = msg->Data[MIDIMSG_STATUS];
+        }
+
+        for (i = 1; i < msg->DataLen; i++)
+        {
+            hal_midiTxEnqueue_ISR(msg->Data[i]);
+        }
+
+        midilog_handleMidiOut_ISR(msg);
     }
 
-    for (i = 1; i < msg->DataLen; i++)
-    {
-        hal_midiTxEnqueue_ISR(msg->Data[i]);
-    }
 
     return FILTER_PROCESS_DISCARD;
 }

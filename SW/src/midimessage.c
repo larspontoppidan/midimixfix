@@ -19,9 +19,9 @@
 // Examples:
 // "-"           Empty
 // "SS."         Only status
-// "SS!AA"       One data byte (running status)
+// ".AA"         One data byte (running status)
 // "SS.AABB"     Two data bytes
-// "?AABBCCDDEE" Raw message with 5 bytes
+// "AABBCCDDEE"  Raw message with 5 bytes
 
 char *midimsg_writeRaw(char *dest, midiMsg_t *msg)
 {
@@ -37,18 +37,13 @@ char *midimsg_writeRaw(char *dest, midiMsg_t *msg)
         // Well formed message?
         if (msg->Flags & MIDIMSG_FLAG_PARSE_OK)
         {
-            // Write status
-            dest = util_writeHex(dest, msg->Data[MIDIMSG_STATUS]);
+            // Write status if we didn't use running status
+            if ((msg->Flags & MIDIMSG_FLAG_RUNN_STATUS) == 0)
+            {
+                dest = util_writeHex(dest, msg->Data[MIDIMSG_STATUS]);
+            }
 
-            // Did we use running status?
-            if (msg->Flags & MIDIMSG_FLAG_RUNN_STATUS)
-            {
-                *(dest++) = '!';
-            }
-            else
-            {
-                *(dest++) = '.';
-            }
+            *(dest++) = '.';
 
             // Write all the data
             for (i = 1u; i < msg->DataLen; i++)
@@ -59,9 +54,8 @@ char *midimsg_writeRaw(char *dest, midiMsg_t *msg)
         else
         {
             // Not well formed message (or part of sysex)
-            *(dest++) = '?';
 
-            // Write raw data
+            // Just write raw data
             for (i = 0u; i < msg->DataLen; i++)
             {
                 dest = util_writeHex(dest, msg->Data[i]);
@@ -85,16 +79,14 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg)
     {
         dest = util_copyString_P(dest, PSTR("BAD:Too short"));
     }
+    else if (msg->Flags & MIDIMSG_FLAG_RAW)
+    {
+        dest = util_copyString_P(dest, PSTR("Raw data?"));
+    }
     else if (msg->Flags & MIDIMSG_FLAG_PARSE_OK)
     {
         // We have well formed message, decode it
         uint8_t status = msg->Data[MIDIMSG_STATUS];
-
-        if (msg->Flags & MIDIMSG_FLAG_RUNN_STATUS)
-        {
-            // Indicate running status with prefix '!'
-            *(dest++) = 'r';
-        }
 
         if (status >= 0xF0)
         {
@@ -177,6 +169,7 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg)
 
 void midimsg_newSetStatus(midiMsg_t *msg, uint8_t status)
 {
+    msg->Flags = MIDIMSG_FLAG_PARSE_OK;
     msg->DataLen = 1;
     msg->Data[MIDIMSG_STATUS] = status;
 }
