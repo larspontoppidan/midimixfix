@@ -44,8 +44,9 @@
 #include "../util.h"
 #include "../hal.h"
 #include "../filters.h"
-#include "../filtersteps.h"
+#include "../midiprocessing.h"
 #include "../ui.h"
+#include "../menuinterface.h"
 #include <avr/pgmspace.h>
 #include <string.h>
 
@@ -134,20 +135,17 @@ static void drawItem(uint8_t item)
     {
         uint8_t buffer[21];
         memset(buffer, 0, 21);
-        filterInstance_t *filter = fsteps_getFilter_SAFE(item - 1);
+        filters_instance_t filter = midiproc_getFilterInstance_SAFE(item - 1);
 
-        if (filter != NULL)
+        if ((movingFilterMode) && (item == selectedItem))
         {
-            if ((movingFilterMode) && (item == selectedItem))
-            {
-                // We are currently moving this filter, indent one space
-                buffer[0] = ' ';
-                filter_getTitle(filter->FilterType, (char*)(buffer + 1));
-            }
-            else
-            {
-                filter_getTitle(filter->FilterType, (char*)(buffer));
-            }
+            // We are currently moving this filter, indent one space
+            buffer[0] = ' ';
+            util_copyString_P((char*)(buffer + 1), filters_getFilterTitle(filter.FilterType));
+        }
+        else
+        {
+            util_copyString_P((char*)buffer, filters_getFilterTitle(filter.FilterType));
         }
 
         ui_menuDrawItem(item, buffer);
@@ -163,9 +161,11 @@ static void handleUiEvent(uint8_t uiEvent)
             // Remove filter menu and select is pushed,
 
             // this filter needs to go, unless it's the final midi out filter
-            if ((selectedItem - 1) < (fsteps_getCount_SAFE() - 1))
+            if ((selectedItem - 1) < (midiproc_getFilterCount_SAFE() - 1))
             {
-                fsteps_removeFilter_MAIN(selectedItem - 1);
+                midiproc_stop_MAIN();
+                midiproc_removeFilter_MAIN(selectedItem - 1);
+                midiproc_start_MAIN();
 
                 // Back out of menu
                 ui_menuBackOut();
@@ -176,7 +176,7 @@ static void handleUiEvent(uint8_t uiEvent)
             // Reorder filter menu and select is pushed,
             // Go into moving mode, unless its the last filter
             if ((movingFilterMode == FALSE) &&
-                    ((selectedItem - 1) != (fsteps_getCount_SAFE() - 1)))
+                    ((selectedItem - 1) != (midiproc_getFilterCount_SAFE() - 1)))
             {
                 movingFilterMode = TRUE;
 
@@ -215,7 +215,7 @@ static void handleUiEvent(uint8_t uiEvent)
             handleMoveEvent(uiEvent);
 
             // Did we get to final midi out filter?
-            if ((selectedItem - 1) == (fsteps_getCount_SAFE() - 1))
+            if ((selectedItem - 1) == (midiproc_getFilterCount_SAFE() - 1))
             {
                 // Then we must abort this
                 selectedItem = oldItem;
@@ -225,7 +225,9 @@ static void handleUiEvent(uint8_t uiEvent)
                 // Ok, if cursor changed swap around and draw both
                 if (selectedItem != oldItem)
                 {
-                    fsteps_swapFilter_MAIN(oldItem - 1, selectedItem - 1);
+                    midiproc_stop_MAIN();
+                    midiproc_swapFilters_MAIN(oldItem - 1, selectedItem - 1);
+                    midiproc_start_MAIN();
 
                     // Draw both
                     drawItem(oldItem);
@@ -251,7 +253,7 @@ static void handleUiEvent(uint8_t uiEvent)
 
 static uint8_t getItemCount(void)
 {
-    return fsteps_getCount_SAFE() + 1;
+    return midiproc_getFilterCount_SAFE() + 1;
 }
 
 static void handleMoveEvent(uint8_t uiEvent)
@@ -259,7 +261,7 @@ static void handleMoveEvent(uint8_t uiEvent)
     switch (uiEvent)
     {
     case UI_EVENT_MOVE_UP:
-        if (selectedItem < fsteps_getCount_SAFE())
+        if (selectedItem < midiproc_getFilterCount_SAFE())
         {
             selectedItem++;
         }
@@ -271,7 +273,7 @@ static void handleMoveEvent(uint8_t uiEvent)
         }
         break;
     case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        selectedItem = fsteps_getCount_SAFE();
+        selectedItem = midiproc_getFilterCount_SAFE();
         break;
     case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
         selectedItem = 1;

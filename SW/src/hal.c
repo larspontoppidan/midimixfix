@@ -318,6 +318,12 @@ static void outputTxComplete_ISR()
 }
 
 
+bool_t hal_getMidiTxBufferEmpty_ISR(void)
+{
+    return (TxBufferHead == TxBufferTail);
+}
+
+
 void hal_midiTxEnqueue_ISR(uint8_t x)
 {
     uint8_t index;

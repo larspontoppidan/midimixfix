@@ -43,6 +43,7 @@
 #include "../errors.h"
 #include "../util.h"
 #include "../ui.h"
+#include "../menuinterface.h"
 #include <avr/pgmspace.h>
 
 

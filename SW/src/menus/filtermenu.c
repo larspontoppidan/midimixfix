@@ -44,8 +44,9 @@
 #include "../util.h"
 #include "../hal.h"
 #include "../filters.h"
-#include "../filtersteps.h"
+#include "../midiprocessing.h"
 #include "../ui.h"
+#include "../menuinterface.h"
 #include "../midimessage.h"
 #include <avr/pgmspace.h>
 #include <string.h>
@@ -77,8 +78,6 @@ const menuInterface_t PROGMEM filtermenu_Menu =
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
-#define TITLE_MENU    0xFF
-
 // ----------------------------  LOCAL VARIABLES  -------------------------------
 
 uint8_t selectedItem = 0;
@@ -90,8 +89,9 @@ uint8_t mode;
 #define MODE_EDIT_IN      2 // Editing input of filter
 #define MODE_EDIT_OUT     3 // Editing output of filter
 
-uint8_t currentFilterMenu;  // TITLE_MENU, otherwise menu item
-filterInstance_t *currentFilter;
+uint8_t currentFilterMenu;  // 0 is title menu, 1 is first menu item
+filters_instance_t currentFilter;
+uint8_t currentFilterStep;
 
 // --------------------------  PRIVATE FUNCTIONS  -------------------------------
 
@@ -100,12 +100,12 @@ static void countItems(void)
     uint8_t i;
 
     // One row for each filter
-    itemCount = fsteps_getCount_SAFE();
+    itemCount = midiproc_getFilterCount_SAFE();
 
-    for (i = 0; i < fsteps_getCount_SAFE(); i++)
+    for (i = 0; i < midiproc_getFilterCount_SAFE(); i++)
     {
         // Plus it's submenus
-        itemCount += filter_request(fsteps_getFilter_SAFE(i), FILTER_REQ_MENU_ITEMS);
+        itemCount += filters_getMenuItems(midiproc_getFilterInstance_SAFE(i).FilterType);
     }
 }
 
@@ -119,15 +119,16 @@ static void setCurrentFilter(uint8_t item)
     // One row for each filter
     n = item;
 
-    for (i = 0; i < fsteps_getCount_SAFE(); i++)
+    for (i = 0; i < midiproc_getFilterCount_SAFE(); i++)
     {
-        currentFilter = fsteps_getFilter_SAFE(i);
+        currentFilter = midiproc_getFilterInstance_SAFE(i);
+        currentFilterStep = i;
+        currentFilterMenu = n;
 
         // Are we at top menu for this filter?
         if (n == 0)
         {
             // Yes
-            currentFilterMenu = TITLE_MENU;
             break;
         }
 
@@ -135,12 +136,11 @@ static void setCurrentFilter(uint8_t item)
         n--;
 
         // Are we at a submenu for this filter?
-        count = filter_request(currentFilter, FILTER_REQ_MENU_ITEMS);
+        count = filters_getMenuItems(currentFilter.FilterType);
 
         if (n < count)
         {
             // Yes
-            currentFilterMenu = n;
             break;
         }
         else
@@ -191,7 +191,7 @@ static uint8_t routeToAscii(uint8_t route)
     }
     else if (route == MIDIMSG_ROUTE_INACTIVE)
     {
-        ret = ' ';
+        ret = 'X';
     }
     else if (route <= 9)
     {
@@ -247,7 +247,7 @@ static void setCurrentCursor(void)
         break;
     case MODE_EDIT_FILTER:
         // Get indentation from filter
-        col = filter_request(currentFilter, FILTER_REQ_MENU_INDENT) + 2;
+        col = filters_getMenuIndent(currentFilter.FilterType) + 2;
         break;
     }
 
@@ -282,23 +282,39 @@ static void drawItem(uint8_t item)
     memset(buffer, ' ', 19);
     buffer[19] = 0;
 
-    // Find item
-    setCurrentFilter(item);
-
-    if (currentFilterMenu == TITLE_MENU)
+    if (item < itemCount)
     {
-        // Write filter title
-        filter_getTitle(currentFilter->FilterType, (char*)(buffer));
+        // Find item
+        setCurrentFilter(item);
 
-        // Write filter input / output routes:
-        buffer[16] = routeToAscii(currentFilter->RouteIn);
-        buffer[17] = '>';
-        buffer[18] = routeToAscii(currentFilter->RouteOut);
-    }
-    else
-    {
-        // Write filter submenu with indent
-        filter_getMenuText(currentFilter, (char *)(buffer + 1), currentFilterMenu);
+        if (currentFilterMenu == 0)
+        {
+            // Write menu text
+            filters_writeMenuText(currentFilter, 0, buffer);
+
+            // We are at title menu, write filter input / output routes:
+            midiproc_route_t route = midiproc_getFilterRoute_SAFE(currentFilterStep);
+
+            // The style depends on filter operating mode
+            uint8_t mode = filters_getFilterMode(currentFilter.FilterType);
+
+            if (mode != FILTER_MODE_OUT)
+            {
+                buffer[16] = routeToAscii(route.In);
+            }
+
+            buffer[17] = '>';
+
+            if (mode != FILTER_MODE_IN)
+            {
+                buffer[18] = routeToAscii(route.Out);
+            }
+        }
+        else
+        {
+            // Write menu text
+            filters_writeMenuText(currentFilter, currentFilterMenu, buffer + 1);
+        }
     }
 
     ui_menuDrawItem(item, buffer);
@@ -317,17 +333,34 @@ static void handleUiEvent(uint8_t uiEvent)
         // Make sure selectedItem is currentFilter
         setCurrentFilter(selectedItem);
 
-        if (currentFilterMenu == TITLE_MENU)
+        if (currentFilterMenu == 0)
         {
+            uint8_t filter_mode = filters_getFilterMode(currentFilter.FilterType);
+
             // In this case we toggle between root menu, in and out.
             // Set cursor accordingly
             switch (mode)
             {
             case MODE_NO_EDIT:
-                mode = MODE_EDIT_IN;
+                if (filter_mode == FILTER_MODE_OUT)
+                {
+                    mode = MODE_EDIT_OUT;
+                }
+                else
+                {
+                    mode = MODE_EDIT_IN;
+                }
                 break;
             case MODE_EDIT_IN:
-                mode = MODE_EDIT_OUT;
+                if ((filter_mode == FILTER_MODE_IN) ||
+                    (filter_mode == FILTER_MODE_PROCESSOR))
+                {
+                    mode = MODE_NO_EDIT;
+                }
+                else
+                {
+                    mode = MODE_EDIT_OUT;
+                }
                 break;
             case MODE_EDIT_OUT:
                 mode = MODE_NO_EDIT;
@@ -352,32 +385,40 @@ static void handleUiEvent(uint8_t uiEvent)
     else
     {
         // Incrementing / decrementing stuff
-
-        switch (mode)
+        if (mode == MODE_NO_EDIT)
         {
-        case MODE_NO_EDIT:
             // Moving cursor
             handleMoveEvent(uiEvent);
-            break;
+        }
+        else if ((mode == MODE_EDIT_IN) ||
+                 (mode == MODE_EDIT_OUT))
+        {
+            // We are editing IN/OUT
+            midiproc_route_t route = midiproc_getFilterRoute_SAFE(currentFilterStep);
 
-        case MODE_EDIT_IN:
-            currentFilter->RouteIn = util_boundedAddInt8(currentFilter->RouteIn, -1, 9, eventToDelta(uiEvent));
+            if (mode == MODE_EDIT_IN)
+            {
+                route.In = util_boundedAddInt8(route.In, -1, 9, eventToDelta(uiEvent));
+            }
+            else
+            {
+                route.Out = util_boundedAddInt8(route.Out, -1, 9, eventToDelta(uiEvent));
+            }
 
-            // Notify filter of change
-            filter_request(currentFilter, FILTER_REQ_UPDATE_SELF);
-            break;
+            // Update route. First we must stop processing...
+            midiproc_stop_MAIN();
+            midiproc_setRoute_MAIN(currentFilterStep, route);
+            midiproc_start_MAIN();
 
-        case MODE_EDIT_OUT:
-            currentFilter->RouteOut = util_boundedAddInt8(currentFilter->RouteOut, 0, 9, eventToDelta(uiEvent));
-
-            // Notify filter of change
-            filter_request(currentFilter, FILTER_REQ_UPDATE_SELF);
-            break;
-
-        case MODE_EDIT_FILTER:
+        }
+        else if (mode == MODE_EDIT_FILTER)
+        {
             // Let filter handle this edit operation
-            filter_handleUiEvent(currentFilter, currentFilterMenu, uiEvent);
-            break;
+            filters_handleUiEvent(currentFilter, currentFilterMenu, uiEvent);
+        }
+        else
+        {
+            // TODO ERROR!
         }
 
         // Update this in any case and set cursor

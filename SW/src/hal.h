@@ -51,6 +51,8 @@ uint16_t hal_tickCountGet_MAIN(void);
 
 void   hal_midiTxEnqueue_ISR(uint8_t x);
 
+bool_t hal_getMidiTxBufferEmpty_ISR(void);
+
 uint16_t hal_adcGetValue_ISR(uint8_t channel);
 uint16_t hal_adcGetValue_MAIN(uint8_t channel);
 

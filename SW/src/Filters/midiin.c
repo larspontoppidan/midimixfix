@@ -45,131 +45,380 @@
 #include "../midimessage.h"
 #include "../midigenerics.h"
 #include "../midiprocessing.h"
+#include "../filterinterface.h"
 #include "../errors.h"
 #include "../util.h"
 #include <avr/pgmspace.h>
+
+// ------------------------------  PROTOTYPES  ----------------------------------
+
+static uint8_t genericCreate(uint8_t *step, uint8_t filter_step);
+
+static void    midiin_ConfigNull(uint8_t instance, void* data);
+static uint8_t midiin_ProcessMidiMsgNull(uint8_t instance, midiMsg_t *msg);
+static void    midiin_HandleUiEventNull(uint8_t instance, uint8_t menu_item, uint8_t ui_event);
+
+
+// Functions for the six filters:
+static uint8_t midiin_In1Create(uint8_t filter_step);
+static uint8_t midiin_In2Create(uint8_t filter_step);
+static uint8_t midiin_In1RtCreate(uint8_t filter_step);
+static uint8_t midiin_In2RtCreate(uint8_t filter_step);
+static uint8_t midiin_In1SxCreate(uint8_t filter_step);
+static uint8_t midiin_In2SxCreate(uint8_t filter_step);
+
+static void midiin_In1Destroy(uint8_t instance);
+static void midiin_In2Destroy(uint8_t instance);
+static void midiin_In1RtDestroy(uint8_t instance);
+static void midiin_In2RtDestroy(uint8_t instance);
+static void midiin_In1SxDestroy(uint8_t instance);
+static void midiin_In2SxDestroy(uint8_t instance);
+
+static void midiin_In1SetFilterStep(uint8_t instance, uint8_t filter_step);
+static void midiin_In2SetFilterStep(uint8_t instance, uint8_t filter_step);
+static void midiin_In1RtSetFilterStep(uint8_t instance, uint8_t filter_step);
+static void midiin_In2RtSetFilterStep(uint8_t instance, uint8_t filter_step);
+static void midiin_In1SxSetFilterStep(uint8_t instance, uint8_t filter_step);
+static void midiin_In2SxSetFilterStep(uint8_t instance, uint8_t filter_step);
+
+static void midiin_In1WriteMenuText(uint8_t instance, uint8_t menu_item, void *dest);
+static void midiin_In2WriteMenuText(uint8_t instance, uint8_t menu_item, void *dest);
+static void midiin_In1RtWriteMenuText(uint8_t instance, uint8_t menu_item, void *dest);
+static void midiin_In2RtWriteMenuText(uint8_t instance, uint8_t menu_item, void *dest);
+static void midiin_In1SxWriteMenuText(uint8_t instance, uint8_t menu_item, void *dest);
+static void midiin_In2SxWriteMenuText(uint8_t instance, uint8_t menu_item, void *dest);
+
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
 typedef struct
 {
     // --- Parsing state
-    bool_t  Receiving;
-
+    bool_t Receiving;
     midiMsg_t Msg;
-    uint8_t MsgIndex; // OBSOLETE For referring in midiio
-
-    uint8_t DataCount; // OBSOLETE
     uint8_t ExpectedDataCount;
 
     // For implementation of running status
-    uint8_t MidiStatus; // OBSOLETE
-    bool_t  AllowRunningStatus;
+    bool_t AllowRunningStatus;
 
     // --- Configuration of this particular input
-    uint8_t NormalMsgRoute;   // Where goes normal messages
     uint8_t NormalMsgStep;    // Where goes normal messages
-    uint8_t RealtimeMsgRoute; // Where goes realtime messages
     uint8_t RealtimeMsgStep;  // Where goes realtime messages
-    uint8_t SysexMsgRoute;    // Where goes sysex messages
     uint8_t SysexMsgStep;     // Where goes sysex messages
 
 } inputState_t;
 
 
-typedef struct
+// ------------------------------  VARIABLES  ---------------------------------
+
+static inputState_t Input1State;
+static inputState_t Input2State;
+
+static const char MenuTitleIn1[] PROGMEM = "MIDI In1";
+static const char MenuTitleIn2[] PROGMEM = "MIDI In2";
+static const char MenuTitleIn1Rt[] PROGMEM = "MIDI In1 Realt";
+static const char MenuTitleIn2Rt[] PROGMEM = "MIDI In2 Realt";
+static const char MenuTitleIn1Sx[] PROGMEM = "MIDI In1 Sysex";
+static const char MenuTitleIn2Sx[] PROGMEM = "MIDI In2 Sysex";
+
+const filterInterface_t midiin_In1 PROGMEM =
 {
-    char Text[15];
-} menuTitle_t;
+        midiin_In1Create,
+        midiin_In1Destroy,
+        midiin_In1SetFilterStep,
+        midiin_ConfigNull,
+        midiin_ConfigNull,
+        midiin_ProcessMidiMsgNull,
+        midiin_In1WriteMenuText,
+        midiin_HandleUiEventNull,
 
-// ----------------------------  LOCAL VARIABLES  -------------------------------
+        0,               // Number of bytes in configuration
+        0,               // Number of menu items (0 means only title, 1 is one item)
+        0,               // Cursor indentation in menu
+        FILTER_MODE_OUT, // Filter operation mode
+        MenuTitleIn1,    // Static filter title (this may be different from in-menu title)
 
-inputState_t Input1State;
-inputState_t Input2State;
+        (FILTER_ID_AUTHOR  * 1ul) |
+        (FILTER_ID_VERSION * 1ul) |
+        (FILTER_ID_TYPE    * 1ul)
+};
 
-static menuTitle_t const MenuTitles[6] PROGMEM =
+const filterInterface_t midiin_In2 PROGMEM =
 {
-    {"MIDI In1"},
-    {"MIDI In2"},
-    {"MIDI In1 Realt"},
-    {"MIDI In2 Realt"},
-    {"MIDI In1 Sysex"},
-    {"MIDI In2 Sysex"}
+        midiin_In2Create,
+        midiin_In2Destroy,
+        midiin_In2SetFilterStep,
+        midiin_ConfigNull,
+        midiin_ConfigNull,
+        midiin_ProcessMidiMsgNull,
+        midiin_In2WriteMenuText,
+        midiin_HandleUiEventNull,
+
+        0,               // Number of bytes in configuration
+        0,               // Number of menu items (0 means only title, 1 is one item)
+        0,               // Cursor indentation in menu
+        FILTER_MODE_OUT, // Filter operation mode
+        MenuTitleIn2,    // Static filter title (this may be different from in-menu title)
+
+        (FILTER_ID_AUTHOR  * 1ul) |
+        (FILTER_ID_VERSION * 1ul) |
+        (FILTER_ID_TYPE    * 2ul)
+};
+
+const filterInterface_t midiin_In1Realtime PROGMEM =
+{
+        midiin_In1RtCreate,
+        midiin_In1RtDestroy,
+        midiin_In1RtSetFilterStep,
+        midiin_ConfigNull,
+        midiin_ConfigNull,
+        midiin_ProcessMidiMsgNull,
+        midiin_In1RtWriteMenuText,
+        midiin_HandleUiEventNull,
+
+        0,               // Number of bytes in configuration
+        0,               // Number of menu items (0 means only title, 1 is one item)
+        0,               // Cursor indentation in menu
+        FILTER_MODE_OUT, // Filter operation mode
+        MenuTitleIn1Rt,  // Static filter title (this may be different from in-menu title)
+
+        (FILTER_ID_AUTHOR  * 1ul) |
+        (FILTER_ID_VERSION * 1ul) |
+        (FILTER_ID_TYPE    * 3ul)
+};
+
+const filterInterface_t midiin_In2Realtime PROGMEM =
+{
+        midiin_In2RtCreate,
+        midiin_In2RtDestroy,
+        midiin_In2RtSetFilterStep,
+        midiin_ConfigNull,
+        midiin_ConfigNull,
+        midiin_ProcessMidiMsgNull,
+        midiin_In2RtWriteMenuText,
+        midiin_HandleUiEventNull,
+
+        0,               // Number of bytes in configuration
+        0,               // Number of menu items (0 means only title, 1 is one item)
+        0,               // Cursor indentation in menu
+        FILTER_MODE_OUT, // Filter operation mode
+        MenuTitleIn2Rt,  // Static filter title (this may be different from in-menu title)
+
+        (FILTER_ID_AUTHOR  * 1ul) |
+        (FILTER_ID_VERSION * 1ul) |
+        (FILTER_ID_TYPE    * 4ul)
+};
+
+const filterInterface_t midiin_In1Sysex PROGMEM =
+{
+        midiin_In1SxCreate,
+        midiin_In1SxDestroy,
+        midiin_In1SxSetFilterStep,
+        midiin_ConfigNull,
+        midiin_ConfigNull,
+        midiin_ProcessMidiMsgNull,
+        midiin_In1SxWriteMenuText,
+        midiin_HandleUiEventNull,
+
+        0,               // Number of bytes in configuration
+        0,               // Number of menu items (0 means only title, 1 is one item)
+        0,               // Cursor indentation in menu
+        FILTER_MODE_OUT, // Filter operation mode
+        MenuTitleIn1Sx,    // Static filter title (this may be different from in-menu title)
+
+        (FILTER_ID_AUTHOR  * 1ul) |
+        (FILTER_ID_VERSION * 1ul) |
+        (FILTER_ID_TYPE    * 5ul)
+};
+
+const filterInterface_t midiin_In2Sysex PROGMEM =
+{
+        midiin_In2SxCreate,
+        midiin_In2SxDestroy,
+        midiin_In2SxSetFilterStep,
+        midiin_ConfigNull,
+        midiin_ConfigNull,
+        midiin_ProcessMidiMsgNull,
+        midiin_In2SxWriteMenuText,
+        midiin_HandleUiEventNull,
+
+        0,               // Number of bytes in configuration
+        0,               // Number of menu items (0 means only title, 1 is one item)
+        0,               // Cursor indentation in menu
+        FILTER_MODE_OUT, // Filter operation mode
+        MenuTitleIn2Sx,    // Static filter title (this may be different from in-menu title)
+
+        (FILTER_ID_AUTHOR  * 1ul) |
+        (FILTER_ID_VERSION * 1ul) |
+        (FILTER_ID_TYPE    * 6ul)
 };
 
 
-// ------------------------------  PROTOTYPES  ----------------------------------
-
-static void setRouteStep(uint8_t filter_type, uint8_t route, uint8_t step);
-static uint8_t getRoute(uint8_t filter_type);
-
 // ---------------------------  PRIVATE FUNCTIONS  ------------------------------
 
-static void setRouteStep(uint8_t filter_type, uint8_t route, uint8_t step)
+static uint8_t genericCreate(uint8_t *step, uint8_t filter_step)
 {
-    switch (filter_type)
-    {
-    case FILTER_MIDIIN1:
-        Input1State.NormalMsgRoute = route;
-        Input1State.NormalMsgStep = step;
-        break;
-    case FILTER_MIDIIN2:
-        Input2State.NormalMsgRoute = route;
-        Input2State.NormalMsgStep = step;
-        break;
-    case FILTER_MIDIIN1_REALT:
-        Input1State.RealtimeMsgRoute = route;
-        Input1State.RealtimeMsgStep = step;
-        break;
-    case FILTER_MIDIIN2_REALT:
-        Input2State.RealtimeMsgRoute = route;
-        Input2State.RealtimeMsgStep = step;
-        break;
-    case FILTER_MIDIIN1_SYSEX:
-        Input1State.SysexMsgRoute = route;
-        Input1State.SysexMsgStep = step;
-        break;
-    case FILTER_MIDIIN2_SYSEX:
-        Input2State.SysexMsgRoute = route;
-        Input2State.SysexMsgStep = step;
-        break;
-    default:
-        err_raise_MAIN(ERR_MODULE_MIDIINPUT, __LINE__);
-        break;
-    }
-}
+    uint8_t ret = FILTER_CREATE_FAILED;
 
-static uint8_t getRoute(uint8_t filter_type)
-{
-    uint8_t ret = 0;
-
-    switch (filter_type)
+    if (*step == FILTER_STEP_NA)
     {
-    case FILTER_MIDIIN1:
-        ret = Input1State.NormalMsgRoute;
-        break;
-    case FILTER_MIDIIN2:
-        ret = Input2State.NormalMsgRoute;
-        break;
-    case FILTER_MIDIIN1_REALT:
-        ret = Input1State.RealtimeMsgRoute;
-        break;
-    case FILTER_MIDIIN2_REALT:
-        ret = Input2State.RealtimeMsgRoute;
-        break;
-    case FILTER_MIDIIN1_SYSEX:
-        ret = Input1State.SysexMsgRoute;
-        break;
-    case FILTER_MIDIIN2_SYSEX:
-        ret = Input2State.SysexMsgRoute;
-        break;
-    default:
-        err_raise_MAIN(ERR_MODULE_MIDIINPUT, __LINE__);
-        break;
+        *step = filter_step;
+        ret = 0;
     }
 
     return ret;
 }
+
+// ------------------------  MIDI FILTER INTERFACE FUNCTIONS  -------------------
+
+static void midiin_ConfigNull(uint8_t instance, void* data)
+{
+    (void)(instance);
+    (void)(data);
+}
+
+static uint8_t midiin_ProcessMidiMsgNull(uint8_t instance, midiMsg_t *msg)
+{
+    (void)(instance);
+    (void)(msg);
+    return 0;
+}
+
+static void midiin_HandleUiEventNull(uint8_t instance, uint8_t menu_item, uint8_t ui_event)
+{
+    (void)(instance);
+    (void)(menu_item);
+    (void)(ui_event);
+}
+
+static uint8_t midiin_In1Create(uint8_t filter_step)
+{
+    return genericCreate(&(Input1State.NormalMsgStep), filter_step);
+}
+static uint8_t midiin_In2Create(uint8_t filter_step)
+{
+    return genericCreate(&(Input2State.NormalMsgStep), filter_step);
+}
+static uint8_t midiin_In1RtCreate(uint8_t filter_step)
+{
+    return genericCreate(&(Input1State.RealtimeMsgStep), filter_step);
+}
+static uint8_t midiin_In2RtCreate(uint8_t filter_step)
+{
+    return genericCreate(&(Input2State.RealtimeMsgStep), filter_step);
+}
+static uint8_t midiin_In1SxCreate(uint8_t filter_step)
+{
+    return genericCreate(&(Input1State.SysexMsgStep), filter_step);
+}
+static uint8_t midiin_In2SxCreate(uint8_t filter_step)
+{
+    return genericCreate(&(Input2State.SysexMsgStep), filter_step);
+}
+
+
+static void midiin_In1Destroy(uint8_t instance)
+{
+    (void)(instance);
+    Input1State.NormalMsgStep = FILTER_STEP_NA;
+}
+static void midiin_In2Destroy(uint8_t instance)
+{
+    (void)(instance);
+    Input2State.NormalMsgStep = FILTER_STEP_NA;
+}
+static void midiin_In1RtDestroy(uint8_t instance)
+{
+    (void)(instance);
+    Input1State.RealtimeMsgStep = FILTER_STEP_NA;
+}
+static void midiin_In2RtDestroy(uint8_t instance)
+{
+    (void)(instance);
+    Input2State.RealtimeMsgStep = FILTER_STEP_NA;
+}
+static void midiin_In1SxDestroy(uint8_t instance)
+{
+    (void)(instance);
+    Input1State.SysexMsgStep = FILTER_STEP_NA;
+}
+static void midiin_In2SxDestroy(uint8_t instance)
+{
+    (void)(instance);
+    Input2State.SysexMsgStep = FILTER_STEP_NA;
+}
+
+
+
+static void midiin_In1SetFilterStep(uint8_t instance, uint8_t filter_step)
+{
+    (void)(instance);
+    Input1State.NormalMsgStep = filter_step;
+}
+static void midiin_In2SetFilterStep(uint8_t instance, uint8_t filter_step)
+{
+    (void)(instance);
+    Input2State.NormalMsgStep = filter_step;
+}
+static void midiin_In1RtSetFilterStep(uint8_t instance, uint8_t filter_step)
+{
+    (void)(instance);
+    Input1State.RealtimeMsgStep = filter_step;
+}
+static void midiin_In2RtSetFilterStep(uint8_t instance, uint8_t filter_step)
+{
+    (void)(instance);
+    Input2State.RealtimeMsgStep = filter_step;
+}
+static void midiin_In1SxSetFilterStep(uint8_t instance, uint8_t filter_step)
+{
+    (void)(instance);
+    Input1State.SysexMsgStep = filter_step;
+}
+static void midiin_In2SxSetFilterStep(uint8_t instance, uint8_t filter_step)
+{
+    (void)(instance);
+    Input2State.SysexMsgStep = filter_step;
+}
+
+
+static void midiin_In1WriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
+{
+    (void)(instance);
+    (void)(menu_item);
+    util_copyString_P(dest, MenuTitleIn1);
+}
+static void midiin_In2WriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
+{
+    (void)(instance);
+    (void)(menu_item);
+    util_copyString_P(dest, MenuTitleIn2);
+}
+static void midiin_In1RtWriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
+{
+    (void)(instance);
+    (void)(menu_item);
+    util_copyString_P(dest, MenuTitleIn1Rt);
+}
+static void midiin_In2RtWriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
+{
+    (void)(instance);
+    (void)(menu_item);
+    util_copyString_P(dest, MenuTitleIn2Rt);
+}
+static void midiin_In1SxWriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
+{
+    (void)(instance);
+    (void)(menu_item);
+    util_copyString_P(dest, MenuTitleIn1Sx);
+}
+static void midiin_In2SxWriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
+{
+    (void)(instance);
+    (void)(menu_item);
+    util_copyString_P(dest, MenuTitleIn2Sx);
+}
+
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
@@ -179,69 +428,17 @@ void midiin_initialize(void)
     // Reset the inputs
     Input1State.Receiving = FALSE;
     Input1State.AllowRunningStatus = FALSE;
-    Input1State.NormalMsgRoute = MIDIMSG_ROUTE_INACTIVE;
-    Input1State.RealtimeMsgRoute = MIDIMSG_ROUTE_INACTIVE;
-    Input1State.SysexMsgRoute = MIDIMSG_ROUTE_INACTIVE;
+    Input1State.NormalMsgStep = FILTER_STEP_NA;
+    Input1State.RealtimeMsgStep = FILTER_STEP_NA;
+    Input1State.SysexMsgStep = FILTER_STEP_NA;
 
     Input2State.Receiving = FALSE;
     Input2State.AllowRunningStatus = FALSE;
-    Input2State.NormalMsgRoute = MIDIMSG_ROUTE_INACTIVE;
-    Input2State.RealtimeMsgRoute = MIDIMSG_ROUTE_INACTIVE;
-    Input2State.SysexMsgRoute = MIDIMSG_ROUTE_INACTIVE;
+    Input2State.NormalMsgStep = FILTER_STEP_NA;
+    Input2State.RealtimeMsgStep = FILTER_STEP_NA;
+    Input2State.SysexMsgStep = FILTER_STEP_NA;
 }
 
-bool_t midiin_new(uint8_t filter_type, uint8_t *config, filterInstance_t* self)
-{
-    bool_t success = FALSE;
-
-    (void)(config);
-
-    // Have we already created this particular filter type
-    if (getRoute(filter_type) == MIDIMSG_ROUTE_INACTIVE)
-    {
-        // No, lets set this up
-        self->FilterType = filter_type;
-        self->Instance = 0;
-        self->RouteIn = MIDIMSG_ROUTE_INACTIVE;
-        setRouteStep(self->FilterType, self->RouteOut, self->StepNumber);
-
-        success = TRUE;
-    }
-
-    return success;
-}
-
-uint8_t midiin_request(filterInstance_t* self, uint8_t request)
-{
-    uint8_t ret = 0;
-
-    switch (request)
-    {
-    case FILTER_REQ_DESTROY:
-        // Release this instance of the filter
-        setRouteStep(self->FilterType, MIDIMSG_ROUTE_INACTIVE, 0);
-        break;
-
-    case FILTER_REQ_UPDATE_SELF:
-        // When the self data change, update accordingly:
-        setRouteStep(self->FilterType, self->RouteOut, self->StepNumber);
-
-        // and enforce what cannot change:
-        self->Instance = 0;
-        self->RouteIn = MIDIMSG_ROUTE_INACTIVE;
-        break;
-    }
-
-    return ret;
-}
-
-
-// Menu integration.
-// All we got is a menu title
-void midiin_getMenuTitle(uint8_t filter_type, char *dest)
-{
-    util_copyString_P(dest, MenuTitles[filter_type].Text);
-}
 
 
 // MIDI raw data parsing engine
@@ -258,14 +455,12 @@ void midiin_handleInput1_ISR(uint8_t x)
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
     {
-        if (Input1State.RealtimeMsgRoute != MIDIMSG_ROUTE_INACTIVE)
+        if (Input1State.RealtimeMsgStep != FILTER_STEP_NA)
         {
             // Create a realtime msg on stack and post it for processing right away
             midiMsg_t rt_msg;
 
             midimsg_newSetStatus(&rt_msg, x);
-            rt_msg.Route = Input1State.RealtimeMsgRoute;
-
             midilog_handleMidiIn1RtSysx_ISR(&rt_msg);
             midiproc_addMessage_ISR(&rt_msg, Input1State.RealtimeMsgStep);
         }
@@ -280,7 +475,6 @@ void midiin_handleInput1_ISR(uint8_t x)
             {
                 // So, we are starting a new message.
                 Input1State.Msg.DataLen = 0u;
-                Input1State.Msg.Route = Input1State.NormalMsgRoute;
                 Input1State.Msg.Flags = 0u;
 
                 Input1State.Receiving = TRUE;
@@ -413,14 +607,12 @@ void midiin_handleInput2_ISR(uint8_t x)
     // Real time messages gets special handling right away
     if (type == MIDI_TYPE_SYS_REALTIME)
     {
-        if (Input2State.RealtimeMsgRoute != MIDIMSG_ROUTE_INACTIVE)
+        if (Input2State.RealtimeMsgStep != FILTER_STEP_NA)
         {
             // Create a realtime msg on stack and post it for processing right away
             midiMsg_t rt_msg;
 
             midimsg_newSetStatus(&rt_msg, x);
-            rt_msg.Route = Input2State.RealtimeMsgRoute;
-
             midilog_handleMidiIn2RtSysx_ISR(&rt_msg);
             midiproc_addMessage_ISR(&rt_msg, Input2State.RealtimeMsgStep);
         }
@@ -435,7 +627,6 @@ void midiin_handleInput2_ISR(uint8_t x)
             {
                 // So, we are starting a new message.
                 Input2State.Msg.DataLen = 0u;
-                Input2State.Msg.Route = Input2State.NormalMsgRoute;
                 Input2State.Msg.Flags = 0u;
 
                 Input2State.Receiving = TRUE;
@@ -547,4 +738,9 @@ void midiin_handleInput2_ISR(uint8_t x)
             // We may require another pass to actually use the data byte
         } while (!x_used);
     }
+}
+
+bool_t midiin_getIsReceivingStatus(void)
+{
+    return (Input1State.Receiving | Input2State.Receiving);
 }

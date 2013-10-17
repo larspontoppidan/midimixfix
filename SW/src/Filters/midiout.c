@@ -56,7 +56,43 @@ static const char MenuTitle[9]    PROGMEM = "MIDI Out";
 static const char MenuSetting[18] PROGMEM = "Runn. status : %o";
 
 
-// ----------------------------  LOCAL VARIABLES  -------------------------------
+// ------------------------------  PROTOTYPES  ----------------------------------
+
+static uint8_t midiout_Create(uint8_t filter_step);
+static void    midiout_Destroy(uint8_t instance);
+static void    midiout_SetFilterStep(uint8_t instance, uint8_t filter_step);
+static void    midiout_LoadConfig(uint8_t instance, void* data);
+static void    midiout_SaveConfig(uint8_t instance, void* data);
+static uint8_t midiout_ProcessMidiMsg(uint8_t instance, midiMsg_t *msg);
+static void    midiout_WriteMenuText(uint8_t instance, uint8_t menu_item, void *dest);
+static void    midiout_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t ui_event);
+
+
+// -------------------------------  VARIABLES  ----------------------------------
+
+
+const filterInterface_t midiout_Filter PROGMEM =
+{
+        midiout_Create,
+        midiout_Destroy,
+        midiout_SetFilterStep,
+        midiout_LoadConfig,
+        midiout_SaveConfig,
+        midiout_ProcessMidiMsg,
+        midiout_WriteMenuText,
+        midiout_HandleUiEvent,
+
+        1,              // Number of bytes in configuration
+        1,              // Number of menu items (0 means only title, 1 is one item)
+        15,             // Cursor indentation in menu
+        FILTER_MODE_IN, // Filter operation mode
+        MenuTitle,      // Static filter title (this may be different from in-menu title)
+
+        (FILTER_ID_AUTHOR  * 1ul) |
+        (FILTER_ID_VERSION * 1ul) |
+        (FILTER_ID_TYPE    * 10ul)
+};
+
 
 // Configuration
 static bool_t ConfigUseRunningStatus;
@@ -64,9 +100,6 @@ static bool_t ConfigUseRunningStatus;
 // State
 static uint8_t Instances;
 static uint8_t LastStatus;
-
-// ------------------------------  PROTOTYPES  ----------------------------------
-
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
@@ -77,68 +110,62 @@ void midiout_initialize(void)
     LastStatus = 0xFF;
 }
 
-bool_t midiout_new(uint8_t filter_type, uint8_t *config, filterInstance_t* self)
-{
-    bool_t ret = FALSE;
 
-    (void)(filter_type);
+static uint8_t midiout_Create(uint8_t filter_step)
+{
+    uint8_t ret = FILTER_CREATE_FAILED;
+
+    (void)(filter_step);
 
     if (Instances == 0)
     {
         // Okay, lets do this
         Instances = 1;
 
-        if (config == NULL)
-        {
-            // Default config
-            ConfigUseRunningStatus = FALSE;
-        }
-        else
-        {
-            // Load from config pointer
-            ConfigUseRunningStatus = *config;
-        }
+        // Default config
+        ConfigUseRunningStatus = FALSE;
 
-        self->RouteOut = MIDIMSG_ROUTE_INACTIVE;
-        ret = TRUE;
+        // Return our instance number, which is 0
+        ret = 0;
     }
 
     return ret;
 }
 
-uint8_t midiout_request(filterInstance_t* self, uint8_t request)
+static void midiout_Destroy(uint8_t instance)
 {
-    uint8_t ret = 0;
+    (void)(instance);
 
-    switch (request)
-    {
-    case FILTER_REQ_DESTROY:
-        Instances = 0;
-        break;
-    case FILTER_REQ_CONF_SIZE:
-        ret = 1;
-        break;
-    case FILTER_REQ_MENU_ITEMS:
-        ret = 1;
-        break;
-    case FILTER_REQ_MENU_INDENT:
-        ret = 15;
-        break;
-    case FILTER_REQ_UPDATE_SELF:
-        // Just enforce the route out setting
-        self->RouteOut = MIDIMSG_ROUTE_INACTIVE;
-        break;
-    }
-
-    return ret;
+    // Release our only instance we may have
+    Instances = 0;
 }
 
-// Process midi msg
-void midiout_processMidiMsg(filterInstance_t* self, midiMsg_t *msg)
+static void midiout_SetFilterStep(uint8_t instance, uint8_t filter_step)
+{
+    // We are not posting messages to the processing chain, so we don't care about filter step
+    (void)(instance);
+    (void)(filter_step);
+}
+
+static void midiout_LoadConfig(uint8_t instance, void* data)
+{
+    (void)(instance);
+
+    ConfigUseRunningStatus = *((uint8_t*)data);
+}
+
+static void midiout_SaveConfig(uint8_t instance, void* data)
+{
+    (void)(instance);
+
+    *((uint8_t*)data) = ConfigUseRunningStatus;
+}
+
+static uint8_t midiout_ProcessMidiMsg(uint8_t instance, midiMsg_t *msg)
 {
     uint8_t i;
 
-    (void)(self);
+    (void)(instance);
 
     midilog_handleMidiOut_ISR(msg);
 
@@ -158,37 +185,34 @@ void midiout_processMidiMsg(filterInstance_t* self, midiMsg_t *msg)
         hal_midiTxEnqueue_ISR(msg->Data[i]);
     }
 
-    // We are done with this msg, better discard it!
-    msg->Route = MIDIMSG_ROUTE_INACTIVE;
+    return FILTER_PROCESS_DISCARD;
 }
 
-
-void midiout_getMenuTitle(uint8_t filter_type, char *dest)
-{
-    (void)(filter_type);
-
-    util_copyString_P(dest, MenuTitle);
-}
 
 // Menu integration
-void midiout_getMenuText(filterInstance_t* self, char *dest, uint8_t item)
+static void midiout_WriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
 {
-    (void)(self);
+    (void)(instance);
 
-    if (item == 0)
+    if (menu_item == 0)
+    {
+        util_copyString_P(dest, MenuTitle);
+    }
+    else if (menu_item == 1)
     {
         util_writeFormat_P(dest, MenuSetting, ConfigUseRunningStatus);
     }
 }
 
-void midiout_handleUiEvent(filterInstance_t* self, uint8_t item, uint8_t user_event)
-{
-    (void)(self);
 
-    if (item == 0)
+static void midiout_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t ui_event)
+{
+    (void)(instance);
+
+    if (menu_item == 1)
     {
-        // Handle up down moves on item 0
-        switch (user_event & (~UI_MOVE_FAST_MASK))
+        // Handle up down moves on menu_item 1
+        switch (ui_event & (~UI_MOVE_FAST_MASK))
         {
         case UI_EVENT_MOVE_DOWN:
             ConfigUseRunningStatus = FALSE;
@@ -200,9 +224,3 @@ void midiout_handleUiEvent(filterInstance_t* self, uint8_t item, uint8_t user_ev
     }
 }
 
-void midiout_saveConfig(filterInstance_t* self, uint8_t *dest)
-{
-    (void)(self);
-
-    *dest = ConfigUseRunningStatus;
-}

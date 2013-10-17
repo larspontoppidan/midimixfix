@@ -46,6 +46,7 @@
 #include "../hal.h"
 #include "../filters.h"
 #include "../ui.h"
+#include "../menuinterface.h"
 #include <avr/pgmspace.h>
 
 

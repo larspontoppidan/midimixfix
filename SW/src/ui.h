@@ -9,24 +9,13 @@
 #define UI_H_
 
 #include "common.h"
+#include "menuinterface.h"
 
 // Called from main:
 
 void ui_initialize(void);
 
 void ui_handleUserEvent(uint8_t user_event);
-
-
-// All menus must implement this call back interface:
-
-typedef struct
-{
-    bool_t hasStaticTitle;          // If true, the menu has a static line 0
-    fptrUint8Void_t initGetCursor; // When a menu is entered, this is called initially
-    fptrUint8Void_t getItemCount;   // Returns number of menu items, including line 0
-    fptrVoidUint8_t drawItem;       // Draw one line of menu. Line 0 may be title or first entry
-    fptrVoidUint8_t handleUiEvent;  // Handle the ui event
-} menuInterface_t;
 
 
 // UI events
@@ -37,7 +26,6 @@ typedef struct
 #define UI_EVENT_MOVE_DOWN  4
 
 #define UI_MOVE_FAST_MASK   8 // This may be combined with MOVE_UP / DOWN
-
 
 
 // When entering a menu, ui_menuEnter must be called with the new menu manifest.

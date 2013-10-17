@@ -52,7 +52,6 @@
 #include "ui.h"
 #include "errors.h"
 #include "filterhooks.h"
-#include "filtersteps.h"
 #include "midiprocessing.h"
 #include "midilog.h"
 
@@ -137,9 +136,21 @@ static void handleUi(void)
 
 void loadDefaultFilters(void)
 {
-    fsteps_addFilter_MAIN(FILTER_MIDIIN1, NULL);
-    fsteps_addFilter_MAIN(FILTER_MIDIIN2, NULL);
-    fsteps_addFilter_MAIN(FILTER_MIDIOUT, NULL);
+    midiproc_addFilter_MAIN(filters_findFilterType(
+            (FILTER_ID_AUTHOR  * 1ul) |
+            (FILTER_ID_VERSION * 1ul) |
+            (FILTER_ID_TYPE    * 1ul)));
+
+    midiproc_addFilter_MAIN(filters_findFilterType(
+            (FILTER_ID_AUTHOR  * 1ul) |
+            (FILTER_ID_VERSION * 1ul) |
+            (FILTER_ID_TYPE    * 2ul)));
+
+    midiproc_addFilter_MAIN(filters_findFilterType(
+            (FILTER_ID_AUTHOR  * 1ul) |
+            (FILTER_ID_VERSION * 1ul) |
+            (FILTER_ID_TYPE    * 10ul)));
+
 }
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
@@ -155,7 +166,6 @@ int main(void)
     lcd_initialize();
     quaddecode_initialize();
     midiproc_initialize();
-    fsteps_initialize();
     midilog_initialize();
 
     // Initialize components
@@ -172,6 +182,8 @@ int main(void)
 
     // Load default setup
     loadDefaultFilters();
+
+    midiproc_start_MAIN();
 
     while(TRUE)
     {

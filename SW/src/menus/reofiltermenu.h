@@ -9,7 +9,7 @@
 #define REOFILTERMENU_H_
 
 #include "../common.h"
-#include "../ui.h"
+#include "../menuinterface.h"
 #include <avr/pgmspace.h>
 
 // reofilter is short for REmove & reOrder Filter menu

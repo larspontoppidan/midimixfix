@@ -9,7 +9,7 @@
 #define FILTERMENU_H_
 
 #include "../common.h"
-#include "../ui.h"
+#include "../menuinterface.h"
 #include <avr/pgmspace.h>
 
 extern const menuInterface_t PROGMEM filtermenu_Menu;

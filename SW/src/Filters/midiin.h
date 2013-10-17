@@ -9,7 +9,8 @@
 #define MIDIINPUT_H_
 
 #include "../common.h"
-#include "../filters.h"
+#include "../filterinterface.h"
+#include <avr/pgmspace.h>
 
 // Midi input module parses the raw data bytes from midi inputs into midi messages
 // The messages are inserted into the processing chain as specified by filter setups
@@ -32,13 +33,16 @@ void midiin_initialize(void);
 void midiin_handleInput1_ISR(uint8_t x);
 void midiin_handleInput2_ISR(uint8_t x);
 
+bool_t midiin_getIsReceivingStatus(void);
 
-bool_t  midiin_new(uint8_t filter_type, uint8_t *config, filterInstance_t* self);
-uint8_t midiin_request(filterInstance_t* self, uint8_t request);
-
-// Menu integration
-void midiin_getMenuTitle(uint8_t filter_type, char *dest);
+extern const filterInterface_t PROGMEM midiin_In1;
+extern const filterInterface_t PROGMEM midiin_In2;
+extern const filterInterface_t PROGMEM midiin_In1Realtime;
+extern const filterInterface_t PROGMEM midiin_In2Realtime;
+extern const filterInterface_t PROGMEM midiin_In1Sysex;
+extern const filterInterface_t PROGMEM midiin_In2Sysex;
 
 
 
 #endif /* MIDIINPUT_H_ */
+

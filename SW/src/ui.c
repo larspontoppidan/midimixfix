@@ -63,9 +63,8 @@
 #include "common.h"
 #include "util.h"
 #include "lcd.h"
-
 #include "errors.h"
-
+#include "menuinterface.h"
 #include "menus/mainmenu.h"
 
 #include <avr/pgmspace.h>

@@ -12,11 +12,11 @@
 
 // Midi message storage format definition
 
-#define MIDIMSG_DATA_MAX 5
+#define MIDIMSG_DATA_MAX  4
 
 // Some routes have predefined meanings:
 #define MIDIMSG_ROUTE_INACTIVE   0   // Used for non existing or deleted messages
-#define MIDIMSG_ROUTE_ALL        255 // The wildcard of routes
+#define MIDIMSG_ROUTE_ALL        255 // The wildcard for routes
 
 // The flags give information on how parsing went:
 #define MIDIMSG_FLAG_PARSE_OK    1   // OK message
@@ -35,7 +35,6 @@
 typedef struct
 {
     uint16_t ReceivedTick;
-    uint8_t  Route;
     uint8_t  Flags;
     uint8_t  DataLen; // 0 to data_max
     uint8_t  Data[MIDIMSG_DATA_MAX];

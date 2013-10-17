@@ -10,6 +10,7 @@
 
 
 #include "common.h"
+#include "filters.h"
 #include "midimessage.h"
 
 
@@ -23,6 +24,35 @@ void midiproc_addMessage_MAIN(midiMsg_t *msg, uint8_t filter_step);
 
 void midiproc_start_MAIN(void);
 void midiproc_stop_MAIN(void);
+
+
+// Filter steps
+
+
+typedef struct
+{
+    uint8_t In;
+    uint8_t Out;
+} midiproc_route_t;
+
+
+
+
+
+// Filter steps management
+uint8_t midiproc_getFilterCount_SAFE(void);
+bool_t midiproc_addFilter_MAIN(uint8_t filter_type);
+void   midiproc_removeFilter_MAIN(uint8_t step);
+void   midiproc_swapFilters_MAIN(uint8_t step1, uint8_t step2);
+
+// Accessing one filter
+
+filters_instance_t midiproc_getFilterInstance_SAFE(uint8_t step);
+
+midiproc_route_t midiproc_getFilterRoute_SAFE(uint8_t step);
+void  midiproc_setRoute_MAIN(uint8_t step, midiproc_route_t route);
+
+
 
 
 #endif /* MIDIPROCESSING_H_ */

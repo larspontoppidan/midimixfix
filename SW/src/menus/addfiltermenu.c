@@ -46,8 +46,9 @@
 #include "../util.h"
 #include "../hal.h"
 #include "../filters.h"
-#include "../filtersteps.h"
+#include "../midiprocessing.h"
 #include "../ui.h"
+#include "../menuinterface.h"
 #include <avr/pgmspace.h>
 #include <string.h>
 
@@ -90,7 +91,7 @@ static void handleMoveEvent(uint8_t uiEvent)
     switch (uiEvent)
     {
     case UI_EVENT_MOVE_UP:
-        if (addCursorItem < FILTER_TYPE_COUNT)
+        if (addCursorItem < FILTERS_TYPE_COUNT)
         {
             addCursorItem++;
         }
@@ -102,7 +103,7 @@ static void handleMoveEvent(uint8_t uiEvent)
         }
         break;
     case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        addCursorItem = FILTER_TYPE_COUNT;
+        addCursorItem = FILTERS_TYPE_COUNT;
         break;
     case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
         addCursorItem = 1;
@@ -119,7 +120,7 @@ static uint8_t initGetCursor(void)
 
 static uint8_t getItemCount(void)
 {
-    return FILTER_TYPE_COUNT+1;
+    return FILTERS_TYPE_COUNT + 1;
 }
 
 static void drawItem(uint8_t item)
@@ -132,12 +133,7 @@ static void drawItem(uint8_t item)
     else
     {
         // Menu item
-        uint8_t buffer[21];
-        memset(buffer, 0, 21);
-
-        filter_getTitle(item - 1, (char*)(buffer));
-
-        ui_menuDrawItem(item, buffer);
+        ui_menuDrawItemP(item, (uint8_t*)filters_getFilterTitle(item - 1));
     }
 }
 
@@ -146,11 +142,16 @@ static void handleUiEvent(uint8_t uiEvent)
     if (uiEvent == UI_EVENT_SELECT)
     {
         // Add filter
-        fsteps_addFilter_MAIN(addCursorItem - 1, NULL);
+        midiproc_stop_MAIN();
 
-        // Now the filter is in the last position, reorder so midiout is still
-        // the last filter:
-        fsteps_swapFilter_MAIN(fsteps_getCount_SAFE() - 1, fsteps_getCount_SAFE() - 2);
+        if (midiproc_addFilter_MAIN(addCursorItem - 1))
+        {
+            // Now the filter is in the last position, reorder so midiout is still
+            // the last filter:
+            midiproc_swapFilters_MAIN(midiproc_getFilterCount_SAFE() - 1, midiproc_getFilterCount_SAFE() - 2);
+        }
+
+        midiproc_start_MAIN();
 
         // Back out of menu
         ui_menuBackOut();

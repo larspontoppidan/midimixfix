@@ -47,7 +47,9 @@ typedef uint8_t (*fptrUint8Void_t)(void);
 typedef void (*fptrVoidUint8_t)(uint8_t);
 typedef void (*fptrVoidVoid_t)(void);
 
-typedef void (*fptrVoidUint8Voidptr_t)(uint8_t, void*);
+typedef void (*fptrVoidVoidp_t)(void*);
+typedef void (*fptrVoidUint8Uint8_t)(uint8_t, uint8_t);
+typedef void (*fptrVoidUint8Voidp_t)(uint8_t, void*);
 
 
 
