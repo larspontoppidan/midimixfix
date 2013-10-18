@@ -44,7 +44,10 @@ void ui_menuMoveCursor(uint8_t cursorItem, uint8_t cursorIndent);
 void ui_menuDrawItem(uint8_t item, uint8_t const *data);
 
 // Draw menu item with PGM space data
-void ui_menuDrawItemP(uint8_t item, uint8_t const *data);
+void ui_menuDrawItemP(uint8_t item, const char *data);
+
+
+int8_t ui_eventToDelta(uint8_t ui_event, int8_t fast_speed);
 
 
 #endif /* UI_H_ */

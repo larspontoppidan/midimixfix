@@ -10,6 +10,8 @@
 #include "pgmstrings.h"
 
 
+char const pstr_Empty[] PROGMEM = "";
+
 char const pstr_On[]  PROGMEM = "On";
 char const pstr_Off[] PROGMEM = "Off";
 

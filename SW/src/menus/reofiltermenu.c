@@ -47,6 +47,7 @@
 #include "../midiprocessing.h"
 #include "../ui.h"
 #include "../menuinterface.h"
+#include "../pgmstrings.h"
 #include <avr/pgmspace.h>
 #include <string.h>
 
@@ -128,10 +129,9 @@ static void drawItem(uint8_t item)
     if (item == 0)
     {
         // Title
-        ui_menuDrawItemP(item,
-                (uint8_t *)(removeNotReorderMenu ? ReMenuTitle : OMenuTitle));
+        ui_menuDrawItemP(item, removeNotReorderMenu ? ReMenuTitle : OMenuTitle);
     }
-    else
+    else if ((item-1) < midiproc_getFilterCount_SAFE())
     {
         uint8_t buffer[21];
         memset(buffer, 0, 21);
@@ -149,6 +149,10 @@ static void drawItem(uint8_t item)
         }
 
         ui_menuDrawItem(item, buffer);
+    }
+    else
+    {
+        ui_menuDrawItemP(item, pstr_Empty);
     }
 }
 

@@ -45,6 +45,7 @@
 
 #include "Filters/midiin.h"
 #include "Filters/midiout.h"
+#include "Filters/routechannel.h"
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------
@@ -58,6 +59,7 @@ static const filterInterface_t PROGMEM * const filters_Types[FILTERS_TYPE_COUNT]
         &midiin_In2Realtime,
         &midiin_In1Sysex,
         &midiin_In2Sysex,
+        &routechan_Filter,
         &midiout_Filter
 };
 

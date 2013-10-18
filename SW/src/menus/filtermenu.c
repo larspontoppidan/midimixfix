@@ -63,7 +63,6 @@ static void countItems(void);
 static void setCurrentFilter(uint8_t item);
 static void handleMoveEvent(uint8_t uiEvent);
 static uint8_t routeToAscii(uint8_t route);
-static int8_t eventToDelta(uint8_t uiEvent);
 static void setCurrentCursor(void);
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
@@ -206,29 +205,6 @@ static uint8_t routeToAscii(uint8_t route)
     return ret;
 }
 
-static int8_t eventToDelta(uint8_t uiEvent)
-{
-    uint8_t delta = 0;
-
-    switch (uiEvent)
-    {
-    case UI_EVENT_MOVE_UP:
-        delta = 1;
-        break;
-    case UI_EVENT_MOVE_DOWN:
-        delta = -1;
-        break;
-    case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        delta = 10;
-        break;
-
-    case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
-        delta = -10;
-        break;
-    }
-
-    return delta;
-}
 
 static void setCurrentCursor(void)
 {
@@ -398,11 +374,11 @@ static void handleUiEvent(uint8_t uiEvent)
 
             if (mode == MODE_EDIT_IN)
             {
-                route.In = util_boundedAddInt8(route.In, -1, 9, eventToDelta(uiEvent));
+                route.In = util_boundedAddInt8(route.In, -1, 9, ui_eventToDelta(uiEvent, 10));
             }
             else
             {
-                route.Out = util_boundedAddInt8(route.Out, -1, 9, eventToDelta(uiEvent));
+                route.Out = util_boundedAddInt8(route.Out, -1, 9, ui_eventToDelta(uiEvent, 10));
             }
 
             // Update route. First we must stop processing...

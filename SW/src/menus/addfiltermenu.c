@@ -128,12 +128,12 @@ static void drawItem(uint8_t item)
     if (item == 0)
     {
         // Title
-        ui_menuDrawItemP(0, (uint8_t*)AddTitle);
+        ui_menuDrawItemP(0, AddTitle);
     }
     else
     {
         // Menu item
-        ui_menuDrawItemP(item, (uint8_t*)filters_getFilterTitle(item - 1));
+        ui_menuDrawItemP(item, filters_getFilterTitle(item - 1));
     }
 }
 

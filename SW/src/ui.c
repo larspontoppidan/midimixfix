@@ -378,7 +378,7 @@ void ui_menuDrawItem(uint8_t item, uint8_t const *data)
 
 }
 
-void ui_menuDrawItemP(uint8_t item, uint8_t const *data)
+void ui_menuDrawItemP(uint8_t item, const char *data)
 {
     uint8_t row, col;
 
@@ -423,4 +423,29 @@ void ui_menuDrawItemP(uint8_t item, uint8_t const *data)
         }
     }
 
+}
+
+
+int8_t ui_eventToDelta(uint8_t ui_event, int8_t fast_speed)
+{
+    int8_t delta = 0;
+
+    switch (ui_event)
+    {
+    case UI_EVENT_MOVE_UP:
+        delta = 1;
+        break;
+    case UI_EVENT_MOVE_DOWN:
+        delta = -1;
+        break;
+    case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
+        delta = fast_speed;
+        break;
+
+    case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
+        delta = -fast_speed;
+        break;
+    }
+
+    return delta;
 }

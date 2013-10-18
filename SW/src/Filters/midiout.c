@@ -124,7 +124,7 @@ static uint8_t midiout_Create(uint8_t filter_step)
         Instances = 1;
 
         // Default config
-        ConfigUseRunningStatus = FALSE;
+        ConfigUseRunningStatus = TRUE;
 
         // Return our instance number, which is 0
         ret = 0;

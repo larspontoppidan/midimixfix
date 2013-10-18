@@ -98,7 +98,7 @@ enum
 
 typedef struct
 {
-    uint8_t Text[MENUITEM_MAX];
+    char Text[MENUITEM_MAX];
 } menuItem_t;
 
 // Main menu:

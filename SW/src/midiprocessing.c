@@ -411,6 +411,8 @@ void midiproc_removeFilter_MAIN(uint8_t step)
         // Send the destroy message to filter
         filters_destroy(FilterInstances[step]);
 
+        FilterCount--;
+
         for (i = step; i < FilterCount; i++)
         {
             FilterInstances[i] = FilterInstances[i + 1];
@@ -420,7 +422,6 @@ void midiproc_removeFilter_MAIN(uint8_t step)
             filters_setFilterStep(FilterInstances[i], i);
         }
 
-        FilterCount--;
     }
     else
     {

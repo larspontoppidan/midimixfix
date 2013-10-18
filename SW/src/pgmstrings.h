@@ -10,6 +10,7 @@
 
 #include <avr/pgmspace.h>
 
+extern char const PROGMEM pstr_Empty[];
 extern char const PROGMEM pstr_On[];
 extern char const PROGMEM pstr_Off[];
 

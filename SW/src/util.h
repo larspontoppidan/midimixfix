@@ -26,5 +26,4 @@ void util_writeNumberParentheses(char *dest, uint8_t value);
 
 char *util_writeFormat_P(char *dest, PGM_P src, uint8_t data);
 
-
 #endif /* UTIL_H_ */
