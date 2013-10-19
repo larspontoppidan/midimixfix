@@ -66,7 +66,7 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg);
 //void midimsg_newChanAfterTouch(midiMsg_t *msg, uint8_t chan, uint8_t pressure);
 //void midimsg_newPitchWheel(midiMsg_t *msg, uint8_t chan, int16_t pitch_wheel);
 //void midimsg_newProgramChange(midiMsg_t *msg, uint8_t chan, uint8_t part);
-//void midimsg_newContinuousCtrl(midiMsg_t *msg, uint8_t chan, uint8_t cc, uint8_t value);
+void midimsg_newContinuousCtrl(midiMsg_t *msg, uint8_t chan, uint8_t cc, uint8_t value);
 //
 
 //// Constructing midi messages byte by byte

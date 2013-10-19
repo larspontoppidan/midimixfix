@@ -165,7 +165,15 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg)
     return dest;
 }
 
-// Adding data to midi message
+
+void midimsg_newContinuousCtrl(midiMsg_t *msg, uint8_t chan, uint8_t cc, uint8_t value)
+{
+    msg->DataLen = 3;
+    msg->Flags = MIDIMSG_FLAG_PARSE_OK;
+    msg->Data[0] = MIDI_STATUS_CTRL_CHANGE | chan;
+    msg->Data[1] = cc;
+    msg->Data[2] = value;
+}
 
 void midimsg_newSetStatus(midiMsg_t *msg, uint8_t status)
 {

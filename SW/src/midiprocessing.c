@@ -380,7 +380,7 @@ bool_t midiproc_addFilter_MAIN(uint8_t filter_type)
                 FilterInstances[new_filter_step].Instance = new_instance;
 
                 // Set default In/Out routes according to filter mode
-                FilterRoutes[new_filter_step].In = MIDIMSG_ROUTE_ALL;
+                FilterRoutes[new_filter_step].In = 1;
                 FilterRoutes[new_filter_step].Out = 1;
 
                 // Apply the filter processing mode rules to the route settings:

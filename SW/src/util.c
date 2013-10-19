@@ -397,6 +397,7 @@ void util_writeNumberParentheses(char *dest, uint8_t value)
 //   %O    Boolean written as " (ON)" or "(OFF)"
 //   %o    Boolean written as "On" or "Off"
 //   %c    Write data as midi controller
+//   %C    Write data as midi ui-controller
 //   %n    Write data as note name "C#-4" for example
 //
 char *util_writeFormat_P(char *dest, PGM_P src, uint8_t data)
@@ -441,6 +442,9 @@ char *util_writeFormat_P(char *dest, PGM_P src, uint8_t data)
                 {
                     dest = midi_writeControllerName(dest, data);
                 }
+                break;
+            case 'C':
+                dest = midi_writeUiccName(dest, data);
                 break;
             case 'n':
                 dest = midi_writeNoteName(dest, data);

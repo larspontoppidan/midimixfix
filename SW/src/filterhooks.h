@@ -10,7 +10,7 @@
 
 #include "Filters/midiin.h"
 #include "Filters/midiout.h"
-
+#include "Filters/pedals.h"
 
 // Filters can hook up direct function calls in the program flow.
 
@@ -22,6 +22,7 @@
     do {                           \
       midiin_initialize();         \
       midiout_initialize();        \
+      pedals_initialize();         \
     } while (0)
 //    midilog_initialize();
 //    blockflt_initialize();
@@ -36,8 +37,8 @@
 // For hooking up to the tick interrupt (100 Hz)
 #define FILTER_HOOKS_TICK_ISR()   \
     do {                          \
+        pedals_handleTick_ISR();  \
     } while (0)
-//    pedals_handleTick_ISR();
 //    midilog_handleTick_ISR();
 //    blockflt_handleTick_ISR();
 //    superdly_handleTick_ISR();
@@ -47,6 +48,7 @@
 // For hooking up to the main loop idle loop
 #define FILTER_HOOKS_MAIN_LOOP()  \
     do {                          \
+        pedals_handleMainLoop();  \
     } while (0)
 //    pedals_handleMainLoop();
 //    midilog_handleMainLoop();

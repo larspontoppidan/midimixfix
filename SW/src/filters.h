@@ -28,7 +28,7 @@ typedef struct
 
 } filters_instance_t;
 
-#define FILTERS_TYPE_COUNT 8
+#define FILTERS_TYPE_COUNT 13
 
 // Wrappers performing calls into the applicable filter type:
 

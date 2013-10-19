@@ -1,3 +1,43 @@
+
+//
+// Filename    : pedals.c
+// Code module : Generation of midi messages from pedal readings for MidiMixFix
+// Project     : Midimixfix
+// URL         : http://larsee.dk
+//
+// --------------------------------  LICENSE  -----------------------------------
+//
+// Copyright (c) 2013, Lars Ole Pontoppidan (Larsp)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// *  Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+// *  Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+// *  Neither the name of the original author (Lars Ole Pontoppidan) nor the
+//    names of its contributors may be used to endorse or promote products
+//    derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+// ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//
+//
+// ------------------------------  DESCRIPTION  ---------------------------------
+
+
+// -------------------------------  INCLUDES  -----------------------------------
 /*
  * pedals.c
  *
@@ -5,15 +45,17 @@
  *      Author: lars
  */
 
-#include "common.h"
-#include "hal.h"
-#include "midiio.h"
-#include "midimessage.h"
-#include "midigenerics.h"
-#include "menu.h"
-#include "util.h"
+
+#include "../common.h"
+#include "../midimessage.h"
+#include "../midigenerics.h"
+#include "../midiprocessing.h"
+#include "../errors.h"
+#include "../util.h"
+#include "../hal.h"
+#include "../filters.h"
+#include "../ui.h"
 #include <avr/pgmspace.h>
-#include <string.h>
 
 // DATA PROCESSING
 //
@@ -53,25 +95,28 @@
 // array(a).reshape(-1,8)
 
 
-#define MODE_ENABLED       0x01
-#define MODE_DIGITAL       0x02
-#define MODE_INVERTED      0x04
+// ------------------------------  PROTOTYPES  ----------------------------------
 
-typedef struct
-{
-    uint8_t Mode;
-    uint8_t Gain;
-    int8_t  Offset;
-    uint8_t Controller;
-    uint8_t Channel;
-} pedalSetup_t;
 
-typedef struct
-{
-    uint8_t State; // The state of the digital / analog processing
-    uint8_t Value; // The latest output value for this pedal
-} pedalState_t;
+static uint8_t ProcessAdcValue(int8_t offset, uint8_t gain, uint16_t adc_value);
+static uint8_t handleDigitalPedal_ISR(uint8_t p);
+static uint8_t handleAnalogPedal_ISR(uint8_t p);
 
+static uint8_t pedals_In1Create(uint8_t filter_step);
+static uint8_t pedals_In2Create(uint8_t filter_step);
+static void pedals_Destroy(uint8_t instance);
+static void pedals_SetFilterStep(uint8_t instance, uint8_t filter_step);
+static void pedals_LoadConfig(uint8_t instance, void* data);
+static void pedals_SaveConfig(uint8_t instance, void* data);
+static uint8_t pedals_ProcessMidiMsgNull(uint8_t instance, midiMsg_t *msg);
+static void pedals_WriteMenuText(uint8_t instance, uint8_t menu_item, void *dest);
+static void pedals_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t ui_event);
+
+// --------------------------  TYPES AND CONSTANTS  -----------------------------
+
+#define GAIN_USE_DIGITAL      0
+
+#define USE_MIDI_CHANNEL 0
 
 #define DIGITAL_HIGH_TRIGGER  683u  // 2/3 of full ADC gain
 #define DIGITAL_LOW_TRIGGER   341u  // 1/3 of full ADC gain
@@ -80,8 +125,22 @@ typedef struct
 
 #define INVERT_TABLE_MAX 1024
 
-pedalSetup_t PedalSetup[2];
-pedalState_t PedalState[2];
+
+typedef struct
+{
+    uint8_t  Gain;
+    int8_t  Offset;
+    uint8_t Controller;
+    bool_t  Inverted;
+} pedalSetup_t;
+
+typedef struct
+{
+    bool_t InUse;  // True if this pedal is active as a filter
+    uint8_t FilterStep;
+    uint8_t State; // The state of the digital / analog processing
+    uint8_t Value; // The latest output value for this pedal
+} pedalState_t;
 
 static uint16_t const InvertTable[INVERT_TABLE_MAX] PROGMEM =
 {
@@ -216,10 +275,188 @@ static uint16_t const InvertTable[INVERT_TABLE_MAX] PROGMEM =
 };
 
 
+static const char In1Title[]     PROGMEM = "Pedal 1";
+static const char In2Title[]     PROGMEM = "Pedal 2";
+static const char DynamicTitle[] PROGMEM = " (%i)";
 
-static uint8_t ProcessAdcValue(int8_t offset, uint8_t gain, uint16_t adc_value);
+static const char SettingUiCc[]    PROGMEM = "CC.    : %C";
+static const char SettingGain[]    PROGMEM = "Gain   : ";
+static const char SettingOffset[]  PROGMEM = "Offset : %i";
+static const char SettingInvert[]  PROGMEM = "Invert : %o";
+static const char SettingDigital[] PROGMEM = "DIGITAL";
+
+const filterInterface_t pedals_In1 PROGMEM =
+{
+        pedals_In1Create,
+        pedals_Destroy,
+        pedals_SetFilterStep,
+        pedals_LoadConfig,
+        pedals_SaveConfig,
+        pedals_ProcessMidiMsgNull,
+        pedals_WriteMenuText,
+        pedals_HandleUiEvent,
+
+        sizeof(pedalSetup_t),  // Number of bytes in configuration
+        4,                     // Number of menu items (0 means only title, 1 is one item)
+        9,                     // Cursor indentation in menu
+        FILTER_MODE_OUT,       // Filter operation mode
+        In1Title,              // Static filter title (this may be different from in-menu title)
+
+        (FILTER_ID_AUTHOR  * 1ul) |
+        (FILTER_ID_VERSION * 1ul) |
+        (FILTER_ID_TYPE    * 20ul)
+};
+
+const filterInterface_t pedals_In2 PROGMEM =
+{
+        pedals_In2Create,
+        pedals_Destroy,
+        pedals_SetFilterStep,
+        pedals_LoadConfig,
+        pedals_SaveConfig,
+        pedals_ProcessMidiMsgNull,
+        pedals_WriteMenuText,
+        pedals_HandleUiEvent,
+
+        sizeof(pedalSetup_t),  // Number of bytes in configuration
+        4,                     // Number of menu items (0 means only title, 1 is one item)
+        9,                     // Cursor indentation in menu
+        FILTER_MODE_OUT,       // Filter operation mode
+        In2Title,              // Static filter title (this may be different from in-menu title)
+
+        (FILTER_ID_AUTHOR  * 1ul) |
+        (FILTER_ID_VERSION * 1ul) |
+        (FILTER_ID_TYPE    * 21ul)
+};
+
+// -------------------------------  VARIABLES  ----------------------------------
+
+pedalSetup_t PedalSetup[2];
+pedalState_t PedalState[2];
+
+bool_t UpdatePedal1;
+bool_t UpdatePedal2;
+
+// ------------------------  MIDI FILTER INTERFACE FUNCTIONS  -------------------
+
+static uint8_t pedals_In1Create(uint8_t filter_step)
+{
+    uint8_t ret = FILTER_CREATE_FAILED;
+
+    if (PedalState[0].InUse == FALSE)
+    {
+        PedalState[0].InUse = TRUE;
+        PedalState[0].FilterStep = filter_step;
+
+        ret = 0; // Return instance number for Pedal1, which is 0
+    }
+
+    return ret;
+}
+
+static uint8_t pedals_In2Create(uint8_t filter_step)
+{
+    uint8_t ret = FILTER_CREATE_FAILED;
+
+    if (PedalState[1].InUse == FALSE)
+    {
+        PedalState[1].InUse = TRUE;
+        PedalState[1].FilterStep = filter_step;
+        ret = 1; // Return instance number for Pedal2, which is 1
+    }
+
+    return ret;
+}
+
+static void pedals_Destroy(uint8_t instance)
+{
+    PedalState[instance].InUse = FALSE;
+}
+
+static void pedals_SetFilterStep(uint8_t instance, uint8_t filter_step)
+{
+    PedalState[instance].FilterStep = filter_step;
+}
+
+static void pedals_LoadConfig(uint8_t instance, void* data)
+{
+    PedalSetup[instance] = *((pedalSetup_t*)data);
+}
+
+static void pedals_SaveConfig(uint8_t instance, void* data)
+{
+    *((pedalSetup_t*)data) = PedalSetup[instance];
+}
+
+static uint8_t pedals_ProcessMidiMsgNull(uint8_t instance, midiMsg_t *msg)
+{
+    (void)(instance);
+    (void)(msg);
+    return 0;
+}
+
+static void pedals_WriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
+{
+    switch (menu_item)
+    {
+    case 0: // Write dynamic title including the actual output value of filter
+        dest = util_copyString_P(dest, (instance == 0) ? In1Title : In2Title);
+        util_writeFormat_P(dest, DynamicTitle, PedalState[instance].Value);
+        break;
+
+    case 1: // Set controller menu item
+        util_writeFormat_P(dest, SettingUiCc, PedalSetup[instance].Controller);
+        break;
+
+    case 2:
+        dest = util_copyString_P(dest, SettingGain);
+        if (PedalSetup[instance].Gain == GAIN_USE_DIGITAL)
+        {
+            util_copyString_P(dest, SettingDigital);
+        }
+        else
+        {
+            util_writeUint8(dest, PedalSetup[instance].Gain);
+        }
+        break;
+    case 3:
+        util_writeFormat_P(dest, SettingOffset, PedalSetup[instance].Offset);
+        break;
+    case 4:
+        util_writeFormat_P(dest, SettingInvert, PedalSetup[instance].Inverted);
+        break;
+    }
+
+}
 
 
+static void pedals_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t ui_event)
+{
+    int8_t delta = ui_eventToDelta(ui_event, 10);
+
+    switch (menu_item)
+    {
+    case 1:
+        PedalSetup[instance].Controller =
+            util_boundedAddUint8(PedalSetup[instance].Controller, 0, MIDI_UICC_MAX-1, delta);
+        break;
+
+    case 2:
+        PedalSetup[instance].Gain =
+             util_boundedAddUint8(PedalSetup[instance].Gain, 0, 255, delta);
+        break;
+
+    case 3:
+        PedalSetup[instance].Offset =
+             util_boundedAddInt8(PedalSetup[instance].Offset, -128, 127, delta);
+        break;
+    case 4:
+        PedalSetup[instance].Inverted = delta > 0 ? TRUE : FALSE;
+        break;
+    }
+}
+
+// ---------------------------  PRIVATE FUNCTIONS  ------------------------------
 
 static uint8_t ProcessAdcValue(int8_t offset, uint8_t gain, uint16_t adc_value)
 {
@@ -261,11 +498,6 @@ static uint8_t ProcessAdcValue(int8_t offset, uint8_t gain, uint16_t adc_value)
 }
 
 
-void pedals_initialize(void)
-{
-    memset(&PedalSetup, 0, sizeof(pedalSetup_t) * 2);
-}
-
 // The digital pedal processing includes a schmitt triggering function of the ADC value
 static uint8_t handleDigitalPedal_ISR(uint8_t p)
 {
@@ -281,7 +513,7 @@ static uint8_t handleDigitalPedal_ISR(uint8_t p)
         PedalState[p].State = (value < DIGITAL_LOW_TRIGGER) ? 0 : 127;
     }
 
-    if (PedalSetup[p].Mode & MODE_INVERTED)
+    if (PedalSetup[p].Inverted)
     {
         return 127 - PedalState[p].State;
     }
@@ -345,7 +577,7 @@ static uint8_t handleAnalogPedal_ISR(uint8_t p)
     // Write back new state
     PedalState[p].State = state;
 
-    if (PedalSetup[p].Mode & MODE_INVERTED)
+    if (PedalSetup[p].Inverted)
     {
         return 127 - (state & 127);
     }
@@ -355,13 +587,29 @@ static uint8_t handleAnalogPedal_ISR(uint8_t p)
     }
 }
 
+// ---------------------------  PUBLIC FUNCTIONS  -------------------------------
+
+void pedals_initialize(void)
+{
+    // Set some usable defaults
+    PedalSetup[0].Controller = 4;  // Volume
+    PedalSetup[0].Inverted = TRUE;
+    PedalSetup[0].Gain = 40;
+    PedalSetup[0].Offset = 0;
+
+    PedalSetup[1].Controller = 10; // SustainP.
+    PedalSetup[1].Inverted = TRUE;
+    PedalSetup[1].Gain = 0;
+    PedalSetup[1].Offset = 0;
+}
+
 void pedals_handleTick_ISR(void)
 {
     uint8_t new_value;
 
-    if (PedalSetup[0].Mode & MODE_ENABLED)
+    if (PedalState[0].InUse)
     {
-        if (PedalSetup[0].Mode & MODE_DIGITAL)
+        if (PedalSetup[0].Gain == GAIN_USE_DIGITAL)
         {
             new_value = handleDigitalPedal_ISR(0);
         }
@@ -372,23 +620,19 @@ void pedals_handleTick_ISR(void)
 
         if (new_value != PedalState[0].Value)
         {
-            uint8_t index;
-
             PedalState[0].Value = new_value;
 
             // Generate midi message
-            index = midiio_msgNew_ISR(MIDIMSG_SOURCE_GENERATED | MIDIMSG_FLAG_MSG_OK,
-                                      MIDI_STATUS_CTRL_CHANGE | PedalSetup[0].Channel);
-
-            midiio_msgAddData_ISR(index, PedalSetup[0].Controller);
-            midiio_msgAddData_ISR(index, new_value);
-            midiio_msgFinish_ISR(index, 0u);
+            midiMsg_t msg;
+            midimsg_newContinuousCtrl(&msg, USE_MIDI_CHANNEL,
+                    midi_convertUiccToCc(PedalSetup[0].Controller), new_value);
+            midiproc_addMessage_ISR(&msg, PedalState[0].FilterStep);
         }
     }
 
-    if (PedalSetup[1].Mode & MODE_ENABLED)
+    if (PedalState[1].InUse)
     {
-        if (PedalSetup[1].Mode & MODE_DIGITAL)
+        if (PedalSetup[1].Gain == GAIN_USE_DIGITAL)
         {
             new_value = handleDigitalPedal_ISR(1);
         }
@@ -399,210 +643,31 @@ void pedals_handleTick_ISR(void)
 
         if (new_value != PedalState[1].Value)
         {
-            uint8_t index;
-
             PedalState[1].Value = new_value;
 
             // Generate midi message
-            index = midiio_msgNew_ISR(MIDIMSG_SOURCE_GENERATED | MIDIMSG_FLAG_MSG_OK,
-                                      MIDI_STATUS_CTRL_CHANGE | PedalSetup[1].Channel);
-
-            // TODO the message won't get processed by filters?
-
-            midiio_msgAddData_ISR(index, PedalSetup[1].Controller);
-            midiio_msgAddData_ISR(index, new_value);
-            midiio_msgFinish_ISR(index, 0u);
+            midiMsg_t msg;
+            midimsg_newContinuousCtrl(&msg, USE_MIDI_CHANNEL,
+                    midi_convertUiccToCc(PedalSetup[1].Controller), new_value);
+            midiproc_addMessage_ISR(&msg, PedalState[1].FilterStep);
         }
     }
 
-    // Profiling. Analog pedal processing, min: 9.6 us, max: 31.6 us
-    // Profiling. Digital pedal processing, min: 4.8 us, max: 26.4 us
+    // Profiling. Analog pedal processing, min: 9.6 us, max: 31.6 us   (before restructuring!)
+    // Profiling. Digital pedal processing, min: 4.8 us, max: 26.4 us  (before restructuring!)
 
 }
 
 void pedals_handleMainLoop(void)
 {
-
-}
-
-
-uint8_t pedals_menuGetSubCount(uint8_t pedal)
-{
-    uint8_t ret = 0;
-
-    if (PedalSetup[pedal].Mode & MODE_ENABLED)
+    if (UpdatePedal1)
     {
-        if (PedalSetup[pedal].Mode & MODE_DIGITAL)
-        {
-            ret = 2;
-        }
-        else
-        {
-            ret = 3;
-        }
+        // TODO implement this
+        UpdatePedal1 = FALSE;
     }
 
-    return ret;
-}
-
-void pedals_menuGetText(uint8_t pedal, char *dest, uint8_t item)
-{
-    if (item == 0)
+    if (UpdatePedal2)
     {
-        // Pedal-1       (OFF)
-        // Pedal-1   (DIGITAL)
-        // Pedal-1    (ANALOG)
-
-        util_writeFormat_P(dest, PSTR("Pedal-%i"), pedal + 1);
-
-        // Lookup pedal mode in mode string table:
-        switch (PedalSetup[pedal].Mode & (MODE_ENABLED | MODE_DIGITAL))
-        {
-        case 0:
-            util_copyString_P(dest + 14, PSTR("(OFF)"));
-            break;
-
-        case MODE_ENABLED:
-            util_copyString_P(dest + 11, PSTR("(ANALOG)"));
-            break;
-
-        case (MODE_ENABLED | MODE_DIGITAL):
-            util_copyString_P(dest + 10, PSTR("(DIGITAL)"));
-            break;
-        }
-    }
-    else if (item == 1)
-    {
-        //  Ch1 CC: SustainP
-        dest = util_writeFormat_P(dest, PSTR("Ch%i "), PedalSetup[pedal].Channel + 1);
-        dest = util_writeFormat_P(dest, PSTR("CC: %c"), PedalSetup[pedal].Controller);
-
-    }
-    else if (item == 2)
-    {
-        //  Invert:1 Outp:XXX
-        dest = util_writeFormat_P(dest, PSTR("Invert:%i "),
-                (PedalSetup[pedal].Mode & MODE_INVERTED) ? 1 : 0);
-
-        dest = util_writeFormat_P(dest, PSTR("Outp:%i "), PedalState[pedal].Value);
-
-    }
-    else if (item == 3)
-    {
-        //  Gain:XXX Offs:XXXX
-        dest = util_writeFormat_P(dest, PSTR("Gain:%U "), PedalSetup[pedal].Gain);
-        dest = util_writeFormat_P(dest, PSTR("Offs:%I "), PedalSetup[pedal].Offset);
+        UpdatePedal2 = FALSE;
     }
 }
-
-uint8_t pedals_menuHandleEvent(uint8_t pedal, uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
-{
-    uint8_t ret;
-    int8_t knob_gained;
-
-    // Are we changing the edit_mode level?
-    if (user_event == MENU_EVENT_SELECT)
-    {
-        edit_mode++;
-        knob_delta = 0;
-    }
-    else if (user_event == MENU_EVENT_BACK)
-    {
-        edit_mode--;
-        knob_delta = 0;
-    }
-
-    if (user_event == MENU_EVENT_TURN_PUSH)
-    {
-        knob_gained = knob_delta * 10;
-    }
-    else
-    {
-        knob_gained = knob_delta;
-    }
-
-
-    // Deal with edit_mode combined with item
-    switch (item * 4 + edit_mode)
-    {
-    case 1:  // 0 * 4 + 1:
-        // We are editing pedal mode
-        if (knob_delta > 0)
-        {
-            // Successively set MODE_ENABLED, then MODE_DIGITAL flags:
-            PedalSetup[pedal].Mode |= (PedalSetup[pedal].Mode & MODE_ENABLED) ? MODE_DIGITAL : MODE_ENABLED;
-        }
-        else if (knob_delta < 0)
-        {
-            // Successively remove MODE_DIGITAL, then MODE_ENABLED flags:
-            PedalSetup[pedal].Mode &= ~((PedalSetup[pedal].Mode & MODE_DIGITAL) ? MODE_DIGITAL : MODE_ENABLED);
-        }
-
-        ret = 17 | MENU_UPDATE_ALL;
-        break;
-
-    case 5:  // 1 * 4 + 1
-        // Channel
-        PedalSetup[pedal].Channel = util_boundedAddUint8(PedalSetup[pedal].Channel, 0, 15, knob_gained);
-        ret = 2;
-        break;
-
-    case 6:  // 1 * 4 + 2
-        // Controller
-        PedalSetup[pedal].Controller = util_boundedAddUint8(PedalSetup[pedal].Controller, 0, 127, knob_gained);
-        ret = 8;
-        break;
-
-    case 9: // 2 * 4 + 1
-        // Invert
-        if (knob_delta > 0)
-        {
-            PedalSetup[pedal].Mode |= MODE_INVERTED;
-        }
-        else if (knob_delta < 0)
-        {
-            PedalSetup[pedal].Mode &= ~MODE_INVERTED;
-        }
-
-        ret = 7 | MENU_UPDATE_ALL;
-        break;
-
-    case 13: // 3 * 4 + 1
-        // Gain
-        PedalSetup[pedal].Gain = util_boundedAddUint8(PedalSetup[pedal].Gain, 0, 255, knob_gained);
-        ret = 5 | MENU_UPDATE_ALL;
-        break;
-
-    case 14: // 3 * 4 + 2
-        // Offset
-        PedalSetup[pedal].Offset = util_boundedAddInt8(PedalSetup[pedal].Offset, -128, 127, knob_gained);
-        ret = 10 | MENU_UPDATE_ALL;
-        break;
-
-    default:
-        // We don't support this edit mode
-        ret = MENU_EDIT_MODE_UNAVAIL;
-        break;
-    }
-
-
-    return ret;
-}
-
-
-uint8_t pedals_configGetSize(void)
-{
-    return sizeof(pedalSetup_t) * 2;
-}
-
-void pedals_configSave(uint8_t *dest)
-{
-    memcpy(dest, &(PedalSetup[0]), sizeof(pedalSetup_t) * 2);
-}
-
-void pedals_configLoad(uint8_t *dest)
-{
-    memcpy(&(PedalSetup[0]), dest, sizeof(pedalSetup_t) * 2);
-}
-
-

@@ -91,7 +91,7 @@ static void handleMoveEvent(uint8_t uiEvent)
     switch (uiEvent)
     {
     case UI_EVENT_MOVE_UP:
-        if (addCursorItem < FILTERS_TYPE_COUNT)
+        if (addCursorItem < (FILTERS_TYPE_COUNT-1))
         {
             addCursorItem++;
         }
@@ -103,7 +103,7 @@ static void handleMoveEvent(uint8_t uiEvent)
         }
         break;
     case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        addCursorItem = FILTERS_TYPE_COUNT;
+        addCursorItem = (FILTERS_TYPE_COUNT-1);
         break;
     case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
         addCursorItem = 1;
@@ -120,7 +120,7 @@ static uint8_t initGetCursor(void)
 
 static uint8_t getItemCount(void)
 {
-    return FILTERS_TYPE_COUNT + 1;
+    return (FILTERS_TYPE_COUNT-1) + 1;
 }
 
 static void drawItem(uint8_t item)

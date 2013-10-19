@@ -45,7 +45,11 @@
 
 #include "Filters/midiin.h"
 #include "Filters/midiout.h"
+#include "Filters/pedals.h"
 #include "Filters/routechannel.h"
+#include "Filters/setchannel.h"
+#include "Filters/transposefilter.h"
+#include "Filters/modifycontroller.h"
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------
@@ -59,7 +63,12 @@ static const filterInterface_t PROGMEM * const filters_Types[FILTERS_TYPE_COUNT]
         &midiin_In2Realtime,
         &midiin_In1Sysex,
         &midiin_In2Sysex,
+        &pedals_In1,
+        &pedals_In2,
         &routechan_Filter,
+        &setchan_Filter,
+        &modifycc_Filter,
+        &transfilter_Filter,
         &midiout_Filter
 };
 

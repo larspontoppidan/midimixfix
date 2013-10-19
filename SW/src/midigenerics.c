@@ -27,7 +27,7 @@ static char const MidiCtrlNames1[32][10] PROGMEM =
         {"Balance"},   // 8
         {"Undef.9"},   // 9
         {"Pan"},       // 10
-        {"Expr."},     // 11
+        {"Express."},  // 11
         {"Eff.Ctl.1"}, // 12
         {"Eff.Ctl.2"}, // 13
         {"Undef.14"},  // 14
@@ -63,7 +63,7 @@ static char const MidiCtrlNames2[64][10] PROGMEM =
         {"Intensity"}, // 71
         {"Rel.Time"},  // 72
         {"Att.Time"},  // 73
-        {"Brightns"},  // 74
+        {"Brightns."},  // 74
         {"DecayTime"}, // 75
         {"VibRate"},   // 76
         {"VibDepth"},  // 77
@@ -167,6 +167,41 @@ static const char NoteNames[12][3] PROGMEM =
         {"B"}
 };
 
+
+static const uint8_t UiCcEasyAccess[MIDI_UICC_EASY_ACCESS] PROGMEM =
+{
+    1 , // Modulat.   0
+    2 , // Breath
+    4 , // FootCtl
+    5 , // Port.Time
+    7 , // Volume
+    8 , // Balance    5
+    10, // Pan
+    11, // Express.
+    12, // Eff.Ctl.1
+    13, // Eff.Ctl.2
+    64, // SustainP   10
+    65, // Portam.P
+    66, // Sosten.P
+    67, // SoftP
+    68, // LegatoP
+    69, // Hold2      15
+    70, // Variation
+    71, // Intensity
+    72, // Rel.Time
+    73, // Att.Time
+    74, // Brightns.   20
+    75, // DecayTime
+    76, // VibRate
+    77, // VibDepth
+    78, // VibDelay
+    84, // PortaCtl
+    91, // Reverb
+    92, // Tremolo
+    93, // Chorus
+    94, // DetuDepth
+    95  // PhasDepth
+};
 
 uint8_t midi_getDataCount(uint8_t midi_status)
 {
@@ -304,6 +339,41 @@ bool_t midi_isKeyBlack(uint8_t key)
     case 10: // A#
         ret = TRUE;
         break;
+    }
+
+    return ret;
+}
+
+
+char* midi_writeUiccName(char *dest, uint8_t uicc)
+{
+    char *ret;
+
+    if (uicc < MIDI_UICC_EASY_ACCESS)
+    {
+        ret = midi_writeControllerName(dest,
+                pgm_read_byte(&(UiCcEasyAccess[uicc])));
+    }
+    else
+    {
+        ret = util_writeFormat_P(dest, PSTR("CC:%i"),
+                uicc - MIDI_UICC_EASY_ACCESS);
+    }
+
+    return ret;
+}
+
+uint8_t midi_convertUiccToCc(uint8_t uicc)
+{
+    uint8_t ret;
+
+    if (uicc < MIDI_UICC_EASY_ACCESS)
+    {
+        ret = pgm_read_byte(&(UiCcEasyAccess[uicc]));
+    }
+    else
+    {
+        ret = uicc - MIDI_UICC_EASY_ACCESS;
     }
 
     return ret;

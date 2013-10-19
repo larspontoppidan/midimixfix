@@ -20,6 +20,20 @@ uint8_t midi_getDataCount(uint8_t midi_status);
 // Is a certain key white or black on the keyboard?
 bool_t midi_isKeyBlack(uint8_t key);
 
+
+// The Uicc list is a encoding system with emphasis on easy user access
+// to common MIDI CC (continous controllers), as well as raw access to all
+// existing CC:
+//  0 - 30   Typically used controllers written in human readable format
+//  31 -     All controllers in written in hexadecimal format
+
+char *  midi_writeUiccName(char *dest, uint8_t uicc);
+uint8_t midi_convertUiccToCc(uint8_t uicc);
+
+#define MIDI_UICC_EASY_ACCESS 31
+#define MIDI_UICC_MAX         (MIDI_UICC_EASY_ACCESS + 128)
+
+
 ////////////////////// Midi Message definitions ///////////////////////////
 
 
