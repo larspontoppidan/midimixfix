@@ -301,6 +301,24 @@ char *util_copyString_P(char *dest, PGM_P src)
     return dest;
 }
 
+char *util_copyString(char *dest, char *src)
+{
+    char c;
+
+    while(1)
+    {
+        c = *src;
+
+        if (c == 0u)
+            break;
+
+        *(dest++) = c;
+        src++;
+    }
+
+    return dest;
+}
+
 int8_t util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add)
 {
     // Work in 16 bit signed space to avoid rollover

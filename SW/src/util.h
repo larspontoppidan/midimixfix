@@ -17,6 +17,7 @@ char *util_writeInt8LA(char *dest, int8_t value);
 char *util_writeInt16LA(char *dest, int16_t value);
 char *util_writeHex(char *dest, uint8_t value);
 char *util_copyString_P(char *dest, PGM_P src);
+char *util_copyString(char *dest, char *src);
 
 int8_t util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add);
 

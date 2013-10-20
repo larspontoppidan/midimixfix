@@ -167,8 +167,8 @@ static void handleUiEvent(uint8_t uiEvent)
                 midiproc_removeFilter_MAIN(selectedItem - 1);
                 midiproc_start_MAIN();
 
-                // Back out of menu
-                ui_menuBackOut();
+                // Update all
+                ui_requestUpdateAll();
             }
         }
         else

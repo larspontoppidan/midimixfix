@@ -357,6 +357,7 @@ void ui_menuEnter(const menuInterface_t *menu)
     MenuOffset = -1;
 
     // MoveCursor function will fix everything and redraw current view now
+    // TODO this should be deferred to an update call
     ui_menuMoveCursor(menuInitGetCursor(Menu), 0);
 }
 

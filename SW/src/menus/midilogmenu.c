@@ -215,7 +215,8 @@ static void handleUiEvent(uint8_t uiEvent)
         {
             midilog_stop();
             logActive = FALSE;
-            ui_menuBackOut();
+
+            ui_requestUpdateAll();
         }
         else
         {

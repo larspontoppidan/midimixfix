@@ -296,7 +296,17 @@ static void handleUiEvent(uint8_t uiEvent)
 {
     if (uiEvent == UI_EVENT_BACK)
     {
-        ui_menuBackOut();
+        if (mode == MODE_NO_EDIT)
+        {
+            // We are at root level, back out
+            ui_menuBackOut();
+        }
+        else
+        {
+            // We are editing something, just exit edit mode
+            mode = MODE_NO_EDIT;
+            setCurrentCursor();
+        }
     }
     else if (uiEvent == UI_EVENT_SELECT)
     {

@@ -1,7 +1,7 @@
 
 //
-// Filename    : addfiltermenu.c
-// Code module : Add filter menu implementation
+// Filename    : msgscreen.c
+// Code module : Display simple message on screen
 // Project     : Midimixfix
 // URL         : http://larsee.dk
 //
@@ -36,41 +36,33 @@
 //
 // ------------------------------  DESCRIPTION  ---------------------------------
 
-// The add filter menu presents a list of all available filters for adding to
-// filtersteps
 
 // -------------------------------  INCLUDES  -----------------------------------
 
 #include "../common.h"
 #include "../errors.h"
+#include "../midilog.h"
 #include "../util.h"
 #include "../hal.h"
 #include "../filters.h"
-#include "../midiprocessing.h"
 #include "../ui.h"
-#include "../menuinterface.h"
 #include "../util.h"
-#include "msgscreen.h"
+#include "../menuinterface.h"
 #include <avr/pgmspace.h>
 #include <string.h>
 
+
 // ------------------------------  PROTOTYPES  ----------------------------------
 
-
-static uint8_t initGetCursor(void);    // Initialize adding filters
-static uint8_t getItemCount(void);     // Get item count when adding (all filters)
+static uint8_t initGetCursor(void);
+static uint8_t getItemCount(void);
 static void    writeItem(uint8_t item, void *dest);
 static void    handleUiEvent(uint8_t uiEvent);
 
-static void    handleMoveEvent(uint8_t uiEvent);
-
-
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
-static const char AddTitle[] PROGMEM = "--- ADD Filter: ----";
-
-// Add filter menu interface declaration
-const menuInterface_t PROGMEM addfiltermenu_AddMenu =
+// Menu self declaration struct
+static const menuInterface_t PROGMEM msgscreen_Menu =
 {
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -79,102 +71,62 @@ const menuInterface_t PROGMEM addfiltermenu_AddMenu =
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
+
+static const char Title[] PROGMEM = "----  Message:  ----";
+
+
 // ----------------------------  LOCAL VARIABLES  -------------------------------
 
-static uint8_t addCursorItem = 1;
+const char *Message;
+uint8_t WriteOffset;
+
+// ---------------------------  PRIVATE FUNCTIONS  -------------------------------
+
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
-// move cursor
-
-static void handleMoveEvent(uint8_t uiEvent)
+void msgscreen_Show_P(const char *msg, uint8_t write_offset)
 {
-    switch (uiEvent)
-    {
-    case UI_EVENT_MOVE_UP:
-        if (addCursorItem < (FILTERS_TYPE_COUNT-1))
-        {
-            addCursorItem++;
-        }
-        break;
-    case UI_EVENT_MOVE_DOWN:
-        if (addCursorItem > 1)
-        {
-            addCursorItem--;
-        }
-        break;
-    case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        addCursorItem = (FILTERS_TYPE_COUNT-1);
-        break;
-    case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
-        addCursorItem = 1;
-        break;
-    }
+    Message = msg;
+    WriteOffset = write_offset;
+    ui_menuEnter(&msgscreen_Menu);
 }
 
-// ADD menu
+
+// ---------------------------  MENU CALLBACKS ------------------------------
+
 
 static uint8_t initGetCursor(void)
 {
-    return addCursorItem;
+    // We are about to enter this menu. Just return cursor position
+    return 2;
 }
 
 static uint8_t getItemCount(void)
 {
-    return (FILTERS_TYPE_COUNT-1) + 1;
+    // This "menu" always have the same number of items
+    return 3;
 }
 
 static void writeItem(uint8_t item, void *dest)
 {
     if (item == 0)
     {
-        // Title
-        util_copyString_P(dest, AddTitle);
+        util_copyString_P(dest, Title);
     }
-    else
+    else if (item == 2)
     {
-        // Menu item
-        util_copyString_P(dest, filters_getFilterTitle(item - 1));
+        util_copyString_P((char*)dest + WriteOffset, Message);
     }
 }
 
 static void handleUiEvent(uint8_t uiEvent)
 {
-    if (uiEvent == UI_EVENT_SELECT)
-    {
-        // Add filter
-        midiproc_stop_MAIN();
-
-        if (midiproc_addFilter_MAIN(addCursorItem - 1))
-        {
-            // Now the filter is in the last position, reorder so midiout is still
-            // the last filter:
-            midiproc_swapFilters_MAIN(midiproc_getFilterCount_SAFE() - 1, midiproc_getFilterCount_SAFE() - 2);
-            midiproc_start_MAIN();
-
-            msgscreen_Show_P(PSTR("FILTER ADDED"), 3);
-        }
-        else
-        {
-            midiproc_start_MAIN();
-
-            msgscreen_Show_P(PSTR("ADD FAILED!"), 4);
-        }
-
-    }
-    else if (uiEvent == UI_EVENT_BACK)
+    // Leave this screen if user backs or selects
+    if ((uiEvent == UI_EVENT_BACK) ||
+        (uiEvent == UI_EVENT_SELECT))
     {
         ui_menuBackOut();
     }
-    else
-    {
-        // Move cursor
-        handleMoveEvent(uiEvent);
-
-        // Let ui know we moved cursor
-        ui_menuMoveCursor(addCursorItem, 0);
-    }
-
 }
-

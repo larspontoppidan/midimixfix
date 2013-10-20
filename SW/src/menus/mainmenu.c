@@ -216,7 +216,9 @@ static void handleUiEvent(uint8_t uiEvent)
 {
     if (uiEvent == UI_EVENT_BACK)
     {
-        // User tries to back out of main menu. Not going to happen...
+        // User tries to back out of main menu. Set cursor to top
+        cursorItem = 1;
+        ui_menuMoveCursor(cursorItem, 0);
     }
     else if (uiEvent == UI_EVENT_SELECT)
     {
@@ -227,8 +229,6 @@ static void handleUiEvent(uint8_t uiEvent)
     {
         // Moving cursor
         handleMoveEvent(uiEvent);
-
-        // Let ui know we moved cursor
         ui_menuMoveCursor(cursorItem, 0);
     }
 }
