@@ -336,6 +336,11 @@ void ui_requestUpdate(uint8_t menu_item)
     }
 }
 
+const menuInterface_t * ui_getCurrentMenu(void)
+{
+    return Menu;
+}
+
 
 // When entering a menu, ui_menuEnter must be called with the new menu manifest.
 // This will make ui render the menu.

@@ -10,9 +10,12 @@
 
 #include "../common.h"
 #include "../menuinterface.h"
+#include "../filterinterface.h"
 #include <avr/pgmspace.h>
 
 extern const menuInterface_t PROGMEM filtermenu_Menu;
+
+void filtermenu_RequestUpdate(filters_instance_t filter, uint8_t menu_item);
 
 
 #endif /* FILTERMENU_H_ */

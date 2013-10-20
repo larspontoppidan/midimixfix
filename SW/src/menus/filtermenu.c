@@ -408,3 +408,42 @@ static void handleUiEvent(uint8_t uiEvent)
         setCurrentCursor();
     }
 }
+
+void filtermenu_RequestUpdate(filters_instance_t filter, uint8_t menu_item)
+{
+    // We won't even start this business if we are not the current menu
+    if (ui_getCurrentMenu() == &filtermenu_Menu)
+    {
+        // Find filter menu item
+        uint8_t i;
+        uint8_t item = 0;
+        bool_t found = FALSE;
+
+        for (i = 0; (i < midiproc_getFilterCount_SAFE()) && (found == FALSE); i++)
+        {
+            filters_instance_t fi = midiproc_getFilterInstance_SAFE(i);
+            if ((fi.FilterType == filter.FilterType) &&
+                (fi.Instance == filter.Instance))
+            {
+                // This is the filter. Add desired menu item
+                item += menu_item;
+                found = TRUE;
+            }
+            else
+            {
+                // Move on to next filter, add it's menu item count
+                item += 1 + filters_getMenuItems(fi.FilterType);
+            }
+        }
+
+        if (found)
+        {
+            ui_requestUpdate(item);
+        }
+        else
+        {
+            // This shouldn't happen
+            // TODO err_raise_MAIN()
+        }
+    }
+}

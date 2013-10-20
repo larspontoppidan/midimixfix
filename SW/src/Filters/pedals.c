@@ -55,6 +55,7 @@
 #include "../hal.h"
 #include "../filters.h"
 #include "../ui.h"
+#include "../menus/filtermenu.h"
 #include <avr/pgmspace.h>
 
 // DATA PROCESSING
@@ -627,7 +628,12 @@ void pedals_handleTick_ISR(void)
             midimsg_newContinuousCtrl(&msg, USE_MIDI_CHANNEL,
                     midi_convertUiccToCc(PedalSetup[0].Controller), new_value);
             midiproc_addMessage_ISR(&msg, PedalState[0].FilterStep);
+
+            // Notify that we may want to update this in menu
+            UpdatePedal1 = TRUE;
         }
+
+
     }
 
     if (PedalState[1].InUse)
@@ -650,7 +656,11 @@ void pedals_handleTick_ISR(void)
             midimsg_newContinuousCtrl(&msg, USE_MIDI_CHANNEL,
                     midi_convertUiccToCc(PedalSetup[1].Controller), new_value);
             midiproc_addMessage_ISR(&msg, PedalState[1].FilterStep);
+
+            // Notify that we may want to update this in menu
+            UpdatePedal2 = TRUE;
         }
+
     }
 
     // Profiling. Analog pedal processing, min: 9.6 us, max: 31.6 us   (before restructuring!)
@@ -662,12 +672,28 @@ void pedals_handleMainLoop(void)
 {
     if (UpdatePedal1)
     {
-        // TODO implement this
         UpdatePedal1 = FALSE;
+
+        // Build our instance
+        filters_instance_t instance;
+        instance.FilterType = FILTER_TYPE_PEDALS_IN1;
+        instance.Instance = 0;
+
+        // Request update of menu title
+        filtermenu_RequestUpdate(instance, 0);
     }
 
     if (UpdatePedal2)
     {
         UpdatePedal2 = FALSE;
+
+        // Build our instance
+        filters_instance_t instance;
+        instance.FilterType = FILTER_TYPE_PEDALS_IN2;
+        instance.Instance = 1;
+
+        // Request update of menu title
+        filtermenu_RequestUpdate(instance, 0);
+
     }
 }

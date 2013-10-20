@@ -44,9 +44,9 @@ void ui_menuBackOut(void);
 // Instruct UI to draw cursor on some item with some indent
 void ui_menuMoveCursor(uint8_t cursorItem, uint8_t cursorIndent);
 
-
-
 int8_t ui_eventToDelta(uint8_t ui_event, int8_t fast_speed);
+
+const menuInterface_t * ui_getCurrentMenu(void);
 
 
 #endif /* UI_H_ */

@@ -57,19 +57,7 @@
 
 static const filterInterface_t PROGMEM * const filters_Types[FILTERS_TYPE_COUNT] =
 {
-        &midiin_In1,
-        &midiin_In2,
-        &midiin_In1Realtime,
-        &midiin_In2Realtime,
-        &midiin_In1Sysex,
-        &midiin_In2Sysex,
-        &pedals_In1,
-        &pedals_In2,
-        &routechan_Filter,
-        &setchan_Filter,
-        &modifycc_Filter,
-        &transfilter_Filter,
-        &midiout_Filter
+        FILTER_INTERFACE_LIST
 };
 
 

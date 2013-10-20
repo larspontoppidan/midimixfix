@@ -28,7 +28,40 @@ typedef struct
 
 } filters_instance_t;
 
-#define FILTERS_TYPE_COUNT 13
+
+#define FILTER_INTERFACE_LIST  \
+    &midiin_In1,           \
+    &midiin_In2,           \
+    &midiin_In1Realtime,   \
+    &midiin_In2Realtime,   \
+    &midiin_In1Sysex,      \
+    &midiin_In2Sysex,      \
+    &pedals_In1,           \
+    &pedals_In2,           \
+    &routechan_Filter,     \
+    &setchan_Filter,       \
+    &modifycc_Filter,      \
+    &transfilter_Filter,   \
+    &midiout_Filter
+
+enum
+{
+    FILTER_TYPE_MIDIIN_IN1,
+    FILTER_TYPE_MIDIIN_IN2,
+    FILTER_TYPE_MIDIIN_IN1REALTIME,
+    FILTER_TYPE_MIDIIN_IN2REALTIME,
+    FILTER_TYPE_MIDIIN_IN1SYSEX,
+    FILTER_TYPE_MIDIIN_IN2SYSEX,
+    FILTER_TYPE_PEDALS_IN1,
+    FILTER_TYPE_PEDALS_IN2,
+    FILTER_TYPE_ROUTECHAN_FILTER,
+    FILTER_TYPE_SETCHAN_FILTER,
+    FILTER_TYPE_MODIFYCC_FILTER,
+    FILTER_TYPE_TRANSFILTER_FILTER,
+    FILTER_TYPE_MIDIOUT_FILTER,
+    FILTERS_TYPE_COUNT
+};
+
 
 // Wrappers performing calls into the applicable filter type:
 
