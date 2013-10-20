@@ -595,8 +595,8 @@ void pedals_initialize(void)
     // Set some usable defaults
     PedalSetup[0].Controller = 4;  // Volume
     PedalSetup[0].Inverted = TRUE;
-    PedalSetup[0].Gain = 40;
-    PedalSetup[0].Offset = 0;
+    PedalSetup[0].Gain = 50;
+    PedalSetup[0].Offset = -1;
 
     PedalSetup[1].Controller = 10; // SustainP.
     PedalSetup[1].Inverted = TRUE;

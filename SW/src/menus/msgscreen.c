@@ -80,8 +80,6 @@ static const char Title[] PROGMEM = "----  Message:  ----";
 const char *Message;
 uint8_t WriteOffset;
 
-// ---------------------------  PRIVATE FUNCTIONS  -------------------------------
-
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 

@@ -294,6 +294,9 @@ static void writeItem(uint8_t item, void *dest)
 
 static void handleUiEvent(uint8_t uiEvent)
 {
+    // Make sure we are at selected item
+    setCurrentFilter(selectedItem);
+
     if (uiEvent == UI_EVENT_BACK)
     {
         if (mode == MODE_NO_EDIT)
@@ -311,10 +314,6 @@ static void handleUiEvent(uint8_t uiEvent)
     else if (uiEvent == UI_EVENT_SELECT)
     {
         // Selecting stuff.
-
-        // Make sure selectedItem is currentFilter
-        setCurrentFilter(selectedItem);
-
         if (currentFilterMenu == 0)
         {
             uint8_t filter_mode = filters_getFilterMode(currentFilter.FilterType);
