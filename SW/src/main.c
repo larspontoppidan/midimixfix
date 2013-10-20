@@ -194,6 +194,7 @@ int main(void)
         handleUi();
 
         midilog_handleMainLoop();
+        ui_handleMainLoopHandler();
     }
 
     return 0;

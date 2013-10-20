@@ -49,6 +49,7 @@
 #include "../midiprocessing.h"
 #include "../ui.h"
 #include "../menuinterface.h"
+#include "../util.h"
 #include <avr/pgmspace.h>
 #include <string.h>
 
@@ -57,7 +58,7 @@
 
 static uint8_t initGetCursor(void);    // Initialize adding filters
 static uint8_t getItemCount(void);     // Get item count when adding (all filters)
-static void    drawItem(uint8_t item); // Write item from list of all filters
+static void    writeItem(uint8_t item, void *dest);
 static void    handleUiEvent(uint8_t uiEvent);
 
 static void    handleMoveEvent(uint8_t uiEvent);
@@ -73,7 +74,7 @@ const menuInterface_t PROGMEM addfiltermenu_AddMenu =
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
         getItemCount,     // fptrUint8Void_t  getItemCount;
-        drawItem,         // fptrVoidUint8_t  drawItem;
+        writeItem,        // fptrVoidUint8Voidp_t writeItem;
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
@@ -123,17 +124,17 @@ static uint8_t getItemCount(void)
     return (FILTERS_TYPE_COUNT-1) + 1;
 }
 
-static void drawItem(uint8_t item)
+static void writeItem(uint8_t item, void *dest)
 {
     if (item == 0)
     {
         // Title
-        ui_menuDrawItemP(0, AddTitle);
+        util_copyString_P(dest, AddTitle);
     }
     else
     {
         // Menu item
-        ui_menuDrawItemP(item, filters_getFilterTitle(item - 1));
+        util_copyString_P(dest, filters_getFilterTitle(item - 1));
     }
 }
 

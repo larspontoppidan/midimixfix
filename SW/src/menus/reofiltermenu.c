@@ -46,6 +46,7 @@
 #include "../filters.h"
 #include "../midiprocessing.h"
 #include "../ui.h"
+#include "../util.h"
 #include "../menuinterface.h"
 #include "../pgmstrings.h"
 #include <avr/pgmspace.h>
@@ -64,7 +65,7 @@
 static uint8_t reInitGetCursor(void);  // Initialize removing filters
 static uint8_t oInitGetCursor(void);   // Initialize re ordering filters
 static uint8_t getItemCount(void);     // Get item count when removing or reordering (all loaded filters)
-static void    drawItem(uint8_t item); // Write item from list of all loaded filters
+static void    writeItem(uint8_t item, void *dest);
 static void    handleUiEvent(uint8_t uiEvent);
 
 // Private helper functions:
@@ -84,7 +85,7 @@ const menuInterface_t PROGMEM reofiltermenu_RemoveMenu =
         TRUE,             // bool_t hasStaticTitle;
         reInitGetCursor,  // fptrUint8Void_t  enterGetCursor;
         getItemCount,     // fptrUint8Void_t  getItemCount;
-        drawItem,         // fptrVoidUint8_t  drawItem;
+        writeItem,        // fptrVoidUint8Voidp_t writeItem;
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
@@ -94,7 +95,7 @@ const menuInterface_t PROGMEM reofiltermenu_ReorderMenu =
         TRUE,             // bool_t hasStaticTitle;
         oInitGetCursor,   // fptrUint8Void_t  enterGetCursor;
         getItemCount,     // fptrUint8Void_t  getItemCount;
-        drawItem,         // fptrVoidUint8_t  drawItem;
+        writeItem,        // fptrVoidUint8Voidp_t writeItem;
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
@@ -124,35 +125,30 @@ static uint8_t oInitGetCursor(void)
     return selectedItem;
 }
 
-static void drawItem(uint8_t item)
+static void writeItem(uint8_t item, void *dest)
 {
     if (item == 0)
     {
         // Title
-        ui_menuDrawItemP(item, removeNotReorderMenu ? ReMenuTitle : OMenuTitle);
+        util_copyString_P(dest, removeNotReorderMenu ? ReMenuTitle : OMenuTitle);
     }
     else if ((item-1) < midiproc_getFilterCount_SAFE())
     {
-        uint8_t buffer[21];
-        memset(buffer, 0, 21);
         filters_instance_t filter = midiproc_getFilterInstance_SAFE(item - 1);
 
         if ((movingFilterMode) && (item == selectedItem))
         {
             // We are currently moving this filter, indent one space
-            buffer[0] = ' ';
-            util_copyString_P((char*)(buffer + 1), filters_getFilterTitle(filter.FilterType));
+            util_copyString_P((char*)(dest) + 1, filters_getFilterTitle(filter.FilterType));
         }
         else
         {
-            util_copyString_P((char*)buffer, filters_getFilterTitle(filter.FilterType));
+            util_copyString_P(dest, filters_getFilterTitle(filter.FilterType));
         }
-
-        ui_menuDrawItem(item, buffer);
     }
     else
     {
-        ui_menuDrawItemP(item, pstr_Empty);
+        // Empty line
     }
 }
 
@@ -185,7 +181,7 @@ static void handleUiEvent(uint8_t uiEvent)
                 movingFilterMode = TRUE;
 
                 // We need to redraw this line
-                drawItem(selectedItem);
+                ui_requestUpdate(selectedItem);
 
                 // With correct cursor indent
                 ui_menuMoveCursor(selectedItem, 2);
@@ -195,7 +191,7 @@ static void handleUiEvent(uint8_t uiEvent)
                 movingFilterMode = FALSE;
 
                 // We need to redraw this line
-                drawItem(selectedItem);
+                ui_requestUpdate(selectedItem);
 
                 // With correct cursor indent
                 ui_menuMoveCursor(selectedItem, 0);
@@ -234,8 +230,8 @@ static void handleUiEvent(uint8_t uiEvent)
                     midiproc_start_MAIN();
 
                     // Draw both
-                    drawItem(oldItem);
-                    drawItem(selectedItem);
+                    ui_requestUpdate(oldItem);
+                    ui_requestUpdate(selectedItem);
 
                     // Set cursor with indent
                     ui_menuMoveCursor(selectedItem, 2);

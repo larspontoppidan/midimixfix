@@ -47,6 +47,7 @@
 #include "../ui.h"
 #include "../menuinterface.h"
 #include "../lcd.h"
+#include "../util.h"
 #include <avr/pgmspace.h>
 
 #include "presetsmenu.h"
@@ -59,7 +60,7 @@
 
 static uint8_t initGetCursor(void);
 static uint8_t getItemCount(void);
-static void    drawItem(uint8_t item);
+static void    writeItem(uint8_t item, void *dest);
 static void    handleUiEvent(uint8_t uiEvent);
 
 static void handleSelectEvent(void);
@@ -73,7 +74,7 @@ const menuInterface_t PROGMEM mainmenu_Menu =
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
         getItemCount,     // fptrUint8Void_t  getItemCount;
-        drawItem,         // fptrVoidUint8_t  drawItem;
+        writeItem,        // fptrVoidUint8Voidp_t writeItem;
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
@@ -204,11 +205,11 @@ static uint8_t getItemCount(void)
     return ITEM_COUNT;
 }
 
-static void drawItem(uint8_t item)
+static void writeItem(uint8_t item, void *dest)
 {
     // We are instructed to draw an item.
     // Since everything is progmem strings for this menu, this is simple:
-    ui_menuDrawItemP(item, MainItem[item].Text);
+    util_copyString_P(dest, MainItem[item].Text);
 }
 
 static void handleUiEvent(uint8_t uiEvent)

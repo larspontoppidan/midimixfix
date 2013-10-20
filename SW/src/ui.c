@@ -73,6 +73,9 @@
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
 
+#define REQUEST_ALL         0xFF
+#define REQUEST_NONE        0
+#define REQUEST_FIRST_ITEM  1
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------
 
@@ -85,20 +88,26 @@ static const menuInterface_t *Menu;
 static const menuInterface_t *MenuParent;
 static const menuInterface_t *MenuParentParent;
 
-static int8_t MenuOffset;
-static int8_t MenuCursorItem;
+static int8_t  MenuOffset;
+static uint8_t RequestUpdate;
+
+static uint8_t cursorCol;
+static uint8_t cursorRow;
 
 
 // ------------------------------  PROTOTYPES  ----------------------------------
 
-static void drawAll(void);
-static void drawCursor(uint8_t row, uint8_t col);
+static void writeBufferToLcd(uint8_t row, char *buffer);
+
+static void writeAll(void);
+static void writeMenuItem(uint8_t item);
+static void drawCursor(void);
 
 // Wrappers for accessing progmem stuff in menuInterface:
 static inline bool_t  menuHasStaticTitle(const menuInterface_t *Menu);
 static inline uint8_t menuInitGetCursor(const menuInterface_t *Menu);
 static inline uint8_t menuGetItemCount(const menuInterface_t *Menu);
-static inline void    menuDrawItem(const menuInterface_t *Menu, uint8_t item);
+static inline void    menuWriteItem(const menuInterface_t *Menu, uint8_t item, char *dest);
 static inline void    menuHandleUiEvent(const menuInterface_t *Menu, uint8_t uiEvent);
 
 // --------------------------  PRIVATE FUNCTIONS  -------------------------------
@@ -120,10 +129,10 @@ static inline uint8_t menuGetItemCount(const menuInterface_t *Menu)
     return (getItemCount)();
 }
 
-static inline void menuDrawItem(const menuInterface_t *Menu, uint8_t item)
+static inline void menuWriteItem(const menuInterface_t *Menu, uint8_t item, char *dest)
 {
-    fptrVoidUint8_t drawItem = (fptrVoidUint8_t)pgm_read_word(&(Menu->drawItem));
-    (drawItem)(item);
+    fptrVoidUint8Voidp_t drawItem = (fptrVoidUint8Voidp_t)pgm_read_word(&(Menu->writeItem));
+    (drawItem)(item, dest);
 }
 
 static inline void menuHandleUiEvent(const menuInterface_t *Menu, uint8_t uiEvent)
@@ -133,9 +142,37 @@ static inline void menuHandleUiEvent(const menuInterface_t *Menu, uint8_t uiEven
 }
 
 
-static void drawAll(void)
+
+static void writeBufferToLcd(uint8_t row, char *buffer)
 {
     uint8_t i;
+
+    // Blit to LCD
+    lcd_setCursor(row, 0);
+
+    for (i = 0u; i < LCD_COLUMNS; i++)
+    {
+        if (buffer[i] != 0)
+        {
+            lcd_write((uint8_t)(buffer[i]));
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // Make sure we blank out rest of line with spaces
+    for (; i < LCD_COLUMNS; i++)
+    {
+        lcd_write(' ');
+    }
+}
+
+static void writeAll(void)
+{
+    uint8_t i;
+    char buffer[LCD_COLUMNS + 5]; // We want to have some extra space in the buffer
 
     // The LCD's four rows:
     //   row0: Menu title (always), menu_item = 0
@@ -151,8 +188,9 @@ static void drawAll(void)
     if (menuHasStaticTitle(Menu))
     {
         // Title row is fixed
-        menuDrawItem(Menu, 0);
-
+        memset(buffer, ' ', LCD_COLUMNS + 5);
+        menuWriteItem(Menu, 0, buffer);
+        writeBufferToLcd(0, buffer);
         i = 1;
     }
     else
@@ -160,13 +198,46 @@ static void drawAll(void)
         i = 0;
     }
 
+    // Menu items get indented by one space
     for (; i < LCD_ROWS; i++)
     {
-        menuDrawItem(Menu, i + MenuOffset);
+        memset(buffer, ' ', LCD_COLUMNS + 5);
+        menuWriteItem(Menu, i + MenuOffset, &(buffer[1]));
+        writeBufferToLcd(i, buffer);
     }
 }
 
-static void drawCursor(uint8_t row, uint8_t col)
+static void writeMenuItem(uint8_t item)
+{
+    uint8_t row;
+    uint8_t col;
+    char buffer[LCD_COLUMNS + 5]; // We want to have some extra space in the buffer
+    memset(buffer, ' ', LCD_COLUMNS + 5);
+
+    // Determine where to draw this menu item
+    if (menuHasStaticTitle(Menu) && (item == 0))
+    {
+        // Its a menu title
+        row = 0;
+        col = 0;
+    }
+    else
+    {
+        // Its a regular menu item, which is offset into display:
+        row = item - MenuOffset;
+        col = 1;
+    }
+
+    // Is this visible?
+    if (row < LCD_ROWS)
+    {
+        // Let menu write up what it wants to display
+        menuWriteItem(Menu, item, &(buffer[col]));
+        writeBufferToLcd(row, buffer);
+    }
+}
+
+static void drawCursor(void)
 {
     uint8_t i;
 
@@ -182,11 +253,11 @@ static void drawCursor(uint8_t row, uint8_t col)
     for (; i < LCD_ROWS; i++)
     {
         lcd_setCursor(i, 0);
-        lcd_write((i == row) ? LCD_CHAR_RIGHTARROW : ' ');
+        lcd_write((i == cursorRow) ? LCD_CHAR_RIGHTARROW : ' ');
     }
 
     // Set the visible cursor correctly
-    lcd_setCursor(row, col);
+    lcd_setCursor(cursorRow, cursorCol);
 }
 
 
@@ -199,10 +270,13 @@ void ui_initialize(void)
 {
     // Reset variables
     MenuOffset = 0;
-    MenuCursorItem = 0;
+    RequestUpdate = REQUEST_NONE;
 
     MenuParent = NULL;
     MenuParentParent = NULL;
+
+    cursorCol = 0;
+    cursorRow = 0;
 
     // We want main menu hooked up initially
     ui_menuEnter(&mainmenu_Menu);
@@ -221,6 +295,44 @@ void ui_handleUserEvent(uint8_t user_event)
     {
         // TODO check this other places also
         err_raise(ERR_MODULE_UI, __LINE__);
+    }
+}
+
+
+void ui_handleMainLoopHandler(void)
+{
+    if (RequestUpdate != REQUEST_NONE)
+    {
+        if (RequestUpdate == REQUEST_ALL)
+        {
+            writeAll();
+        }
+        else
+        {
+            writeMenuItem(RequestUpdate - REQUEST_FIRST_ITEM);
+        }
+
+        // Reset cursor
+        drawCursor();
+
+        RequestUpdate = REQUEST_NONE;
+    }
+}
+
+void ui_requestUpdateAll(void)
+{
+    RequestUpdate = REQUEST_ALL;
+}
+
+void ui_requestUpdate(uint8_t menu_item)
+{
+    if (RequestUpdate != REQUEST_NONE)
+    {
+        RequestUpdate = REQUEST_ALL;
+    }
+    else
+    {
+        RequestUpdate = REQUEST_FIRST_ITEM + menu_item;
     }
 }
 
@@ -283,7 +395,6 @@ void ui_menuMoveCursor(uint8_t cursorItem, uint8_t cursorIndent)
     }
 
     // Load desired cursor position
-    MenuCursorItem = cursorItem;
 
     // Is MenuOffset in range?
     if (MenuOffset < 0)
@@ -325,106 +436,17 @@ void ui_menuMoveCursor(uint8_t cursorItem, uint8_t cursorIndent)
 
     if (needRedraw)
     {
-        drawAll();
+        writeAll();
+
+        // If we have redrawn everything, we can clear any pending request
+        RequestUpdate = REQUEST_NONE;
     }
 
-    drawCursor(MenuCursorItem - MenuOffset, cursorIndent);
+    cursorCol = cursorIndent;
+    cursorRow = cursorItem - MenuOffset;
+
+    drawCursor();
 }
-
-
-void ui_menuDrawItem(uint8_t item, uint8_t const *data)
-{
-    uint8_t row;
-    uint8_t col;
-
-    // A what LCD row is this?
-    if (menuHasStaticTitle(Menu) && (item == 0))
-    {
-        row = 0;
-        col = 0;
-    }
-    else
-    {
-        row = item - MenuOffset;
-        col = 1;
-    }
-
-    // Is this visible?
-    if (row < LCD_ROWS)
-    {
-        uint8_t i;
-
-        // Blit to LCD
-        lcd_setCursor(row, col);
-
-        for (i = 0u; i <  (LCD_COLUMNS-col); i++)
-        {
-            if (data[i] != 0)
-            {
-                lcd_write(data[i]);
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        // Make sure we blank out rest of line
-        for (; i < (LCD_COLUMNS-col); i++)
-        {
-            lcd_write(' ');
-        }
-    }
-
-}
-
-void ui_menuDrawItemP(uint8_t item, const char *data)
-{
-    uint8_t row, col;
-
-    // A what LCD row is this?
-    if (menuHasStaticTitle(Menu) && (item == 0))
-    {
-        row = 0;
-        col = 0;
-    }
-    else
-    {
-        row = item - MenuOffset;
-        col = 1;
-    }
-
-    // Is this visible?
-    if (row < LCD_ROWS)
-    {
-        uint8_t i;
-
-        // Blit to LCD
-        lcd_setCursor(row, col);
-
-        for (i = 0u; i <  (LCD_COLUMNS-col); i++)
-        {
-            uint8_t x = pgm_read_byte( &(data[i]) );
-
-            if (x != 0)
-            {
-                lcd_write(x);
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        // Make sure we blank out rest of line
-        for (; i <  (LCD_COLUMNS-col); i++)
-        {
-            lcd_write(' ');
-        }
-    }
-
-}
-
 
 int8_t ui_eventToDelta(uint8_t ui_event, int8_t fast_speed)
 {
@@ -449,3 +471,4 @@ int8_t ui_eventToDelta(uint8_t ui_event, int8_t fast_speed)
 
     return delta;
 }
+

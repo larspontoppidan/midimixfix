@@ -53,7 +53,7 @@
 static uint8_t saveInitGetCursor(void);
 static uint8_t loadInitGetCursor(void);
 static uint8_t getItemCount(void);
-static void    drawItem(uint8_t item);
+static void    writeItem(uint8_t item, void *dest);
 static void    handleUiEvent(uint8_t uiEvent);
 
 static void handleLoadEvent(void);
@@ -70,7 +70,7 @@ const menuInterface_t PROGMEM presetsmenu_LoadMenu =
         TRUE,             // bool_t hasStaticTitle;
         loadInitGetCursor,    // fptrUint8Void_t  enterGetCursor;
         getItemCount,     // fptrUint8Void_t  getItemCount;
-        drawItem,         // fptrVoidUint8_t  drawItem;
+        writeItem,        // fptrVoidUint8Voidp_t writeItem;
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
@@ -79,7 +79,7 @@ const menuInterface_t PROGMEM presetsmenu_SaveMenu =
         TRUE,             // bool_t hasStaticTitle;
         saveInitGetCursor,    // fptrUint8Void_t  enterGetCursor;
         getItemCount,     // fptrUint8Void_t  getItemCount;
-        drawItem,         // fptrVoidUint8_t  drawItem;
+        writeItem,        // fptrVoidUint8Voidp_t writeItem;
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
@@ -154,23 +154,16 @@ static uint8_t getItemCount(void)
     return PRESET_COUNT;
 }
 
-static void drawItem(uint8_t item)
+static void writeItem(uint8_t item, void *dest)
 {
-    char buffer[21];
-    char *p;
-
     if (item == 0)
     {
-        p = util_copyString_P(buffer, saveNotLoad ? PresetSaveTitle : PresetLoadTitle);
+        util_copyString_P(dest, saveNotLoad ? PresetSaveTitle : PresetLoadTitle);
     }
     else
     {
-        p = util_writeFormat_P(buffer, PresetItem, item);
+        util_writeFormat_P(dest, PresetItem, item);
     }
-
-    *p = 0;
-
-    ui_menuDrawItem(item, (uint8_t *)buffer);
 }
 
 static void handleUiEvent(uint8_t uiEvent)

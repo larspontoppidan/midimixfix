@@ -55,7 +55,7 @@
 
 static uint8_t initGetCursor(void);
 static uint8_t getItemCount(void);
-static void    drawItem(uint8_t item);
+static void    writeItem(uint8_t item, void *buffer);
 static void    handleUiEvent(uint8_t uiEvent);
 
 
@@ -73,7 +73,7 @@ const menuInterface_t PROGMEM filtermenu_Menu =
         FALSE,            // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
         getItemCount,     // fptrUint8Void_t  getItemCount;
-        drawItem,         // fptrVoidUint8_t  drawItem;
+        writeItem,        // fptrVoidUint8Voidp_t writeItem;
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
@@ -251,12 +251,9 @@ static uint8_t getItemCount(void)
     return itemCount;
 }
 
-static void drawItem(uint8_t item)
+static void writeItem(uint8_t item, void *dest)
 {
-    uint8_t buffer[21];
-
-    memset(buffer, ' ', 19);
-    buffer[19] = 0;
+    uint8_t *buffer = dest;
 
     if (item < itemCount)
     {
@@ -289,11 +286,10 @@ static void drawItem(uint8_t item)
         else
         {
             // Write menu text
-            filters_writeMenuText(currentFilter, currentFilterMenu, buffer + 1);
+            filters_writeMenuText(currentFilter, currentFilterMenu, &(buffer[1]));
         }
     }
 
-    ui_menuDrawItem(item, buffer);
 }
 
 static void handleUiEvent(uint8_t uiEvent)
@@ -398,7 +394,7 @@ static void handleUiEvent(uint8_t uiEvent)
         }
 
         // Update this in any case and set cursor
-        drawItem(selectedItem);
+        ui_requestUpdate(selectedItem);
         setCurrentCursor();
     }
 }

@@ -15,6 +15,9 @@
 
 void ui_initialize(void);
 
+void ui_handleMainLoopHandler(void);
+
+
 void ui_handleUserEvent(uint8_t user_event);
 
 
@@ -27,6 +30,9 @@ void ui_handleUserEvent(uint8_t user_event);
 
 #define UI_MOVE_FAST_MASK   8 // This may be combined with MOVE_UP / DOWN
 
+// Submenus can request ui module to update some or part of the display:
+void ui_requestUpdateAll(void);
+void ui_requestUpdate(uint8_t menu_item);
 
 // When entering a menu, ui_menuEnter must be called with the new menu manifest.
 // This will make ui render the menu.
@@ -38,13 +44,6 @@ void ui_menuBackOut(void);
 // Instruct UI to draw cursor on some item with some indent
 void ui_menuMoveCursor(uint8_t cursorItem, uint8_t cursorIndent);
 
-
-// When a menu is drawing one item, it must prepare the data and call this function
-// (instead of accessing LCD module directly)
-void ui_menuDrawItem(uint8_t item, uint8_t const *data);
-
-// Draw menu item with PGM space data
-void ui_menuDrawItemP(uint8_t item, const char *data);
 
 
 int8_t ui_eventToDelta(uint8_t ui_event, int8_t fast_speed);

@@ -15,9 +15,9 @@
 typedef struct
 {
     bool_t hasStaticTitle;          // If true, the menu has a static line 0
-    fptrUint8Void_t initGetCursor; // When a menu is entered, this is called initially
+    fptrUint8Void_t initGetCursor;  // When a menu is entered, this is called initially
     fptrUint8Void_t getItemCount;   // Returns number of menu items, including line 0
-    fptrVoidUint8_t drawItem;       // Draw one line of menu. Line 0 may be title or first entry
+    fptrVoidUint8Voidp_t writeItem; // Write one line of menu. Line 0 may be title or first entry
     fptrVoidUint8_t handleUiEvent;  // Handle the ui event
 } menuInterface_t;
 
