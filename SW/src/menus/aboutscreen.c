@@ -1,7 +1,7 @@
 
 //
-// Filename    : mainmenu.c
-// Code module : Main midimixfix menu implementation implementation
+// Filename    : aboutscreen.c
+// Code module : Display MIDIMIXFIX credits, version info and pending errors!
 // Project     : Midimixfix
 // URL         : http://larsee.dk
 //
@@ -41,21 +41,16 @@
 
 #include "../common.h"
 #include "../errors.h"
+#include "../midilog.h"
 #include "../util.h"
 #include "../hal.h"
 #include "../filters.h"
 #include "../ui.h"
-#include "../menuinterface.h"
-#include "../lcd.h"
 #include "../util.h"
+#include "../menuinterface.h"
 #include <avr/pgmspace.h>
+#include <string.h>
 
-#include "presetsmenu.h"
-#include "addfiltermenu.h"
-#include "reofiltermenu.h"
-#include "filtermenu.h"
-#include "midilogmenu.h"
-#include "aboutscreen.h"
 
 // ------------------------------  PROTOTYPES  ----------------------------------
 
@@ -64,13 +59,10 @@ static uint8_t getItemCount(void);
 static void    writeItem(uint8_t item, void *dest);
 static void    handleUiEvent(uint8_t uiEvent);
 
-static void handleSelectEvent(void);
-static void handleMoveEvent(uint8_t uiEvent);
-
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
 // Menu self declaration struct
-const menuInterface_t PROGMEM mainmenu_Menu =
+const menuInterface_t PROGMEM aboutscreen_Menu =
 {
         TRUE,             // bool_t hasStaticTitle;
         initGetCursor,    // fptrUint8Void_t  enterGetCursor;
@@ -79,21 +71,6 @@ const menuInterface_t PROGMEM mainmenu_Menu =
         handleUiEvent     // fptrVoidUint8_t  handleUiEvent;
 };
 
-// Menu items enumeration
-enum
-{
-    ITEM_TITLE = 0,
-    ITEM_FILTERS,
-    ITEM_LOAD_PRESET,
-    ITEM_SAVE_PRESET,
-    ITEM_ADD_FILT,
-    ITEM_REMOVE_FILT,
-    ITEM_REORG_FILT,
-    ITEM_MIDILOG,
-    ITEM_BOOTLOADER,
-    ITEM_ABOUT,
-    ITEM_COUNT
-};
 
 // Menu item texts:
 #define MENUITEM_MAX 21
@@ -103,20 +80,20 @@ typedef struct
     char Text[MENUITEM_MAX];
 } menuItem_t;
 
-// Main menu:
+
+#define ITEM_COUNT 9
 
 static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
 {
-    {"**** MIDIMIXFIX ****"},
-    {" Setup filters"},
-    {" Load preset"},
-    {" Save preset"},
-    {" Add filter"},
-    {" Remove filter"},
-    {" Reorder filters"},
-    {" Show midi log"},
-    {" Bootloader"},
-    {" About"}
+   {"----   ABOUT:   ----"},
+    {"  MIDIMIXFIX v1.0"},       // Todo configuation management
+    {"       By:"},
+    {"Lars O. Pontoppidan"},
+    {" http://larsee.dk"},
+    {""},
+    {"  Copyright 2013"},
+    {""},
+    {"Errors:"},
 };
 
 
@@ -125,112 +102,53 @@ static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
 // Current cursor position
 static uint8_t cursorItem = 1;
 
-// ---------------------------  PRIVATE FUNCTIONS  -------------------------------
 
-static void handleSelectEvent(void)
-{
-    switch(cursorItem)
-    {
-    case ITEM_FILTERS:
-        ui_menuEnter(&filtermenu_Menu);
-        break;
-    case ITEM_LOAD_PRESET:
-        ui_menuEnter(&presetsmenu_LoadMenu);
-        break;
-    case ITEM_SAVE_PRESET:
-        ui_menuEnter(&presetsmenu_SaveMenu);
-        break;
-    case ITEM_ADD_FILT:
-        ui_menuEnter(&addfiltermenu_AddMenu);
-        break;
-    case ITEM_REMOVE_FILT:
-        ui_menuEnter(&reofiltermenu_RemoveMenu);
-        break;
-    case ITEM_REORG_FILT:
-        ui_menuEnter(&reofiltermenu_ReorderMenu);
-        break;
-    case ITEM_MIDILOG:
-        ui_menuEnter(&midilogmenu_Menu);
-        break;
-    case ITEM_BOOTLOADER:
-        lcd_clear();
-        lcd_writeString_P(PSTR("Bootloader activated"));
-        hal_lcdBacklightSet(FALSE);
-        hal_jumpBootloader();
-        break;
-    case ITEM_ABOUT:
-        ui_menuEnter(&aboutscreen_Menu);
-        break;
-    }
-}
-
-static void handleMoveEvent(uint8_t uiEvent)
-{
-    switch (uiEvent)
-    {
-    case UI_EVENT_MOVE_UP:
-        if (cursorItem < (ITEM_COUNT - 1))
-        {
-            cursorItem++;
-        }
-        break;
-    case UI_EVENT_MOVE_DOWN:
-        if (cursorItem > 1)
-        {
-            cursorItem--;
-        }
-        break;
-    case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        cursorItem = ITEM_COUNT - 1;
-        break;
-    case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
-        cursorItem = 1;
-        break;
-    }
-}
-
-// ---------------------------  PUBLIC FUNCTIONS  -------------------------------
-
-
-// ---------------------------  MENU CALLBACKS ------------------------------
+// ------------------------  MENU INTERFACE FUNCTIONS ---------------------------
 
 
 static uint8_t initGetCursor(void)
 {
-    // We are about to enter this menu. Just return cursor position
     return cursorItem;
 }
 
 static uint8_t getItemCount(void)
 {
-    // This menu always have the same number of items
-    return ITEM_COUNT;
+    uint8_t ret;
+
+    if (err_getCount() == 0)
+    {
+        ret = ITEM_COUNT - 2;
+    }
+    else
+    {
+        ret = ITEM_COUNT + err_getCount();
+    }
+
+    return ret;
 }
 
 static void writeItem(uint8_t item, void *dest)
 {
-    // We are instructed to draw an item.
-    // Since everything is progmem strings for this menu, this is simple:
-    util_copyString_P(dest, MainItem[item].Text);
+    if (item < ITEM_COUNT)
+    {
+        util_copyString_P(dest, MainItem[item].Text);
+    }
+    else
+    {
+        err_print((char*)dest + 1, item - ITEM_COUNT);
+    }
 }
 
 static void handleUiEvent(uint8_t uiEvent)
 {
     if (uiEvent == UI_EVENT_BACK)
     {
-        // User tries to back out of main menu. Set cursor to top
-        cursorItem = 1;
-        ui_menuMoveCursor(cursorItem, 0);
-    }
-    else if (uiEvent == UI_EVENT_SELECT)
-    {
-        // Selecting stuff in main menu:
-        handleSelectEvent();
+        ui_menuBackOut();
     }
     else
     {
         // Moving cursor
-        handleMoveEvent(uiEvent);
+        cursorItem = util_boundedAddUint8(cursorItem, 1, getItemCount() - 1, ui_eventToDelta(uiEvent, 25));
         ui_menuMoveCursor(cursorItem, 0);
     }
 }
