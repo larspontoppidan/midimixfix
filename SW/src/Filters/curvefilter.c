@@ -144,9 +144,12 @@ typedef struct
 
 } curveFilter_t;
 
+
 typedef struct
 {
-    bool_t  InUse;
+    uint8_t  LatestIn;
+    bool_t   LatestInChanged;
+    bool_t   InUse;
 } curveInstance_t;
 
 
@@ -183,8 +186,6 @@ const filterInterface_t curvefilter_Filter PROGMEM =
         (FILTER_ID_TYPE    * 15ul)
 };
 
-
-
 // -------------------------------  VARIABLES  ----------------------------------
 
 static curveFilter_t   Filters[FILTER_COUNT_MAX];
@@ -194,12 +195,6 @@ static uint8_t         FilterCount;
 // The midi_status to work with corresponding to mode
 // Derived from curveFilter_t settings to simplify ISR implementation
 static uint8_t FilterMidiStatus[FILTER_COUNT_MAX];
-
-
-
-static uint8_t  LatestIn;  // TODO this needs to be duplicated for all instances...
-static uint8_t  LatestOut;
-static volatile uint8_t MenuNeedUpdate = 0;
 
 // --------------------------  PRIVATE FUNCTIONS  ------------------------------
 
@@ -225,34 +220,32 @@ void curveflt_initialize(void)
     uint8_t i;
 
     FilterCount = 0;
-    MenuNeedUpdate = 0xFF;
 
     // Set default curves in all slots
     for (i = 0; i < FILTER_COUNT_MAX; i++)
     {
         Filters[i].Mode = FILTER_NOTE_ON;
         curvemath_reset(&(Filters[i].Curve));
+        Instances[i].InUse = FALSE;
         DeriveFilterStatus(i);
     }
 }
 
 void curveflt_handleMainLoop(void)
 {
-    while (MenuNeedUpdate != 0xFF)
+    uint8_t i;
+    filters_instance_t fi;
+    fi.FilterType = FILTER_TYPE_CURVE_FILTER;
+
+    for (i = 0; i < FILTER_COUNT_MAX; i++)
     {
-        filters_instance_t fi;
+        if (Instances[i].LatestInChanged)
+        {
+            Instances[i].LatestInChanged = FALSE;
 
-        fi.FilterType = FILTER_TYPE_CURVE_FILTER;
-
-        hal_interruptsDisable();
-        fi.Instance = MenuNeedUpdate;
-        MenuNeedUpdate = 0xFF;
-        hal_interruptsEnable();
-
-        filtermenu_RequestUpdate(fi, 0);
-
-        // It may happen that need update is set again and we just wrote garbage data
-        // Try again
+            fi.Instance = i;
+            filtermenu_RequestUpdate(fi, 0);
+        }
     }
 }
 
@@ -278,6 +271,7 @@ static uint8_t Create(uint8_t filter_step)
     if (i < FILTER_COUNT_MAX)
     {
         // Okay, lets do this
+        Instances[i].LatestIn = 0;
         Instances[i].InUse = TRUE;
 
         // Return instance number
@@ -374,12 +368,14 @@ static uint8_t ProcessMidiMsg(uint8_t instance, midiMsg_t *msg)
         if (apply_curve != 0)
         {
             // We are still happy about this, then do it
-            LatestIn = msg->Data[apply_curve];
-            LatestOut = curvemath_apply(LatestIn, &(Filters[instance].Curve));
-            msg->Data[apply_curve] = LatestOut;
+            uint8_t x = msg->Data[apply_curve];
+
+            Instances[instance].LatestIn = x;
+            Instances[instance].LatestInChanged = TRUE;
+            x = curvemath_apply(x, &(Filters[instance].Curve));
+            msg->Data[apply_curve] = x;
 
             ret = FILTER_PROCESS_DID;
-            MenuNeedUpdate = instance;
         }
     }
 
@@ -392,11 +388,14 @@ static uint8_t ProcessMidiMsg(uint8_t instance, midiMsg_t *msg)
 // Menu integration
 static void WriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
 {
+    uint8_t x;
+
     switch (menu_item)
     {
-    case 0: // Write dynamic title including the actual output value of filter
-        dest = util_writeFormat_P(dest, DynamicTitle1, LatestIn);
-        util_writeFormat_P(dest, DynamicTitle2, LatestOut);
+    case 0: // Write dynamic title including the latest actual input and output of filter
+        x = Instances[instance].LatestIn;
+        dest = util_writeFormat_P(dest, DynamicTitle1, x);
+        util_writeFormat_P(dest, DynamicTitle2, curvemath_apply(x, &(Filters[instance].Curve)));
         break;
 
     case 1: // Set controller menu item
@@ -460,5 +459,8 @@ static void HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t ui_event)
             util_boundedAddUint8(Filters[instance].Curve.Type, 0, CURVEMATH_TYPES - 1, delta);
         break;
     }
+
+    // Just update menu 0 in any case
+    filtermenu_RequestUpdate(fi, 0);
 }
 
