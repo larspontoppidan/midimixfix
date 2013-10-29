@@ -8,7 +8,7 @@
 #ifndef CURVEMATH_H_
 #define CURVEMATH_H_
 
-#include "common.h"
+#include "../common.h"
 
 
 #define CURVEMATH_TYPES 7
@@ -31,8 +31,6 @@ char *curvemath_writeHigh(char *dest, curveMath_t *curve);
 
 // Applying curve on a value
 uint8_t curvemath_apply(uint8_t x, curveMath_t *curve);
-
-
 
 
 

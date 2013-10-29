@@ -223,13 +223,13 @@ static void modifycc_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t 
     {
         // Handle up down moves on menu_item 1
         Instances[instance].ConfigFrom =
-                util_boundedAddUint8(Instances[instance].ConfigFrom, 0, MIDI_UICC_MAX-1,
+                util_boundedAddUint8(Instances[instance].ConfigFrom, 0, MIDI_UICC_COUNT - 1,
                         ui_eventToDelta(ui_event, 10));
     }
     else if (menu_item == 2)
     {
         Instances[instance].ConfigTo =
-                util_boundedAddUint8(Instances[instance].ConfigTo, 0, MIDI_UICC_MAX-1,
+                util_boundedAddUint8(Instances[instance].ConfigTo, 0, MIDI_UICC_COUNT - 1,
                         ui_eventToDelta(ui_event, 10));
     }
 }

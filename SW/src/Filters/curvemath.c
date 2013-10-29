@@ -6,22 +6,22 @@
  */
 
 
-#include "common.h"
+#include "../common.h"
 #include "curvemath.h"
-#include "util.h"
+#include "../util.h"
 #include "avr/pgmspace.h"
 
 // Curve type names
 
-static char const CurveNames[CURVEMATH_TYPES][4] PROGMEM =
+static char const CurveNames[CURVEMATH_TYPES][10] PROGMEM =
 {
-    {"Lin"},  // 0
-    {"0.6"},  // 1
-    {"0.8"},  // 2
-    {"1.2"},  // 3
-    {"1.6"},  // 4
-    {"-S-"},  // 5
-    {"-N-"},  // 6
+    {"Linear"},  // 0
+    {"Gamma 0.6"},  // 1
+    {"Gamma 0.8"},  // 2
+    {"Gamma 1.2"},  // 3
+    {"Gamma 1.6"},  // 4
+    {"-S- shape"},  // 5
+    {"-N- shape"},  // 6
 };
 
 #define GAIN_FIXPOINT_SCALE  64

@@ -85,7 +85,7 @@ typedef struct
 
 static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
 {
-   {"----   ABOUT:   ----"},
+    {"----   ABOUT:   ----"},
     {"  MIDIMIXFIX v1.0"},       // Todo configuation management
     {"       By:"},
     {"Lars O. Pontoppidan"},
@@ -93,7 +93,7 @@ static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
     {""},
     {"  Copyright 2013"},
     {""},
-    {"Errors:"},
+    {"Errors:"}                  // Todo this type of string storage could use some compression
 };
 
 

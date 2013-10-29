@@ -278,7 +278,7 @@ static uint16_t const InvertTable[INVERT_TABLE_MAX] PROGMEM =
 
 static const char In1Title[]     PROGMEM = "Pedal 1";
 static const char In2Title[]     PROGMEM = "Pedal 2";
-static const char DynamicTitle[] PROGMEM = " (%i)";
+static const char DynamicTitle[] PROGMEM = " ->%i";
 
 static const char SettingUiCc[]    PROGMEM = "CC.    : %C";
 static const char SettingGain[]    PROGMEM = "Gain   : ";
@@ -439,7 +439,7 @@ static void pedals_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t ui
     {
     case 1:
         PedalSetup[instance].Controller =
-            util_boundedAddUint8(PedalSetup[instance].Controller, 0, MIDI_UICC_MAX-1, delta);
+            util_boundedAddUint8(PedalSetup[instance].Controller, 0, MIDI_UICC_COUNT - 1, delta);
         break;
 
     case 2:

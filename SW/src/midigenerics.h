@@ -31,7 +31,7 @@ char *  midi_writeUiccName(char *dest, uint8_t uicc);
 uint8_t midi_convertUiccToCc(uint8_t uicc);
 
 #define MIDI_UICC_EASY_ACCESS 31
-#define MIDI_UICC_MAX         (MIDI_UICC_EASY_ACCESS + 128)
+#define MIDI_UICC_COUNT         (MIDI_UICC_EASY_ACCESS + 128)
 
 
 ////////////////////// Midi Message definitions ///////////////////////////

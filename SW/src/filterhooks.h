@@ -11,6 +11,7 @@
 #include "Filters/midiin.h"
 #include "Filters/midiout.h"
 #include "Filters/pedals.h"
+#include "Filters/curvefilter.h"
 
 // Filters can hook up direct function calls in the program flow.
 
@@ -23,10 +24,11 @@
       midiin_initialize();         \
       midiout_initialize();        \
       pedals_initialize();         \
+      curveflt_initialize();       \
     } while (0)
+
 //    midilog_initialize();
 //    blockflt_initialize();
-//    curveflt_initialize();
 //    pedals_initialize();
 //    genmsg_initialize();
 //    superdly_initialize();
@@ -49,11 +51,11 @@
 #define FILTER_HOOKS_MAIN_LOOP()  \
     do {                          \
         pedals_handleMainLoop();  \
+        curveflt_handleMainLoop();\
     } while (0)
 //    pedals_handleMainLoop();
 //    midilog_handleMainLoop();
 //    blockflt_handleMainLoop();
-//    curveflt_handleMainLoop();
 //    superdly_handleMainLoop();
 
 

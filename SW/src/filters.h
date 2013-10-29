@@ -42,6 +42,7 @@ typedef struct
     &setchan_Filter,       \
     &modifycc_Filter,      \
     &transfilter_Filter,   \
+    &curvefilter_Filter,   \
     &midiout_Filter
 
 enum
@@ -58,6 +59,7 @@ enum
     FILTER_TYPE_SETCHAN_FILTER,
     FILTER_TYPE_MODIFYCC_FILTER,
     FILTER_TYPE_TRANSFILTER_FILTER,
+    FILTER_TYPE_CURVE_FILTER,
     FILTER_TYPE_MIDIOUT_FILTER,
     FILTERS_TYPE_COUNT
 };

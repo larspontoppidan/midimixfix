@@ -50,6 +50,7 @@
 #include "Filters/setchannel.h"
 #include "Filters/transposefilter.h"
 #include "Filters/modifycontroller.h"
+#include "Filters/curvefilter.h"
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------
