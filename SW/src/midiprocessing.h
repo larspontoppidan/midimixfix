@@ -40,10 +40,13 @@ typedef struct
 
 
 // Filter steps management
-uint8_t midiproc_getFilterCount_SAFE(void);
+uint8_t midiproc_getFilterSteps_SAFE(void);
 bool_t midiproc_addFilter_MAIN(uint8_t filter_type);
+bool_t midiproc_loadFilter_MAIN(uint8_t filter_type, midiproc_route_t route, uint8_t *filter_config);
+
 void   midiproc_removeFilter_MAIN(uint8_t step);
 void   midiproc_swapFilters_MAIN(uint8_t step1, uint8_t step2);
+void   midiproc_removeAllFilters_MAIN(void);
 
 // Accessing one filter
 

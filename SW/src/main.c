@@ -49,11 +49,13 @@
 #include "hal.h"
 #include "lcd.h"
 #include "quaddecode.h"
+#include "presetstorage.h"
 #include "ui.h"
 #include "errors.h"
 #include "filterhooks.h"
 #include "midiprocessing.h"
 #include "midilog.h"
+
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
@@ -165,6 +167,7 @@ int main(void)
     hal_initialize();
     lcd_initialize();
     quaddecode_initialize();
+    presets_initialize();
     midiproc_initialize();
     midilog_initialize();
 
@@ -179,6 +182,7 @@ int main(void)
 
     // Turn on display
     hal_lcdBacklightSet(TRUE);
+
 
     // Load default setup
     loadDefaultFilters();

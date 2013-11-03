@@ -342,7 +342,7 @@ void midiproc_stop_MAIN(void)
 
 // Filter management
 
-uint8_t midiproc_getFilterCount_SAFE(void)
+uint8_t midiproc_getFilterSteps_SAFE(void)
 {
     return FilterCount;
 }
@@ -402,6 +402,51 @@ bool_t midiproc_addFilter_MAIN(uint8_t filter_type)
     return (new_instance != FILTER_CREATE_FAILED);
 }
 
+
+bool_t midiproc_loadFilter_MAIN(uint8_t filter_type, midiproc_route_t route, uint8_t *filter_config)
+{
+    uint8_t new_instance = FILTER_CREATE_FAILED;
+
+    if (ProcessingEnabled == FALSE)
+    {
+        uint8_t new_filter_step = FilterCount;
+
+        if (new_filter_step < FILTERSTEPS_MAX)
+        {
+            new_instance = filters_create(filter_type, new_filter_step);
+
+            if (new_instance != FILTER_CREATE_FAILED)
+            {
+                FilterInstances[new_filter_step].FilterType = filter_type;
+                FilterInstances[new_filter_step].Instance = new_instance;
+
+                // Set default In/Out routes according to filter mode
+                FilterRoutes[new_filter_step] = route;
+
+                // Apply the filter processing mode rules to the route settings:
+                correctFilterRoute(filter_type, &(FilterRoutes[new_filter_step]) );
+
+                // Load the filter config
+                filters_loadConfig(FilterInstances[new_filter_step], filter_config);
+
+                FilterCount++;
+            }
+        }
+        else
+        {
+            // Ran out of steps, return false
+        }
+    }
+    else
+    {
+        // This is only allowed when processing is stopped!
+        err_raise_MAIN(ERR_MODULE_MIDIPROC, __LINE__);
+    }
+
+    return (new_instance != FILTER_CREATE_FAILED);
+}
+
+
 void midiproc_removeFilter_MAIN(uint8_t step)
 {
     if (ProcessingEnabled == FALSE)
@@ -422,6 +467,29 @@ void midiproc_removeFilter_MAIN(uint8_t step)
             filters_setFilterStep(FilterInstances[i], i);
         }
 
+    }
+    else
+    {
+        // This is only allowed when processing is stopped!
+        err_raise_MAIN(ERR_MODULE_MIDIPROC, __LINE__);
+    }
+}
+
+void midiproc_removeAllFilters_MAIN(void)
+{
+    if (ProcessingEnabled == FALSE)
+    {
+        uint8_t i;
+
+        // Send the destroy message to all filters
+
+        for (i = 0; i < FilterCount; i++)
+        {
+            filters_destroy(FilterInstances[i]);
+        }
+
+        // Zero the filtercount
+        FilterCount = 0;
     }
     else
     {

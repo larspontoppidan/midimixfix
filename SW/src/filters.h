@@ -43,11 +43,12 @@ typedef struct
     &modifycc_Filter,      \
     &transfilter_Filter,   \
     &curvefilter_Filter,   \
+    &genmsg_Filter,        \
     &midiout_Filter
 
 enum
 {
-    FILTER_TYPE_MIDIIN_IN1,
+    FILTER_TYPE_MIDIIN_IN1 = 0,
     FILTER_TYPE_MIDIIN_IN2,
     FILTER_TYPE_MIDIIN_IN1REALTIME,
     FILTER_TYPE_MIDIIN_IN2REALTIME,
@@ -60,6 +61,7 @@ enum
     FILTER_TYPE_MODIFYCC_FILTER,
     FILTER_TYPE_TRANSFILTER_FILTER,
     FILTER_TYPE_CURVE_FILTER,
+    FILTER_TYPE_GENMSG_FILTER,
     FILTER_TYPE_MIDIOUT_FILTER,
     FILTERS_TYPE_COUNT
 };

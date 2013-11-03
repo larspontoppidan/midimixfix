@@ -51,6 +51,7 @@
 #include "Filters/transposefilter.h"
 #include "Filters/modifycontroller.h"
 #include "Filters/curvefilter.h"
+#include "Filters/generatemsg.h"
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------

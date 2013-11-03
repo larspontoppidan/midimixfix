@@ -44,6 +44,9 @@
 #include "../util.h"
 #include "../ui.h"
 #include "../menuinterface.h"
+#include "../midiprocessing.h"
+#include "../presetstorage.h"
+#include "msgscreen.h"
 #include <avr/pgmspace.h>
 
 
@@ -56,14 +59,10 @@ static uint8_t getItemCount(void);
 static void    writeItem(uint8_t item, void *dest);
 static void    handleUiEvent(uint8_t uiEvent);
 
-static void handleLoadEvent(void);
-static void handleSaveEvent(void);
 static void handleMoveEvent(uint8_t uiEvent);
 
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
-
-#define PRESET_COUNT 10
 
 const menuInterface_t PROGMEM presetsmenu_LoadMenu =
 {
@@ -97,23 +96,12 @@ static bool_t  saveNotLoad;
 
 // ---------------------------  PRIVATE FUNCTIONS  -------------------------------
 
-
-static void handleLoadEvent(void)
-{
-
-}
-
-static void handleSaveEvent(void)
-{
-
-}
-
 static void handleMoveEvent(uint8_t uiEvent)
 {
     switch (uiEvent)
     {
     case UI_EVENT_MOVE_UP:
-        if (cursorItem < (PRESET_COUNT - 1))
+        if (cursorItem < PRESETS_SLOTS)
         {
             cursorItem++;
         }
@@ -125,7 +113,7 @@ static void handleMoveEvent(uint8_t uiEvent)
         }
         break;
     case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        cursorItem = PRESET_COUNT - 1;
+        cursorItem = PRESETS_SLOTS;
         break;
     case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
         cursorItem = 1;
@@ -151,7 +139,7 @@ static uint8_t loadInitGetCursor(void)
 
 static uint8_t getItemCount(void)
 {
-    return PRESET_COUNT;
+    return PRESETS_SLOTS + 1; // The menu title also counts
 }
 
 static void writeItem(uint8_t item, void *dest)
@@ -177,11 +165,34 @@ static void handleUiEvent(uint8_t uiEvent)
         // Selecting stuff in main menu:
         if (saveNotLoad)
         {
-            handleSaveEvent();
+            presets_save(cursorItem - 1);
+
+            ui_menuBackOut();
+            msgscreen_Show_P(PSTR("PRESET SAVED"), 3);
         }
         else
         {
-            handleLoadEvent();
+            // First we test
+            switch (presets_load(cursorItem - 1, TRUE))
+            {
+            case PRESET_OK:
+                // OK, lets load
+                midiproc_stop_MAIN();
+                presets_load(cursorItem - 1, FALSE);
+                midiproc_start_MAIN();
+
+                ui_menuBackOut();
+                msgscreen_Show_P(PSTR("PRESET LOADED"), 3);
+                break;
+
+            case PRESET_EMPTY:
+                msgscreen_Show_P(PSTR("PRESET EMPTY!"), 3);
+                break;
+
+            default:
+                msgscreen_Show_P(PSTR("PRESET ERROR!"), 3);
+                break;
+            }
         }
     }
     else

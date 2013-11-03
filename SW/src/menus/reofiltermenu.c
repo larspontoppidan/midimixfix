@@ -132,7 +132,7 @@ static void writeItem(uint8_t item, void *dest)
         // Title
         util_copyString_P(dest, removeNotReorderMenu ? ReMenuTitle : OMenuTitle);
     }
-    else if ((item-1) < midiproc_getFilterCount_SAFE())
+    else if ((item-1) < midiproc_getFilterSteps_SAFE())
     {
         filters_instance_t filter = midiproc_getFilterInstance_SAFE(item - 1);
 
@@ -161,7 +161,7 @@ static void handleUiEvent(uint8_t uiEvent)
             // Remove filter menu and select is pushed,
 
             // this filter needs to go, unless it's the final midi out filter
-            if ((selectedItem - 1) < (midiproc_getFilterCount_SAFE() - 1))
+            if ((selectedItem - 1) < (midiproc_getFilterSteps_SAFE() - 1))
             {
                 midiproc_stop_MAIN();
                 midiproc_removeFilter_MAIN(selectedItem - 1);
@@ -176,7 +176,7 @@ static void handleUiEvent(uint8_t uiEvent)
             // Reorder filter menu and select is pushed,
             // Go into moving mode, unless its the last filter
             if ((movingFilterMode == FALSE) &&
-                    ((selectedItem - 1) != (midiproc_getFilterCount_SAFE() - 1)))
+                    ((selectedItem - 1) != (midiproc_getFilterSteps_SAFE() - 1)))
             {
                 movingFilterMode = TRUE;
 
@@ -215,7 +215,7 @@ static void handleUiEvent(uint8_t uiEvent)
             handleMoveEvent(uiEvent);
 
             // Did we get to final midi out filter?
-            if ((selectedItem - 1) == (midiproc_getFilterCount_SAFE() - 1))
+            if ((selectedItem - 1) == (midiproc_getFilterSteps_SAFE() - 1))
             {
                 // Then we must abort this
                 selectedItem = oldItem;
@@ -253,7 +253,7 @@ static void handleUiEvent(uint8_t uiEvent)
 
 static uint8_t getItemCount(void)
 {
-    return midiproc_getFilterCount_SAFE() + 1;
+    return midiproc_getFilterSteps_SAFE() + 1;
 }
 
 static void handleMoveEvent(uint8_t uiEvent)
@@ -261,7 +261,7 @@ static void handleMoveEvent(uint8_t uiEvent)
     switch (uiEvent)
     {
     case UI_EVENT_MOVE_UP:
-        if (selectedItem < midiproc_getFilterCount_SAFE())
+        if (selectedItem < midiproc_getFilterSteps_SAFE())
         {
             selectedItem++;
         }
@@ -273,7 +273,7 @@ static void handleMoveEvent(uint8_t uiEvent)
         }
         break;
     case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        selectedItem = midiproc_getFilterCount_SAFE();
+        selectedItem = midiproc_getFilterSteps_SAFE();
         break;
     case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
         selectedItem = 1;

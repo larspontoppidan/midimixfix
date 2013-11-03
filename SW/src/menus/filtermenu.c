@@ -99,9 +99,9 @@ static void countItems(void)
     uint8_t i;
 
     // One row for each filter
-    itemCount = midiproc_getFilterCount_SAFE();
+    itemCount = midiproc_getFilterSteps_SAFE();
 
-    for (i = 0; i < midiproc_getFilterCount_SAFE(); i++)
+    for (i = 0; i < midiproc_getFilterSteps_SAFE(); i++)
     {
         // Plus it's submenus
         itemCount += filters_getMenuItems(midiproc_getFilterInstance_SAFE(i).FilterType);
@@ -118,7 +118,7 @@ static void setCurrentFilter(uint8_t item)
     // One row for each filter
     n = item;
 
-    for (i = 0; i < midiproc_getFilterCount_SAFE(); i++)
+    for (i = 0; i < midiproc_getFilterSteps_SAFE(); i++)
     {
         currentFilter = midiproc_getFilterInstance_SAFE(i);
         currentFilterStep = i;
@@ -418,7 +418,7 @@ void filtermenu_RequestUpdate(filters_instance_t filter, uint8_t menu_item)
         uint8_t item = 0;
         bool_t found = FALSE;
 
-        for (i = 0; (i < midiproc_getFilterCount_SAFE()) && (found == FALSE); i++)
+        for (i = 0; (i < midiproc_getFilterSteps_SAFE()) && (found == FALSE); i++)
         {
             filters_instance_t fi = midiproc_getFilterInstance_SAFE(i);
             if ((fi.FilterType == filter.FilterType) &&

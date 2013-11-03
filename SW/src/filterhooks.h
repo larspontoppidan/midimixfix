@@ -12,6 +12,7 @@
 #include "Filters/midiout.h"
 #include "Filters/pedals.h"
 #include "Filters/curvefilter.h"
+#include "Filters/generatemsg.h"
 
 // Filters can hook up direct function calls in the program flow.
 
@@ -25,6 +26,7 @@
       midiout_initialize();        \
       pedals_initialize();         \
       curveflt_initialize();       \
+      genmsg_initialize();         \
     } while (0)
 
 //    midilog_initialize();

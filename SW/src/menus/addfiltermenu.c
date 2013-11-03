@@ -150,7 +150,7 @@ static void handleUiEvent(uint8_t uiEvent)
         {
             // Now the filter is in the last position, reorder so midiout is still
             // the last filter:
-            midiproc_swapFilters_MAIN(midiproc_getFilterCount_SAFE() - 1, midiproc_getFilterCount_SAFE() - 2);
+            midiproc_swapFilters_MAIN(midiproc_getFilterSteps_SAFE() - 1, midiproc_getFilterSteps_SAFE() - 2);
             midiproc_start_MAIN();
 
             msgscreen_Show_P(PSTR("FILTER ADDED"), 3);

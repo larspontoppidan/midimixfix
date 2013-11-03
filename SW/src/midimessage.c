@@ -166,6 +166,15 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg)
 }
 
 
+void midimsg_newProgramChange(midiMsg_t *msg, uint8_t chan, uint8_t part)
+{
+    msg->DataLen = 2;
+    msg->Flags = MIDIMSG_FLAG_PARSE_OK;
+    msg->Data[0] = MIDI_STATUS_PROG_CHANGE | chan;
+    msg->Data[1] = part;
+}
+
+
 void midimsg_newContinuousCtrl(midiMsg_t *msg, uint8_t chan, uint8_t cc, uint8_t value)
 {
     msg->DataLen = 3;
