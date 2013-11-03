@@ -78,15 +78,17 @@ static const char Title[] PROGMEM = "----  Message:  ----";
 // ----------------------------  LOCAL VARIABLES  -------------------------------
 
 const char *Message;
+uint8_t Data;
 uint8_t WriteOffset;
 
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
-void msgscreen_Show_P(const char *msg, uint8_t write_offset)
+void msgscreen_Show_FormatP(const char *msg, uint8_t data, uint8_t write_offset)
 {
     Message = msg;
+    Data = data;
     WriteOffset = write_offset;
     ui_menuEnter(&msgscreen_Menu);
 }
@@ -115,7 +117,7 @@ static void writeItem(uint8_t item, void *dest)
     }
     else if (item == 2)
     {
-        util_copyString_P((char*)dest + WriteOffset, Message);
+        util_writeFormat_P((char*)dest + WriteOffset, Message, Data);
     }
 }
 

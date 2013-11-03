@@ -16,7 +16,8 @@
 
 // Midiprocessing must be stopped before calling presets_load
 
-void    presets_initialize(void);
+bool_t  presets_validateEeprom(void);
+void    presets_resetEeprom(void);
 
 uint8_t presets_load(uint8_t preset_slot, bool_t test);
 void    presets_save(uint8_t preset_slot);

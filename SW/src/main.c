@@ -55,7 +55,7 @@
 #include "filterhooks.h"
 #include "midiprocessing.h"
 #include "midilog.h"
-
+#include "menus/msgscreen.h"
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
@@ -69,6 +69,8 @@ static bool_t UiBackPushed = FALSE;
 // ------------------------------  PROTOTYPES  ----------------------------------
 
 static void handleUi(void);
+
+static void loadOrInitEeprom(void);
 
 // ---------------------------  PRIVATE FUNCTIONS  ------------------------------
 
@@ -135,25 +137,49 @@ static void handleUi(void)
     _delay_ms(10);
 }
 
-
-void loadDefaultFilters(void)
+static void loadOrInitEeprom(void)
 {
-    midiproc_addFilter_MAIN(filters_findFilterType(
-            (FILTER_ID_AUTHOR  * 1ul) |
-            (FILTER_ID_VERSION * 1ul) |
-            (FILTER_ID_TYPE    * 1ul)));
+    // Is eeprom contents acceptable?
+    if (presets_validateEeprom())
+    {
+        uint8_t r;
 
-    midiproc_addFilter_MAIN(filters_findFilterType(
-            (FILTER_ID_AUTHOR  * 1ul) |
-            (FILTER_ID_VERSION * 1ul) |
-            (FILTER_ID_TYPE    * 2ul)));
+        // Try to load preset 1 (no need to test first here)
+        r = presets_load(0, FALSE);
 
-    midiproc_addFilter_MAIN(filters_findFilterType(
-            (FILTER_ID_AUTHOR  * 1ul) |
-            (FILTER_ID_VERSION * 1ul) |
-            (FILTER_ID_TYPE    * 10ul)));
+        switch (r)
+        {
+        case PRESET_OK:
+            // It worked!
+            break;
 
+        case PRESET_EMPTY:
+            // Nothing there, load defaults
+            midiproc_loadDefaultFilters();
+            break;
+        case PRESET_CHKSUM_ERROR:
+            // This is critical, we must give up
+            msgscreen_Show_FormatP(PSTR("PRESET CORRUPT!"), 0, 2);
+            midiproc_loadDefaultFilters();
+            break;
+        default:
+            // There was some other error, notify user
+            msgscreen_Show_FormatP(PSTR("PRESET LOAD ERR:%i"), r, 1);
+            break;
+        }
+    }
+    else
+    {
+        // Eeprom is invalid, uninitialized or in wrong format, notify user that
+        // we had to reset it
+        presets_resetEeprom();
+        msgscreen_Show_FormatP(PSTR("PRESETS RESET"), 0, 3);
+
+        // And load defaults
+        midiproc_loadDefaultFilters();
+    }
 }
+
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
@@ -167,7 +193,6 @@ int main(void)
     hal_initialize();
     lcd_initialize();
     quaddecode_initialize();
-    presets_initialize();
     midiproc_initialize();
     midilog_initialize();
 
@@ -183,9 +208,7 @@ int main(void)
     // Turn on display
     hal_lcdBacklightSet(TRUE);
 
-
-    // Load default setup
-    loadDefaultFilters();
+    loadOrInitEeprom();
 
     midiproc_start_MAIN();
 

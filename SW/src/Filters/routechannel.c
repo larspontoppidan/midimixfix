@@ -50,6 +50,7 @@
 #include "../filters.h"
 #include "../ui.h"
 #include <avr/pgmspace.h>
+#include "filteruids.h"
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
@@ -97,9 +98,7 @@ const filterInterface_t routechan_Filter PROGMEM =
         FILTER_MODE_IN_OUT, // Filter operation mode
         MenuTitle,      // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 2ul)
+        FILTER_UID(FILTER_ID_ROUTECHAN_FILTER, 1)
 };
 
 // State

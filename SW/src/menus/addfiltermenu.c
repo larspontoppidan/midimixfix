@@ -153,13 +153,13 @@ static void handleUiEvent(uint8_t uiEvent)
             midiproc_swapFilters_MAIN(midiproc_getFilterSteps_SAFE() - 1, midiproc_getFilterSteps_SAFE() - 2);
             midiproc_start_MAIN();
 
-            msgscreen_Show_P(PSTR("FILTER ADDED"), 3);
+            msgscreen_Show_FormatP(PSTR("FILTER ADDED"), 0, 3);
         }
         else
         {
             midiproc_start_MAIN();
 
-            msgscreen_Show_P(PSTR("ADD FAILED!"), 4);
+            msgscreen_Show_FormatP(PSTR("ADD FAILED!"), 0, 4);
         }
 
     }

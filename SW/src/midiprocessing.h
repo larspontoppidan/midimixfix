@@ -48,6 +48,8 @@ void   midiproc_removeFilter_MAIN(uint8_t step);
 void   midiproc_swapFilters_MAIN(uint8_t step1, uint8_t step2);
 void   midiproc_removeAllFilters_MAIN(void);
 
+void midiproc_loadDefaultFilters(void);
+
 // Accessing one filter
 
 filters_instance_t midiproc_getFilterInstance_SAFE(uint8_t step);

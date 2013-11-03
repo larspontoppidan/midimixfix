@@ -50,6 +50,7 @@
 #include "../filters.h"
 #include "../ui.h"
 #include <avr/pgmspace.h>
+#include "filteruids.h"
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
@@ -110,9 +111,7 @@ const filterInterface_t modifycc_Filter PROGMEM =
         FILTER_MODE_PROCESSOR, // Filter operation mode
         MenuTitle,      // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 5ul)
+        FILTER_UID(FILTER_ID_MODIFYCC_FILTER, 1)
 };
 
 // State

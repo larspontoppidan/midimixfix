@@ -96,7 +96,7 @@
 #define EEPROM_ADDR_FIRST_SLOT  (EEPROM_ADDR_HEADER + EEPROM_HEADER_SIZE)
 
 
-#define EEPROM_CHKSUM_RESET     0xBB
+#define EEPROM_CHKSUM_RESET     0xAB
 
 #define SIG_1   'M'
 #define SIG_2   'M'
@@ -146,9 +146,7 @@ static void     readDataBuffer(void);
 static uint8_t  readByte(void);
 static uint32_t readLong(void);
 
-static bool_t validateEepromHeader(void);
 static void   writeEepromHeader(void);
-
 static void writeEmptySlot(uint8_t slot);
 
 
@@ -257,25 +255,6 @@ static void writeLong(uint32_t x)
     eeprom_write_byte((uint8_t*)(Address++), b);
 }
 
-
-static bool_t validateEepromHeader(void)
-{
-    uint8_t i;
-    bool_t success = TRUE;
-
-    Address = EEPROM_ADDR_HEADER;
-
-    for (i = 0; i < EEPROM_HEADER_SIZE; i++)
-    {
-        if (pgm_read_byte(&(EepromHeader[i])) != readByte())
-        {
-            success = FALSE;
-        }
-    }
-
-    return success;
-}
-
 static void writeEepromHeader(void)
 {
     uint8_t i;
@@ -305,21 +284,37 @@ static void writeEmptySlot(uint8_t slot)
 
 // ---------------------------  PUBLIC FUNCTIONS  ------------------------------
 
-void presets_initialize(void)
+
+bool_t presets_validateEeprom(void)
 {
-    if (validateEepromHeader() == FALSE)
+    uint8_t i;
+    bool_t success = TRUE;
+
+    Address = EEPROM_ADDR_HEADER;
+
+    for (i = 0; i < EEPROM_HEADER_SIZE; i++)
     {
-        uint8_t i;
-
-        // This eeprom is unitialized or using an incorrect format
-
-        // Initialize
-        writeEepromHeader();
-
-        for (i = 0; i < PRESETS_SLOTS; i++)
+        if (pgm_read_byte(&(EepromHeader[i])) != readByte())
         {
-            writeEmptySlot(i);
+            success = FALSE;
         }
+    }
+
+    return success;
+}
+
+void presets_resetEeprom(void)
+{
+    uint8_t i;
+
+    // This eeprom is unitialized or using an incorrect format
+
+    // Initialize
+    writeEepromHeader();
+
+    for (i = 0; i < PRESETS_SLOTS; i++)
+    {
+        writeEmptySlot(i);
     }
 }
 
@@ -344,7 +339,7 @@ uint8_t presets_load(uint8_t slot, bool_t test)
     // Get number of filter steps in that slot
     fsteps = readByte();
 
-    for (i = 0; (i < fsteps) && (ret == PRESET_OK); i++)
+    for (i = 0; i < fsteps; i++)
     {
         uint8_t filter_type;
         midiproc_route_t route;

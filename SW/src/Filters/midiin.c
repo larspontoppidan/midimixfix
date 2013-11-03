@@ -49,6 +49,7 @@
 #include "../errors.h"
 #include "../util.h"
 #include <avr/pgmspace.h>
+#include "filteruids.h"
 
 // ------------------------------  PROTOTYPES  ----------------------------------
 
@@ -139,9 +140,7 @@ const filterInterface_t midiin_In1 PROGMEM =
         FILTER_MODE_OUT, // Filter operation mode
         MenuTitleIn1,    // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 1ul)
+        FILTER_UID(FILTER_ID_MIDIIN_IN1, 1)
 };
 
 const filterInterface_t midiin_In2 PROGMEM =
@@ -161,9 +160,7 @@ const filterInterface_t midiin_In2 PROGMEM =
         FILTER_MODE_OUT, // Filter operation mode
         MenuTitleIn2,    // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 2ul)
+        FILTER_UID(FILTER_ID_MIDIIN_IN2, 1)
 };
 
 const filterInterface_t midiin_In1Realtime PROGMEM =
@@ -183,9 +180,7 @@ const filterInterface_t midiin_In1Realtime PROGMEM =
         FILTER_MODE_OUT, // Filter operation mode
         MenuTitleIn1Rt,  // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 3ul)
+        FILTER_UID(FILTER_ID_MIDIIN_IN1REALTIME, 1)
 };
 
 const filterInterface_t midiin_In2Realtime PROGMEM =
@@ -205,9 +200,7 @@ const filterInterface_t midiin_In2Realtime PROGMEM =
         FILTER_MODE_OUT, // Filter operation mode
         MenuTitleIn2Rt,  // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 4ul)
+        FILTER_UID(FILTER_ID_MIDIIN_IN2REALTIME, 1)
 };
 
 const filterInterface_t midiin_In1Sysex PROGMEM =
@@ -227,9 +220,7 @@ const filterInterface_t midiin_In1Sysex PROGMEM =
         FILTER_MODE_OUT, // Filter operation mode
         MenuTitleIn1Sx,    // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 5ul)
+        FILTER_UID(FILTER_ID_MIDIIN_IN1SYSEX, 1)
 };
 
 const filterInterface_t midiin_In2Sysex PROGMEM =
@@ -249,9 +240,7 @@ const filterInterface_t midiin_In2Sysex PROGMEM =
         FILTER_MODE_OUT, // Filter operation mode
         MenuTitleIn2Sx,    // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 6ul)
+        FILTER_UID(FILTER_ID_MIDIIN_IN2SYSEX, 1)
 };
 
 

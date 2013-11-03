@@ -58,6 +58,7 @@
 #include "../ui.h"
 #include "../menus/filtermenu.h"
 #include <avr/pgmspace.h>
+#include "filteruids.h"
 
 // ------------------------------  PROTOTYPES  ----------------------------------
 
@@ -99,7 +100,7 @@ typedef struct
 static char const StaticTitle[]   PROGMEM = "Generate msg.";
 
 static char const SettingType[]   PROGMEM = "Type : ";
-static char const SettingValue[]  PROGMEM = "Val. : %u";
+static char const SettingValue[]  PROGMEM = "Val. : %i";
 
 const filterInterface_t genmsg_Filter PROGMEM =
 {
@@ -118,9 +119,7 @@ const filterInterface_t genmsg_Filter PROGMEM =
         FILTER_MODE_IN_OUT, // Filter operation mode
         StaticTitle,    // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 18ul)
+        FILTER_UID(FILTER_ID_GENMSG_FILTER, 1)
 };
 
 

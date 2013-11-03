@@ -80,6 +80,7 @@
 #include "../menus/filtermenu.h"
 #include "curvemath.h"
 #include <avr/pgmspace.h>
+#include "filteruids.h"
 
 // ------------------------------  PROTOTYPES  ----------------------------------
 
@@ -181,9 +182,7 @@ const filterInterface_t curvefilter_Filter PROGMEM =
         FILTER_MODE_PROCESSOR, // Filter operation mode
         StaticTitle,    // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 15ul)
+        FILTER_UID(FILTER_ID_CURVE_FILTER, 1)
 };
 
 // -------------------------------  VARIABLES  ----------------------------------

@@ -57,6 +57,7 @@
 #include "../ui.h"
 #include "../menus/filtermenu.h"
 #include <avr/pgmspace.h>
+#include "filteruids.h"
 
 // DATA PROCESSING
 //
@@ -303,9 +304,7 @@ const filterInterface_t pedals_In1 PROGMEM =
         FILTER_MODE_OUT,       // Filter operation mode
         In1Title,              // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 20ul)
+        FILTER_UID(FILTER_ID_PEDALS_IN1, 1)
 };
 
 const filterInterface_t pedals_In2 PROGMEM =
@@ -325,9 +324,7 @@ const filterInterface_t pedals_In2 PROGMEM =
         FILTER_MODE_OUT,       // Filter operation mode
         In2Title,              // Static filter title (this may be different from in-menu title)
 
-        (FILTER_ID_AUTHOR  * 1ul) |
-        (FILTER_ID_VERSION * 1ul) |
-        (FILTER_ID_TYPE    * 21ul)
+        FILTER_UID(FILTER_ID_PEDALS_IN2, 1)
 };
 
 // -------------------------------  VARIABLES  ----------------------------------

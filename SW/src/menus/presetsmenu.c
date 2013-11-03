@@ -85,8 +85,8 @@ const menuInterface_t PROGMEM presetsmenu_SaveMenu =
 static const char PresetLoadTitle[] PROGMEM = "--- LOAD Preset: ---";
 static const char PresetSaveTitle[] PROGMEM = "--- SAVE Preset: ---";
 
-static const char PresetItem[] PROGMEM = "Preset %i";
-
+static const char PresetItem[]     PROGMEM = "Preset %i";
+static const char PresetDefaults[] PROGMEM = "Defaults";
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------
 
@@ -98,10 +98,12 @@ static bool_t  saveNotLoad;
 
 static void handleMoveEvent(uint8_t uiEvent)
 {
+    uint8_t max = saveNotLoad ? (PRESETS_SLOTS) : (PRESETS_SLOTS + 1);
+
     switch (uiEvent)
     {
     case UI_EVENT_MOVE_UP:
-        if (cursorItem < PRESETS_SLOTS)
+        if (cursorItem < max)
         {
             cursorItem++;
         }
@@ -113,7 +115,7 @@ static void handleMoveEvent(uint8_t uiEvent)
         }
         break;
     case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
-        cursorItem = PRESETS_SLOTS;
+        cursorItem = max;
         break;
     case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
         cursorItem = 1;
@@ -128,6 +130,13 @@ static void handleMoveEvent(uint8_t uiEvent)
 static uint8_t saveInitGetCursor(void)
 {
     saveNotLoad = TRUE;
+
+    if (cursorItem > PRESETS_SLOTS)
+    {
+        // When loading we can select one extra "slot", the defaults
+        cursorItem = 1;
+    }
+
     return cursorItem;
 }
 
@@ -139,7 +148,9 @@ static uint8_t loadInitGetCursor(void)
 
 static uint8_t getItemCount(void)
 {
-    return PRESETS_SLOTS + 1; // The menu title also counts
+    // The menu title also counts, and if loading we also have "Defaults"
+
+    return saveNotLoad ? (PRESETS_SLOTS + 1) : (PRESETS_SLOTS + 2);
 }
 
 static void writeItem(uint8_t item, void *dest)
@@ -148,9 +159,30 @@ static void writeItem(uint8_t item, void *dest)
     {
         util_copyString_P(dest, saveNotLoad ? PresetSaveTitle : PresetLoadTitle);
     }
+    else if (item <= PRESETS_SLOTS)
+    {
+        uint8_t r;
+        dest = util_writeFormat_P(dest, PresetItem, item);
+
+        r =  presets_load(item - 1, TRUE);
+        switch (r)
+        {
+        case PRESET_OK:
+            break;
+        case PRESET_EMPTY:
+            util_copyString_P(dest, PSTR(" (empty)"));
+            break;
+        case PRESET_CHKSUM_ERROR:
+            util_writeFormat_P(dest, PSTR(" CORRUPT"), r);
+            break;
+        default:
+            util_writeFormat_P(dest, PSTR(" ERR: %i"), r);
+            break;
+        }
+    }
     else
     {
-        util_writeFormat_P(dest, PresetItem, item);
+        util_copyString_P(dest, PresetDefaults);
     }
 }
 
@@ -165,33 +197,44 @@ static void handleUiEvent(uint8_t uiEvent)
         // Selecting stuff in main menu:
         if (saveNotLoad)
         {
+            // Saving a preset
             presets_save(cursorItem - 1);
 
             ui_menuBackOut();
-            msgscreen_Show_P(PSTR("PRESET SAVED"), 3);
+            msgscreen_Show_FormatP(PSTR("PRESET SAVED"), 0, 3);
+        }
+        else if (cursorItem == (PRESETS_SLOTS + 1))
+        {
+            // Load defaults
+            midiproc_stop_MAIN();
+            midiproc_loadDefaultFilters();
+            midiproc_start_MAIN();
+
+            ui_menuBackOut();
+            msgscreen_Show_FormatP(PSTR("DEFAULTS LOADED"), 0, 2);
         }
         else
         {
             // First we test
-            switch (presets_load(cursorItem - 1, TRUE))
+            uint8_t r = presets_load(cursorItem - 1, TRUE);
+
+            if ((r != PRESET_EMPTY) && (r != PRESET_CHKSUM_ERROR))
             {
-            case PRESET_OK:
                 // OK, lets load
                 midiproc_stop_MAIN();
-                presets_load(cursorItem - 1, FALSE);
+                r = presets_load(cursorItem - 1, FALSE);
                 midiproc_start_MAIN();
 
                 ui_menuBackOut();
-                msgscreen_Show_P(PSTR("PRESET LOADED"), 3);
-                break;
 
-            case PRESET_EMPTY:
-                msgscreen_Show_P(PSTR("PRESET EMPTY!"), 3);
-                break;
-
-            default:
-                msgscreen_Show_P(PSTR("PRESET ERROR!"), 3);
-                break;
+                if (r == PRESET_OK)
+                {
+                    msgscreen_Show_FormatP(PSTR("PRESET LOADED"), 0, 3);
+                }
+                else
+                {
+                    msgscreen_Show_FormatP(PSTR("PRESET LOAD ERR:%i"), r, 1);
+                }
             }
         }
     }
