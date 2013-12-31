@@ -75,6 +75,7 @@ static uint8_t TxBufferTail;
 
 static void midiIoSetup(void);
 static void tickIsrSetup(void);
+static void fastTimerSetup(void);
 static void adcSetup(void);
 
 static void outputTxComplete_ISR();
@@ -129,6 +130,7 @@ void hal_initialize(void)
     // Init other stuff
     midiIoSetup();
     tickIsrSetup();
+    fastTimerSetup();
     adcSetup();
 }
 
@@ -490,7 +492,13 @@ uint16_t hal_adcGetValue_MAIN(uint8_t channel)
     return ret;
 }
 
-
+// Fast tick setup
+static void fastTimerSetup(void)
+{
+    // Setup timer2 for free running mode with 1/1024 prescaler
+    TCCR2A = 0;
+    TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20);
+}
 
 // 100 HZ tick implementation
 
@@ -519,6 +527,9 @@ ISR(TIMER1_COMPA_vect)
 {
     TickCount++;
     FILTER_HOOKS_TICK_ISR();
+
+    // Hal module nurses the quaddecode module, also for the TickIsr:
+    quaddecode_handleTickIsr_ISR();
 }
 
 uint16_t hal_tickCountGet_ISR(void)

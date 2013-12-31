@@ -49,6 +49,9 @@ void hal_interruptsEnable(void);
 uint16_t hal_tickCountGet_ISR(void);
 uint16_t hal_tickCountGet_MAIN(void);
 
+// The fast timer increments each 51.2 us (appr. 20 KHz) in an 8-bit, and thus overflows every 13.1 ms.
+#define HAL_FAST_TIMER_GET() (TCNT2)
+
 void   hal_midiTxEnqueue_ISR(uint8_t x);
 
 bool_t hal_getMidiTxBufferEmpty_ISR(void);

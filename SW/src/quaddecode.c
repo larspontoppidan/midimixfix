@@ -10,74 +10,155 @@
 #include "quaddecode.h"
 #include "hal.h"
 
-// This module decodes quadrature waveforms using an algorithm which is
-// tailor made for the situation where two separate interrupt sources
-// indicate separately when there are changes on two quadrature signals,
-// named A and B.
+// This module decodes quadrature waveforms using an algorithm suited
+// for the situation where two separate interrupt sources indicate
+// separately when there are changes on two quadrature signals,
+// named A and B:
 //
-// The algorithm uses four states, which is somewhat unusual, as they are
-// defined on signal change events combined with the constant state of the
-// non changing signal. State 0 is when A changes (we don't care what value
-// it changes from or to) and B is high. State 1 is when the B changes
-// and A is low, etc.
+// Mechanically stable positions: v
+//           v           v           v
+//          ___       _____       _____
+// A wavef:    |_____|     |_____|
+//          ______       _____       __
+// B wavef:       |_____|     |_____|
 //
-// Defining the states on edges allows the algorithm to not care what way
-// the changing signal is changing, eliminating certain race conditions,
-// that may arise on noisy signals. Another benefit is an inherent Schmitt-
-// trigger characteristic of the state changes. Finally, the algorithm is
-// incredibly simple and efficient to implement.
+// Real life experience with cheap rotary encoders show that they
+// often have problems making a proper grounding of the signals, while
+// the pull up resistors always get the job done. So, in reality the
+// situation may look like this:
+//          ___       _____       _____
+// A wavef:    |||||||     |||||||
+//          ______       _____       __
+// B wavef:       |||||||     |||||||
 //
-// A disadvantage of the algorithm is that only 1/4 of the available
-// quadrature resolution is usable. However, this fits perfectly for counting
-// the clicks on a typical rotary encoder.
+// To reliably decode the above waveforms, with a proper noise rejection,
+// the algorithm uses three states:
 //
+//   A:  A is stable high
+//   B:  B is stable high
+//   N:  Neither A nor B is stable high
 //
-// A wavef: ^\___/^^^\___/^^^
-// B wavef: ^^^\___/^^^\___/^^^
+// When A change interrupt fires, it will reset the A stable timer. Since
+// we don't really know to what A is changing, we don't care about the value
+// of A, but we check the status for B. If B is high and it's stable timer
+// ran out, well, then we are in B stable high state. Otherwise we are in the
+// no stable high state.
 //
-// Mechanical
-// Clicks:  |       |       |
+// Swap A and B in above and it describes what happens in the other interrupt.
 //
-// A change: x   x   x   x
-// B change:   x   x   x   x
+// Now, we end up with the following development of states:
+// (u indicates un-stable, in that stable timer has not yet run out)
 //
-// State:    0 1 2 3 0 1 2 3 0
+//           v            v            v
+//          ___       ______       _____
+// A wavef:    |||||||u     |||||||u
+//          ______       ______       __
+// B wavef:       |||||||u     |||||||u
 //
-// Trigger new value on transition from 1 to 2, or 2 to 1
+// State:      B  N    A    B  N    A
+//
+// The state transitions are translated as follows:
+//
+//  B -> N -> A must increment index by one
+//  A -> N -> B must decrement index by one
+//
+// All other transitions are ignored.
 //
 
+#define STATE_A_HI  0
+#define STATE_B_HI  1
 
-static uint8_t CurrentState;
+static uint8_t State;
+static bool_t  StateNeitherHi;
 
 static int8_t volatile KnobDelta;
 static int8_t volatile KnobPushedDelta;
 
+// Stable timer
+#define STABLE_TIMEOUT 5u // The stable timer will run out after between:
+                          // STABLE_TIMEOUT and (STABLE_TIMEOUT + 1) x 51.2 us
 
-static int8_t UpdateState(uint8_t new_state)
+typedef struct
 {
-    int8_t delta;
+    uint8_t value;
+    bool_t  overflow;
+} stableTimer_t;
 
-    if ((new_state == 2) && (CurrentState == 1))
+static stableTimer_t StableTimerA;
+static stableTimer_t StableTimerB;
+
+// --- Private helper functions
+
+
+static inline int8_t updateState(uint8_t new_state)
+{
+    int8_t delta = 0;
+
+    if (StateNeitherHi && (new_state != State))
     {
-        delta = -1;
-    }
-    else if ((new_state == 1) && (CurrentState == 2))
-    {
-        delta = 1;
-    }
-    else
-    {
-        delta = 0;
+        if (new_state == STATE_A_HI)
+        {
+            delta = -1;
+        }
+        else
+        {
+            delta = 1;
+        }
     }
 
-    CurrentState = new_state;
+    State = new_state;
+    StateNeitherHi = FALSE;
 
     return delta;
 }
 
+static inline void updateStateNeitherHi(void)
+{
+    StateNeitherHi = TRUE;
+}
+
+static inline void resetTimer_ISR(stableTimer_t *p)
+{
+    p->value = HAL_FAST_TIMER_GET();
+    p->overflow = FALSE;
+}
+
+// Returns true if stable timer has run out, otherwise false
+static inline bool_t checkTimer_ISR(stableTimer_t *p)
+{
+    if ((p->overflow) ||
+        ((uint8_t)(HAL_FAST_TIMER_GET() - p->value) > STABLE_TIMEOUT))
+    {
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
+// Since the stable timer overflows each 13.1 ms, this function must be called
+// at an interval at least 13.1 ms - STABLE_TIMEOUT, and not faster than STABLE_TIMEOUT
+static inline void overflowSecureTimer_ISR(stableTimer_t *p)
+{
+    if (p->overflow == FALSE)
+    {
+        if ((uint8_t)(HAL_FAST_TIMER_GET() - p->value) > STABLE_TIMEOUT)
+        {
+            p->overflow = TRUE;
+        }
+    }
+}
+
+
+// --- Public functions
+
+
 void quaddecode_initialize(void)
 {
-    CurrentState = 0;
+    StateNeitherHi = FALSE;
+    StableTimerA.overflow = TRUE;
+    StableTimerB.overflow = TRUE;
     KnobDelta = 0;
     KnobPushedDelta = 0;
 }
@@ -85,36 +166,55 @@ void quaddecode_initialize(void)
 
 void quaddecode_handleAChange_ISR(bool_t b_value, bool_t pushed)
 {
-    uint8_t new_state;
+    resetTimer_ISR(&StableTimerA);
 
-    new_state = b_value ? 0u : 2u;
-
-    if (pushed)
+    if ((b_value != 0) && (checkTimer_ISR(&StableTimerB)))
     {
-        KnobPushedDelta += UpdateState(new_state);
+        int8_t delta = updateState(STATE_B_HI);
+
+        if (pushed)
+        {
+            KnobPushedDelta += delta;
+        }
+        else
+        {
+            KnobDelta += delta;
+        }
     }
     else
     {
-        KnobDelta += UpdateState(new_state);
+        updateStateNeitherHi();
     }
 }
 
 void quaddecode_handleBChange_ISR(bool_t a_value, bool_t pushed)
 {
-    uint8_t new_state;
+    resetTimer_ISR(&StableTimerB);
 
-    new_state = a_value ? 3u : 1u;
-
-    if (pushed)
+    if ((a_value != 0) && (checkTimer_ISR(&StableTimerA)))
     {
-        KnobPushedDelta += UpdateState(new_state);
+        int8_t delta = updateState(STATE_A_HI);
+
+        if (pushed)
+        {
+            KnobPushedDelta += delta;
+        }
+        else
+        {
+            KnobDelta += delta;
+        }
     }
     else
     {
-        KnobDelta += UpdateState(new_state);
+        updateStateNeitherHi();
     }
 }
 
+void quaddecode_handleTickIsr_ISR(void)
+{
+    overflowSecureTimer_ISR(&StableTimerA);
+    overflowSecureTimer_ISR(&StableTimerB);
+}
 
 int8_t quaddecode_getPushedDelta_MAIN(void)
 {
