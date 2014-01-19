@@ -54,7 +54,7 @@
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
-#define MSG_BUFFER_SIZE 12u
+#define MSG_BUFFER_SIZE 15u
 
 #define FILTERSTEPS_MAX 20
 

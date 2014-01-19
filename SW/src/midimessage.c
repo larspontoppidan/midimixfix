@@ -165,6 +165,16 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg)
     return dest;
 }
 
+void midimsg_setChan(midiMsg_t *msg, uint8_t chan)
+{
+    uint8_t ms = msg->Data[MIDIMSG_STATUS];
+
+    // And away current channel, and add desired channel
+    ms = (ms & MIDI_STATUS_MASK) | (chan & MIDI_CHANNEL_MASK);
+
+    msg->Data[MIDIMSG_STATUS] = ms;
+}
+
 
 void midimsg_newProgramChange(midiMsg_t *msg, uint8_t chan, uint8_t part)
 {

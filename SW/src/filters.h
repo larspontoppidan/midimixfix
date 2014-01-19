@@ -44,7 +44,9 @@ typedef struct
     &transfilter_Filter,   \
     &curvefilter_Filter,   \
     &genmsg_Filter,        \
+    &polysplit_Filter,     \
     &midiout_Filter
+
 
 enum
 {
@@ -62,6 +64,7 @@ enum
     FILTER_TYPE_TRANSFILTER_FILTER,
     FILTER_TYPE_CURVE_FILTER,
     FILTER_TYPE_GENMSG_FILTER,
+    FILTER_TYPE_POLYSPLIT_FILTER,
     FILTER_TYPE_MIDIOUT_FILTER,
     FILTERS_TYPE_COUNT
 };

@@ -414,6 +414,7 @@ void util_writeNumberParentheses(char *dest, uint8_t value)
 //   %x    Write data as hex
 //   %O    Boolean written as " (ON)" or "(OFF)"
 //   %o    Boolean written as "On" or "Off"
+//   %y    Boolean written as "Yes" or "No"
 //   %c    Write data as midi controller
 //   %C    Write data as midi ui-controller
 //   %n    Write data as note name "C#-4" for example
@@ -469,6 +470,9 @@ char *util_writeFormat_P(char *dest, PGM_P src, uint8_t data)
                 break;
             case 'O':
                 dest = util_copyString_P(dest, data ? pstr_OnParentheses : pstr_OffParentheses);
+                break;
+            case 'y':
+                dest = util_copyString_P(dest, data ? pstr_Yes : pstr_No);
                 break;
             case 'o':
                 dest = util_copyString_P(dest, data ? pstr_On : pstr_Off);

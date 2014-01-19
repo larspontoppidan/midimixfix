@@ -10,10 +10,9 @@
 #include "quaddecode.h"
 #include "hal.h"
 
-// This module decodes quadrature waveforms using an algorithm suited
-// for the situation where two separate interrupt sources indicate
-// separately when there are changes on two quadrature signals,
-// named A and B:
+// This module decodes quadrature waveforms using an algorithm suited for the
+// situation where two separate interrupt sources indicate separately when
+// there are changes on quadrature signals, named A and B:
 //
 // Mechanically stable positions: v
 //           v           v           v
@@ -22,10 +21,10 @@
 //          ______       _____       __
 // B wavef:       |_____|     |_____|
 //
-// Real life experience with cheap rotary encoders show that they
-// often have problems making a proper grounding of the signals, while
-// the pull up resistors always get the job done. So, in reality the
-// situation may look like this:
+// Real life experience with cheap rotary encoders show that they often have
+// problems making a good connection internally, which is used for grounding
+// the waveforms, while the pull up resistors always get the job done.
+// So, in reality the situation may look like this:
 //          ___       _____       _____
 // A wavef:    |||||||     |||||||
 //          ______       _____       __
@@ -64,6 +63,10 @@
 //
 // All other transitions are ignored.
 //
+// OTHER DEPENDENCIES:
+// Hal module must provide a HAL_FAST_TIMER_GET() 8-bit free running timer
+// incrementing each 51.2 us
+//
 
 #define STATE_A_HI  0
 #define STATE_B_HI  1
@@ -81,7 +84,7 @@ static int8_t volatile KnobPushedDelta;
 typedef struct
 {
     uint8_t value;
-    bool_t  overflow;
+    bool_t  timeout;
 } stableTimer_t;
 
 static stableTimer_t StableTimerA;
@@ -117,35 +120,28 @@ static inline void updateStateNeitherHi(void)
     StateNeitherHi = TRUE;
 }
 
-static inline void resetTimer_ISR(stableTimer_t *p)
+static inline void resetStableTimer_ISR(stableTimer_t *p)
 {
     p->value = HAL_FAST_TIMER_GET();
-    p->overflow = FALSE;
+    p->timeout = FALSE;
 }
 
-// Returns true if stable timer has run out, otherwise false
-static inline bool_t checkTimer_ISR(stableTimer_t *p)
-{
-    if ((p->overflow) ||
-        ((uint8_t)(HAL_FAST_TIMER_GET() - p->value) > STABLE_TIMEOUT))
-    {
-        return TRUE;
-    }
-    else
-    {
-        return FALSE;
-    }
-}
 
-// Since the stable timer overflows each 13.1 ms, this function must be called
-// at an interval at least 13.1 ms - STABLE_TIMEOUT, and not faster than STABLE_TIMEOUT
-static inline void overflowSecureTimer_ISR(stableTimer_t *p)
+// Update the stable timer timeout flag.
+// Since the 8-bit timer value overflows each 13.1 ms, this function must be called
+// at an interval of at most 13.1 ms - STABLE_TIMEOUT, otherwise timeout detections
+// may be missed.
+static inline void checkStableTimer_ISR(stableTimer_t *p)
 {
-    if (p->overflow == FALSE)
+    // The stable timer may have exceeded timeout and had it catched
+    // already, in that case timeout will be true. In other cases,
+    // the timer value must be checked.
+
+    if (p->timeout == FALSE)
     {
         if ((uint8_t)(HAL_FAST_TIMER_GET() - p->value) > STABLE_TIMEOUT)
         {
-            p->overflow = TRUE;
+            p->timeout = TRUE;
         }
     }
 }
@@ -157,8 +153,8 @@ static inline void overflowSecureTimer_ISR(stableTimer_t *p)
 void quaddecode_initialize(void)
 {
     StateNeitherHi = FALSE;
-    StableTimerA.overflow = TRUE;
-    StableTimerB.overflow = TRUE;
+    StableTimerA.timeout = TRUE;
+    StableTimerB.timeout = TRUE;
     KnobDelta = 0;
     KnobPushedDelta = 0;
 }
@@ -166,9 +162,10 @@ void quaddecode_initialize(void)
 
 void quaddecode_handleAChange_ISR(bool_t b_value, bool_t pushed)
 {
-    resetTimer_ISR(&StableTimerA);
+    resetStableTimer_ISR(&StableTimerA);
+    checkStableTimer_ISR(&StableTimerB);
 
-    if ((b_value != 0) && (checkTimer_ISR(&StableTimerB)))
+    if ((b_value != FALSE) && (StableTimerB.timeout != FALSE))
     {
         int8_t delta = updateState(STATE_B_HI);
 
@@ -189,9 +186,10 @@ void quaddecode_handleAChange_ISR(bool_t b_value, bool_t pushed)
 
 void quaddecode_handleBChange_ISR(bool_t a_value, bool_t pushed)
 {
-    resetTimer_ISR(&StableTimerB);
+    resetStableTimer_ISR(&StableTimerB);
+    checkStableTimer_ISR(&StableTimerA);
 
-    if ((a_value != 0) && (checkTimer_ISR(&StableTimerA)))
+    if ((a_value != FALSE) && (StableTimerA.timeout != FALSE))
     {
         int8_t delta = updateState(STATE_A_HI);
 
@@ -212,8 +210,8 @@ void quaddecode_handleBChange_ISR(bool_t a_value, bool_t pushed)
 
 void quaddecode_handleTickIsr_ISR(void)
 {
-    overflowSecureTimer_ISR(&StableTimerA);
-    overflowSecureTimer_ISR(&StableTimerB);
+    checkStableTimer_ISR(&StableTimerA);
+    checkStableTimer_ISR(&StableTimerB);
 }
 
 int8_t quaddecode_getPushedDelta_MAIN(void)

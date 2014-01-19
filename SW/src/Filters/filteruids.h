@@ -31,6 +31,7 @@
 #define FILTER_ID_TRANSFILTER_FILTER   23
 #define FILTER_ID_CURVE_FILTER         24
 #define FILTER_ID_GENMSG_FILTER        25
+#define FILTER_ID_POLYSPLIT_FILTER     26
 #define FILTER_ID_MIDIOUT_FILTER       1
 
 #define FILTER_UID(id, version)  (((uint32_t)id) << 8 | (version))

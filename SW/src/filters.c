@@ -52,6 +52,7 @@
 #include "Filters/modifycontroller.h"
 #include "Filters/curvefilter.h"
 #include "Filters/generatemsg.h"
+#include "Filters/polysplit.h"
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------

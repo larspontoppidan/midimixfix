@@ -14,6 +14,9 @@ extern char const PROGMEM pstr_Empty[];
 extern char const PROGMEM pstr_On[];
 extern char const PROGMEM pstr_Off[];
 
+extern char const PROGMEM pstr_Yes[];
+extern char const PROGMEM pstr_No[];
+
 extern char const PROGMEM pstr_PlusParentheses[];
 extern char const PROGMEM pstr_MinusParentheses[];
 extern char const PROGMEM pstr_OnParentheses[];

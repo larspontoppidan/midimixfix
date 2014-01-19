@@ -15,6 +15,9 @@ char const pstr_Empty[] PROGMEM = "";
 char const pstr_On[]  PROGMEM = "On";
 char const pstr_Off[] PROGMEM = "Off";
 
+char const pstr_Yes[] PROGMEM = "Yes";
+char const pstr_No[]  PROGMEM = "No";
+
 char const pstr_PlusParentheses[]  PROGMEM = "(+)";
 char const pstr_MinusParentheses[] PROGMEM = "(-)";
 char const pstr_OnParentheses[]  PROGMEM = " (ON)";

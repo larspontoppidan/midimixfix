@@ -77,9 +77,9 @@ static const char Title[] PROGMEM = "----  Message:  ----";
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------
 
-const char *Message;
-uint8_t Data;
-uint8_t WriteOffset;
+static const char *Message;
+static uint8_t Data;
+static uint8_t WriteOffset;
 
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------

@@ -55,7 +55,7 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg);
 //uint8_t midimsg_getVelocity(midiMsg_t *msg);
 //
 //// Modifying midi messages
-//void midimsg_setChan(midiMsg_t *msg, uint8_t chan);
+void midimsg_setChan(midiMsg_t *msg, uint8_t chan);
 //void midimsg_setKey(midiMsg_t *msg, uint8_t key);
 //void midimsg_setVelocity(midiMsg_t *msg, uint8_t velocity);
 //

@@ -165,6 +165,7 @@ static void loadOrInitEeprom(void)
         default:
             // There was some other error, notify user
             msgscreen_Show_FormatP(PSTR("PRESET LOAD ERR:%i"), r, 1);
+            midiproc_loadDefaultFilters();
             break;
         }
     }
