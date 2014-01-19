@@ -155,6 +155,10 @@ static void handleSelectEvent(void)
     case ITEM_BOOTLOADER:
         lcd_clear();
         lcd_writeString_P(PSTR("Bootloader activated"));
+        lcd_setCursor(1,0);
+        lcd_writeString_P(PSTR("(select must be"));
+        lcd_setCursor(2,0);
+        lcd_writeString_P(PSTR("pressed for 3 sec.)"));
         hal_lcdBacklightSet(FALSE);
         hal_jumpBootloader();
         break;

@@ -91,7 +91,7 @@ static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
     {"Lars O. Pontoppidan"},
     {" http://larsee.dk"},
     {""},
-    {"  Copyright 2013"},
+    {"  Copyright 2014"},
     {""},
     {"Errors:"}                  // TODO this type of string storage could use some compression
 };

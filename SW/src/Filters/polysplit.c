@@ -46,6 +46,7 @@
 #include "../util.h"
 #include "../ui.h"
 #include "../menus/filtermenu.h"
+#include "../pgmstrings.h"
 #include <avr/pgmspace.h>
 #include "filteruids.h"
 
@@ -60,8 +61,9 @@
 
 #define NOT_FOUND 0xFF
 
-#define TICK_DIVISION 10  // 100 Hz ISR divided by this will be the rate of the rate limit filter transmissions
+#define TICK_DIVISION 4   // 100 Hz ISR divided by this will be the rate of the rate limit filter transmissions
 
+#define SMOOTHE_MAX 5
 
 // Configuration
 
@@ -74,6 +76,7 @@ typedef struct
 {
     uint8_t FirstChannel;
     uint8_t OutChannels;     // E.g., if 5, the channels 1,2,3,4,5 are used
+    uint8_t SmootheKeyAt;    // 0 means off
     uint8_t BroadCastMode;
 } config_t;
 
@@ -83,6 +86,10 @@ typedef struct
 {
     uint8_t NoteOffTime;      // 255 is key on, 254 is key off and counting downwards
     uint8_t LatestKey;        // The key played.
+
+    uint8_t LatestKeyAt;      // Latest key at value sent
+    uint16_t FilterState;     // Smooth filter for Key AfterTouch state
+    uint8_t FilterTarget;     // Target value
 } channel_state_t;
 
 typedef struct
@@ -90,18 +97,21 @@ typedef struct
     bool_t  InUse;
     uint8_t FilterStep;
     uint8_t LatestNoteOnChan;
+    uint8_t TickDivider;
     channel_state_t ChannelState[CHANNEL_MAX];
 } state_t;
+
 
 
 static char const MenuTitle[]    PROGMEM = "Polyphon. split";
 
 static char const MenuSetting1[] PROGMEM = "Ch.range from: %i";
 static char const MenuSetting2[] PROGMEM = "Ch.range to  : %i";
-static char const MenuSetting3[] PROGMEM = "Broadcast CC.: %y";
-static char const MenuSetting4[] PROGMEM = "Bcst. ProgChg: %y";
-static char const MenuSetting5[] PROGMEM = "Bcst. P.Wheel: %y";
-static char const MenuSetting6[] PROGMEM = "Bcst. Chan.AT: %y";
+static char const MenuSetting3[] PROGMEM = "Smoothe KeyAT: ";
+static char const MenuSetting4[] PROGMEM = "Broadcast CC.: %y";
+static char const MenuSetting5[] PROGMEM = "Bcst. ProgChg: %y";
+static char const MenuSetting6[] PROGMEM = "Bcst. P.Wheel: %y";
+static char const MenuSetting7[] PROGMEM = "Bcst. Chan.AT: %y";
 
 
 // ------------------------------  PROTOTYPES  ----------------------------------
@@ -132,7 +142,14 @@ static bool_t handleKeyAT(midiMsg_t *msg);
 static void broadcastMsg(midiMsg_t *msg);
 static bool_t singlecastMsg(midiMsg_t *msg);
 
+// Smooth filter
 
+static void filterReset(uint8_t channel, uint8_t value);
+static void filterNewTarget(uint8_t channel, uint8_t value);
+static void filterUpdate(uint8_t channel);
+static uint8_t filterGetOutput(uint8_t channel);
+
+static void sendKeyAtIfChange(uint8_t channel);
 
 // -------------------------------  VARIABLES  ----------------------------------
 
@@ -149,12 +166,12 @@ const filterInterface_t polysplit_Filter PROGMEM =
         polysplit_HandleUiEvent,
 
         sizeof(config_t),   // Number of bytes in configuration
-        6,                  // Number of menu items (0 means only title, 1 is one item)
+        7,                  // Number of menu items (0 means only title, 1 is one item)
         15,                 // Cursor indentation in menu
         FILTER_MODE_PROCESSOR, // Filter operation mode
         MenuTitle,          // Static filter title (this may be different from in-menu title)
 
-        FILTER_UID(FILTER_ID_POLYSPLIT_FILTER, 1)
+        FILTER_UID(FILTER_ID_POLYSPLIT_FILTER, 2)
 };
 
 static state_t  Instance;
@@ -165,6 +182,35 @@ static config_t Config;
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
+void polysplit_handleTick_ISR(void)
+{
+    if (Instance.TickDivider == 0)
+    {
+        if ((Instance.InUse) &&
+            (Config.SmootheKeyAt != 0))
+        {
+            uint8_t i;
+
+            for (i = 0; i < Config.OutChannels; i++)
+            {
+                if (Instance.ChannelState[i].NoteOffTime == NOTE_STATE_ON)
+                {
+                    filterUpdate(i);
+                    sendKeyAtIfChange(i);
+                }
+            }
+        }
+
+        Instance.TickDivider = TICK_DIVISION - 1;
+    }
+    else
+    {
+        Instance.TickDivider--;
+    }
+}
+
+
+// ------------------------  FILTER INTERFACE FUNCTIONS  ------------------------
 
 static uint8_t polysplit_Create(uint8_t filter_step)
 {
@@ -308,16 +354,27 @@ static void polysplit_WriteMenuText(uint8_t instance, uint8_t menu_item, void *d
         util_writeFormat_P(dest, MenuSetting2, Config.FirstChannel + Config.OutChannels);
         break;
     case 3:
-        util_writeFormat_P(dest, MenuSetting3, Config.BroadCastMode & BROADCAST_CC);
+        dest = util_copyString_P(dest, MenuSetting3);
+        if (Config.SmootheKeyAt > 0)
+        {
+            util_writeInt16LA(dest, Config.SmootheKeyAt);
+        }
+        else
+        {
+            util_copyString_P(dest, pstr_Off);
+        }
         break;
     case 4:
-        util_writeFormat_P(dest, MenuSetting4, Config.BroadCastMode & BROADCAST_PROGCHG);
+        util_writeFormat_P(dest, MenuSetting4, Config.BroadCastMode & BROADCAST_CC);
         break;
     case 5:
-        util_writeFormat_P(dest, MenuSetting5, Config.BroadCastMode & BROADCAST_P_WHEEL);
+        util_writeFormat_P(dest, MenuSetting5, Config.BroadCastMode & BROADCAST_PROGCHG);
         break;
     case 6:
-        util_writeFormat_P(dest, MenuSetting6, Config.BroadCastMode & BROADCAST_PROGCHG);
+        util_writeFormat_P(dest, MenuSetting6, Config.BroadCastMode & BROADCAST_P_WHEEL);
+        break;
+    case 7:
+        util_writeFormat_P(dest, MenuSetting7, Config.BroadCastMode & BROADCAST_PROGCHG);
         break;
     }
 }
@@ -342,18 +399,21 @@ static void polysplit_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t
         Config.OutChannels =  util_boundedAddUint8(Config.OutChannels, 1, CHANNEL_MAX, delta);
         break;
     case 3:
+        Config.SmootheKeyAt = util_boundedAddUint8(Config.SmootheKeyAt, 0, SMOOTHE_MAX, delta);
+        break;
+    case 4:
         Config.BroadCastMode = (Config.BroadCastMode & ~BROADCAST_CC) |
             (delta > 0 ? BROADCAST_CC : 0);
         break;
-    case 4:
+    case 5:
         Config.BroadCastMode = (Config.BroadCastMode & ~BROADCAST_PROGCHG) |
             (delta > 0 ? BROADCAST_PROGCHG : 0);
         break;
-    case 5:
+    case 6:
         Config.BroadCastMode = (Config.BroadCastMode & ~BROADCAST_P_WHEEL) |
             (delta > 0 ? BROADCAST_P_WHEEL : 0);
         break;
-    case 6:
+    case 7:
         Config.BroadCastMode = (Config.BroadCastMode & ~BROADCAST_PROGCHG) |
             (delta > 0 ? BROADCAST_PROGCHG : 0);
         break;
@@ -368,8 +428,10 @@ static void initialize(void)
     // Set defaults
     Config.FirstChannel = 1;
     Config.OutChannels = 7;
+    Config.SmootheKeyAt = 0;
     Config.BroadCastMode = BROADCAST_CC | BROADCAST_CHAN_AT | BROADCAST_PROGCHG | BROADCAST_P_WHEEL;
     Instance.LatestNoteOnChan = NOT_FOUND;
+    Instance.TickDivider = 0;
 
     // Init state of channels
     uint8_t i;
@@ -378,6 +440,8 @@ static void initialize(void)
     {
         Instance.ChannelState[i].LatestKey = 0;
         Instance.ChannelState[i].NoteOffTime = 0;
+        Instance.ChannelState[i].FilterState = 0;
+        Instance.ChannelState[i].FilterTarget = 0;
     }
 }
 
@@ -441,6 +505,7 @@ static bool_t handleNoteOn(midiMsg_t *msg)
 
         Instance.ChannelState[c].LatestKey = msg->Data[MIDIMSG_DATA1];
         Instance.ChannelState[c].NoteOffTime = NOTE_STATE_ON;
+        filterReset(c, msg->Data[MIDIMSG_DATA2]);
     }
 
     return (c != NOT_FOUND);
@@ -476,15 +541,24 @@ static bool_t handleNoteOff(midiMsg_t *msg)
 
 static bool_t handleKeyAT(midiMsg_t *msg)
 {
+    bool_t ret = FALSE;
+
     // Find correct channel for this
     uint8_t c = findActiveChannel(msg->Data[MIDIMSG_DATA1]);
 
     if (c != NOT_FOUND)
     {
         midimsg_setChan(msg, c + Config.FirstChannel);
+        filterNewTarget(c, msg->Data[MIDIMSG_DATA2]);
+
+        if (Config.SmootheKeyAt == 0)
+        {
+            // Only send the KeyAT if we are not smoothing
+            ret = TRUE;
+        }
     }
 
-    return (c != NOT_FOUND);
+    return ret;
 }
 
 
@@ -514,3 +588,53 @@ static void broadcastMsg(midiMsg_t *msg)
     }
 }
 
+
+static void filterReset(uint8_t channel, uint8_t value)
+{
+    Instance.ChannelState[channel].FilterTarget = value;
+    Instance.ChannelState[channel].FilterState = (uint16_t)value << 4;
+}
+
+
+static void filterNewTarget(uint8_t channel, uint8_t value)
+{
+    Instance.ChannelState[channel].FilterTarget = value;
+}
+
+static void filterUpdate(uint8_t channel)
+{
+    uint16_t x;
+
+    // filter law is   state_1 = (state_0*(2^smoothe-1) + x) / (2^smoothe)
+    x = Instance.ChannelState[channel].FilterState << (Config.SmootheKeyAt);
+    x -= Instance.ChannelState[channel].FilterState;
+    x += (uint16_t)(Instance.ChannelState[channel].FilterTarget << 4);
+
+    Instance.ChannelState[channel].FilterState = x >> (Config.SmootheKeyAt);
+}
+
+static uint8_t filterGetOutput(uint8_t channel)
+{
+    return (uint8_t)(Instance.ChannelState[channel].FilterState >> 4);
+}
+
+
+static void sendKeyAtIfChange(uint8_t channel)
+{
+    uint8_t filter_out;
+
+    filter_out = filterGetOutput(channel);
+
+    if (Instance.ChannelState[channel].LatestKeyAt != filter_out)
+    {
+        // Latest key AT value is different from filter calculated output, send new KeyAT message
+        midiMsg_t msg;
+
+        midimsg_newKeyAt(&msg, channel + Config.FirstChannel,
+                Instance.ChannelState[channel].LatestKey, filter_out);
+
+        midiproc_addMessage_ISR(&msg, Instance.FilterStep);
+
+        Instance.ChannelState[channel].LatestKeyAt = filter_out;
+    }
+}

@@ -13,6 +13,7 @@
 #include "Filters/pedals.h"
 #include "Filters/curvefilter.h"
 #include "Filters/generatemsg.h"
+#include "Filters/polysplit.h"
 
 // Filters can hook up direct function calls in the program flow.
 
@@ -42,11 +43,10 @@
 #define FILTER_HOOKS_TICK_ISR()   \
     do {                          \
         pedals_handleTick_ISR();  \
+        polysplit_handleTick_ISR(); \
     } while (0)
-//    midilog_handleTick_ISR();
 //    blockflt_handleTick_ISR();
 //    superdly_handleTick_ISR();
-//    psplit_handleTick_ISR();
 
 
 // For hooking up to the main loop idle loop

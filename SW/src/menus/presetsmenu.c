@@ -162,7 +162,15 @@ static void writeItem(uint8_t item, void *dest)
     else if (item <= PRESETS_SLOTS)
     {
         uint8_t r;
-        dest = util_writeFormat_P(dest, PresetItem, item);
+
+        if (item == 1)
+        {
+            dest = util_copyString_P(dest, PSTR("Start up"));
+        }
+        else
+        {
+            dest = util_writeFormat_P(dest, PresetItem, item);
+        }
 
         r =  presets_load(item - 1, TRUE);
         switch (r)
