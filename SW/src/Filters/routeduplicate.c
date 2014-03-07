@@ -73,9 +73,7 @@ typedef struct
 
 #define INSTANCE_MAX 10
 
-
 #define MESSAGE_TYPE_ALL         0
-
 #define MESSAGE_TYPE_CHAN1       1
 #define MESSAGE_TYPE_CHAN16      16
 

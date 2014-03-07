@@ -184,6 +184,28 @@ void midimsg_newProgramChange(midiMsg_t *msg, uint8_t chan, uint8_t part)
     msg->Data[1] = part;
 }
 
+void midimsg_newChanAfterTouch(midiMsg_t *msg, uint8_t chan, uint8_t pressure)
+{
+    msg->DataLen = 2;
+    msg->Flags = MIDIMSG_FLAG_PARSE_OK;
+    msg->Data[0] = MIDI_STATUS_CHAN_ATOUCH | chan;
+    msg->Data[1] = pressure;
+}
+
+
+void midimsg_newPitchWheel(midiMsg_t *msg, uint8_t chan, int16_t pitch_wheel)
+{
+    msg->DataLen = 3;
+    msg->Flags = MIDIMSG_FLAG_PARSE_OK;
+    msg->Data[MIDIMSG_STATUS] = MIDI_STATUS_PITCH_WHEEL | chan;
+
+    // Offset pwheel
+    pitch_wheel += 8192;
+
+    msg->Data[MIDIMSG_DATA1] = pitch_wheel & 0x7F; // LS 7 bit
+    msg->Data[MIDIMSG_DATA2] = pitch_wheel >> 7u;  // MS 7 bit
+}
+
 
 void midimsg_newContinuousCtrl(midiMsg_t *msg, uint8_t chan, uint8_t cc, uint8_t value)
 {

@@ -358,6 +358,20 @@ uint8_t util_boundedAddUint8(uint8_t value, uint8_t min, uint8_t max, int8_t add
 }
 
 
+int16_t util_boundLimitInt16(int16_t value, int16_t min, int16_t max)
+{
+    if (value < min)
+    {
+        value = min;
+    }
+    else if (value > max)
+    {
+        value = max;
+    }
+
+    return value;
+}
+
 // Specialized function for writing right aligned component status
 //
 // Writes the following to dest[0] to dest[4]:

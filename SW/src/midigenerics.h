@@ -65,6 +65,10 @@ uint8_t midi_convertUiccToCc(uint8_t uicc);
 #define MIDI_STATUS_PITCH_WHEEL   0xE0 // 7-bit LSB, 7-bit MSB of 14-bit pitch value
 #define MIDI_STATUS_SYSTEM        0xF0 // (...) Sysex or system common message
 
+#define MIDI_PITCH_WHEEL_MAX    8191
+#define MIDI_PITCH_WHEEL_MIN    -8192
+
+
 // Channel mode controller messages
 //
 #define MIDI_CTRL_SOUND_OFF       120   // 7-bit value = 0:   All oscillators must turn off

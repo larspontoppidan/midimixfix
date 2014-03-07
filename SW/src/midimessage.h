@@ -63,8 +63,8 @@ void midimsg_setChan(midiMsg_t *msg, uint8_t chan);
 //void midimsg_newNoteOn(midiMsg_t *msg, uint8_t chan, uint8_t key, uint8_t velocity);
 //void midimsg_newNoteOff(midiMsg_t *msg, uint8_t chan, uint8_t key, uint8_t velocity);
 //void midimsg_newKeyAfterTouch(midiMsg_t *msg, uint8_t chan, uint8_t key, uint8_t pressure);
-//void midimsg_newChanAfterTouch(midiMsg_t *msg, uint8_t chan, uint8_t pressure);
-//void midimsg_newPitchWheel(midiMsg_t *msg, uint8_t chan, int16_t pitch_wheel);
+void midimsg_newChanAfterTouch(midiMsg_t *msg, uint8_t chan, uint8_t pressure);
+void midimsg_newPitchWheel(midiMsg_t *msg, uint8_t chan, int16_t pitch_wheel);
 void midimsg_newProgramChange(midiMsg_t *msg, uint8_t chan, uint8_t part);
 void midimsg_newContinuousCtrl(midiMsg_t *msg, uint8_t chan, uint8_t cc, uint8_t value);
 //

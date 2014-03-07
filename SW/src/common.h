@@ -36,8 +36,8 @@ typedef uint8_t bool_t;
 
 #define BUILD_TX_RUNNING_STATUS  FALSE  // If TRUE, the transmitter will use running status
 
-#define BUILD_VERSION_MAJOR  0
-#define BUILD_VERSION_MINOR  1
+//#define BUILD_VERSION_MAJOR  0
+//#define BUILD_VERSION_MINOR  2
 
 
 // Generic function pointers

@@ -20,8 +20,8 @@ char *util_copyString_P(char *dest, PGM_P src);
 char *util_copyString(char *dest, char *src);
 
 int8_t util_boundedAddInt8(int8_t value, int8_t min, int8_t max, int8_t add);
-
 uint8_t util_boundedAddUint8(uint8_t value, uint8_t min, uint8_t max, int8_t add);
+int16_t util_boundLimitInt16(int16_t value, int16_t min, int16_t max);
 
 void util_writeNumberParentheses(char *dest, uint8_t value);
 

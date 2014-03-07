@@ -72,8 +72,8 @@ static uint8_t            FilterCount;
 static uint8_t   MsgBufferFilterStep[MSG_BUFFER_SIZE];
 static midiMsg_t MsgBuffer[MSG_BUFFER_SIZE];
 
-static uint8_t   MsgBufferHead;  // TODO can we live without volatile here?
-static uint8_t   MsgBufferTail;
+static uint8_t volatile MsgBufferHead;  // TODO can we live without volatile here?
+static uint8_t volatile MsgBufferTail;
 
 static bool_t volatile ProcessingNow; // Only ISR access
 static bool_t volatile ProcessingEnabled;

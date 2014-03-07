@@ -86,7 +86,7 @@ typedef struct
 static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
 {
     {"----   ABOUT:   ----"},
-    {"  MIDIMIXFIX v1.0"},       // TODO configuration management
+    {"  MIDIMIXFIX v1.1"},       // TODO configuration management
     {"       By:"},
     {"Lars O. Pontoppidan"},
     {" http://larsee.dk"},

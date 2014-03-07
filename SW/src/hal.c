@@ -15,6 +15,7 @@
 #include <util/delay.h>
 #include <avr/wdt.h>
 #include "quaddecode.h"
+#include "midiprocessing.h"
 
 /////////////////////////    Defines     /////////////////////////
 
@@ -528,7 +529,8 @@ ISR(TIMER1_COMPA_vect)
     TickCount++;
     FILTER_HOOKS_TICK_ISR();
 
-    // Hal module nurses the quaddecode module, also for the TickIsr:
+    // Hal module nurses some of the modules directly:
+    midiproc_handleTick_ISR();
     quaddecode_handleTickIsr_ISR();
 }
 
