@@ -39,7 +39,7 @@ typedef struct
     &pedals_In1,           \
     &pedals_In2,           \
     &routemsg_Filter,      \
-    &routechan_Filter,     \
+    &dupmsg_Filter,        \
     &setchan_Filter,       \
     &modifycc_Filter,      \
     &transfilter_Filter,   \
@@ -60,12 +60,13 @@ enum
     FILTER_TYPE_PEDALS_IN1,
     FILTER_TYPE_PEDALS_IN2,
     FILTER_TYPE_ROUTEMSG_FILTER,
-    FILTER_TYPE_ROUTECHAN_FILTER,
+    FILTER_TYPE_DUPLICATEMSG_FILTER,
     FILTER_TYPE_SETCHAN_FILTER,
     FILTER_TYPE_MODIFYCC_FILTER,
     FILTER_TYPE_TRANSFILTER_FILTER,
     FILTER_TYPE_CURVE_FILTER,
     FILTER_TYPE_GENMSG_FILTER,
+    FILTER_TYPE_DUPLICATE_FILTER,
     FILTER_TYPE_POLYSPLIT_FILTER,
     FILTER_TYPE_MIDIOUT_FILTER,
     FILTERS_TYPE_COUNT
