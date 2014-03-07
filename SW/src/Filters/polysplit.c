@@ -610,6 +610,10 @@ static void filterUpdate(uint8_t channel)
     x -= Instance.ChannelState[channel].FilterState;
     x += (uint16_t)(Instance.ChannelState[channel].FilterTarget << 4);
 
+    // Round before discarding the bits, assuming Config.SmootheKeyAt > 0, which it must be
+    // if we are here:
+    x += (uint16_t)1u << (Config.SmootheKeyAt - 1);
+
     Instance.ChannelState[channel].FilterState = x >> (Config.SmootheKeyAt);
 }
 

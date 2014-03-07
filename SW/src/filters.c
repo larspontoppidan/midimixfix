@@ -47,6 +47,7 @@
 #include "Filters/midiout.h"
 #include "Filters/pedals.h"
 #include "Filters/routechannel.h"
+#include "Filters/routemsg.h"
 #include "Filters/setchannel.h"
 #include "Filters/transposefilter.h"
 #include "Filters/modifycontroller.h"

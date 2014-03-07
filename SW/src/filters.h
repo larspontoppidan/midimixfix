@@ -38,6 +38,7 @@ typedef struct
     &midiin_In2Sysex,      \
     &pedals_In1,           \
     &pedals_In2,           \
+    &routemsg_Filter,      \
     &routechan_Filter,     \
     &setchan_Filter,       \
     &modifycc_Filter,      \
@@ -58,6 +59,7 @@ enum
     FILTER_TYPE_MIDIIN_IN2SYSEX,
     FILTER_TYPE_PEDALS_IN1,
     FILTER_TYPE_PEDALS_IN2,
+    FILTER_TYPE_ROUTEMSG_FILTER,
     FILTER_TYPE_ROUTECHAN_FILTER,
     FILTER_TYPE_SETCHAN_FILTER,
     FILTER_TYPE_MODIFYCC_FILTER,
