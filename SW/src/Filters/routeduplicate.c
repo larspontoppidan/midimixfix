@@ -166,7 +166,7 @@ const filterInterface_t routemsg_Filter PROGMEM =
 };
 
 // State
-instanceState_t Instances[INSTANCE_MAX];
+static instanceState_t Instances[INSTANCE_MAX];
 
 
 // ---------------------------  PRIVATE FUNCTIONS  -------------------------------
@@ -235,8 +235,6 @@ static uint8_t filterCreate(uint8_t filter_step, bool_t routeNotDuplicate)
 {
     uint8_t ret = FILTER_CREATE_FAILED;
     uint8_t i;
-
-    (void)(filter_step);
 
     // Find free instance
     for (i = 0; i < INSTANCE_MAX; i++)

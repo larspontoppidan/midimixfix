@@ -329,11 +329,11 @@ const filterInterface_t pedals_In2 PROGMEM =
 
 // -------------------------------  VARIABLES  ----------------------------------
 
-pedalSetup_t PedalSetup[2];
-pedalState_t PedalState[2];
+static pedalSetup_t PedalSetup[2];
+static pedalState_t PedalState[2];
 
-bool_t UpdatePedal1;
-bool_t UpdatePedal2;
+static bool_t UpdatePedal1;
+static bool_t UpdatePedal2;
 
 // ------------------------  MIDI FILTER INTERFACE FUNCTIONS  -------------------
 

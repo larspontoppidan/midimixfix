@@ -102,7 +102,7 @@ const filterInterface_t transfilter_Filter PROGMEM =
 };
 
 // State
-instanceState_t Instances[INSTANCE_MAX];
+static instanceState_t Instances[INSTANCE_MAX];
 
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------

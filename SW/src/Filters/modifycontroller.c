@@ -121,7 +121,7 @@ const filterInterface_t modifycc_Filter PROGMEM =
 };
 
 // State
-instanceState_t Instances[INSTANCE_MAX];
+static instanceState_t Instances[INSTANCE_MAX];
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 

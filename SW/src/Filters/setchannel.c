@@ -102,7 +102,7 @@ const filterInterface_t setchan_Filter PROGMEM =
 };
 
 // State
-instanceState_t Instances[INSTANCE_MAX];
+static instanceState_t Instances[INSTANCE_MAX];
 
 
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
