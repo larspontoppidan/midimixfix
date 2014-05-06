@@ -463,18 +463,26 @@ void midiproc_removeFilter_MAIN(uint8_t step)
     {
         uint8_t i;
 
-        // Send the destroy message to filter
-        filters_destroy(FilterInstances[step]);
-
-        FilterCount--;
-
-        for (i = step; i < FilterCount; i++)
+        if (step < FilterCount)
         {
-            FilterInstances[i] = FilterInstances[i + 1];
-            FilterRoutes[i] = FilterRoutes[i + 1];
+            // Send the destroy message to filter
+            filters_destroy(FilterInstances[step]);
 
-            // Inform filter that step number has changed
-            filters_setFilterStep(FilterInstances[i], i);
+            FilterCount--;
+
+            for (i = step; i < FilterCount; i++)
+            {
+                FilterInstances[i] = FilterInstances[i + 1];
+                FilterRoutes[i] = FilterRoutes[i + 1];
+
+                // Inform filter that step number has changed
+                filters_setFilterStep(FilterInstances[i], i);
+            }
+        }
+        else
+        {
+            // Invalid step!
+            err_raise_MAIN(ERR_MODULE_MIDIPROC, __LINE__);
         }
 
     }

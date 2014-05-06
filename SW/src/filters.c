@@ -53,6 +53,7 @@
 #include "Filters/curvefilter.h"
 #include "Filters/generatemsg.h"
 #include "Filters/polysplit.h"
+#include "Filters/atsmoother.h"
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------

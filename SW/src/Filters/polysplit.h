@@ -16,6 +16,4 @@
 extern const filterInterface_t PROGMEM polysplit_Filter;
 
 
-void polysplit_handleTick_ISR(void);
-
 #endif /* POLYSPLIT_H_ */

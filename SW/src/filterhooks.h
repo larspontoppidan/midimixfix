@@ -14,6 +14,7 @@
 #include "Filters/curvefilter.h"
 #include "Filters/generatemsg.h"
 #include "Filters/polysplit.h"
+#include "Filters/atsmoother.h"
 
 // Filters can hook up direct function calls in the program flow.
 
@@ -43,7 +44,7 @@
 #define FILTER_HOOKS_TICK_ISR()   \
     do {                          \
         pedals_handleTick_ISR();  \
-        polysplit_handleTick_ISR(); \
+        atsmoother_handleTick_ISR(); \
     } while (0)
 //    blockflt_handleTick_ISR();
 //    superdly_handleTick_ISR();
