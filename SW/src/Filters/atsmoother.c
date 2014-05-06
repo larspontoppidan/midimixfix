@@ -69,7 +69,7 @@
 #define START_N_ON     1
 #define START_VALUE_0  2
 
-#define SMOOTHE_MAX  6
+#define SMOOTHE_MAX  100
 
 #define TICK_DIVISION 3  // 100 Hz tick is divided with this
 
@@ -375,8 +375,8 @@ static void atsmoother_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_
 static void initialize(void)
 {
     // Set defaults
-    Config.FadeIn = 2;
-    Config.FadeOut = 2;
+    Config.FadeIn = 8;
+    Config.FadeOut = 8;
     Config.OutputCc = MESSAGE_TYPE_CHAN_AT;
     Config.Start = START_N_ON;
 
@@ -481,35 +481,35 @@ static void filterNewTarget(uint8_t channel, uint8_t value)
 
 static void filterUpdate(uint8_t channel)
 {
-    uint16_t x;
-    uint8_t smoothe;
-    uint8_t old_out;
+    int16_t diff;
+    int16_t limit;
+
+    // Calculate diff in value << 4
+    diff = (int16_t)(Instance.ChannelState[channel].FilterTarget << 4);
+    diff -= Instance.ChannelState[channel].FilterState;
+
+    diff >>= 1;
 
     // Fading in or out?
-    old_out = filterGetOutput(channel);
-
-    if (old_out < Instance.ChannelState[channel].FilterTarget)
+    if (diff > 0)
     {
-        smoothe = Config.FadeIn;
+        limit = (int16_t)(Config.FadeIn << 2);
+        if (diff > limit)
+        {
+            diff = limit;
+        }
     }
     else
     {
-        smoothe = Config.FadeOut;
+        limit = -(int16_t)(Config.FadeOut << 2);
+
+        if (diff < limit)
+        {
+            diff = limit;
+        }
     }
 
-    // filter law is   state_1 = (state_0*(2^smoothe-1) + x) / (2^smoothe)
-
-    x = Instance.ChannelState[channel].FilterState << smoothe;
-    x -= Instance.ChannelState[channel].FilterState;
-    x += (uint16_t)(Instance.ChannelState[channel].FilterTarget << 4);
-
-    // Round before discarding the bits
-    if (smoothe > 0)
-    {
-        x += (uint16_t)1u << (smoothe - 1);
-    }
-
-    Instance.ChannelState[channel].FilterState = x >> smoothe;
+    Instance.ChannelState[channel].FilterState += diff;
 }
 
 static uint8_t filterGetOutput(uint8_t channel)
