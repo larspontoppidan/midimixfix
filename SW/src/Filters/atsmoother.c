@@ -65,7 +65,7 @@
 #define MESSAGE_TYPE_CHAN_AT     0
 #define MESSAGE_TYPE_FIRST_UICC  1
 
-#define START_ADAPT    0
+#define START_RESERVED 0
 #define START_N_ON     1
 #define START_VALUE_0  2
 
@@ -315,9 +315,9 @@ static void atsmoother_WriteMenuText(uint8_t instance, uint8_t menu_item, void *
         {
             util_copyString_P(dest, PSTR("N.On"));
         }
-        else if (Config.Start == START_ADAPT)
+        else if (Config.Start == START_RESERVED)
         {
-            util_copyString_P(dest, PSTR("Adapt"));
+            util_copyString_P(dest, PSTR("N/A"));
         }
         else
         {
@@ -355,7 +355,7 @@ static void atsmoother_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_
     switch (menu_item)
     {
     case 1:
-        Config.Start = util_boundedAddUint8(Config.Start, 0, START_VALUE_0 + 127, delta);
+        Config.Start = util_boundedAddUint8(Config.Start, START_N_ON, START_VALUE_0 + 127, delta);
         break;
     case 2:
         Config.FadeIn = util_boundedAddUint8(Config.FadeIn, 0, SMOOTHE_MAX, delta);
@@ -424,13 +424,6 @@ static bool_t handleNoteOn(uint8_t channel, uint8_t vel)
 
                 // We will send a filter CC before note on in this case
                 ret = TRUE;
-            }
-            else if (Config.Start == START_ADAPT)
-            {
-                // TODO implement this real
-                filterReset(channel, vel);
-
-                ret = FALSE;
             }
             else
             {

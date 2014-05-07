@@ -354,6 +354,9 @@ static void handleUiEvent(uint8_t uiEvent)
             if (mode == MODE_NO_EDIT)
             {
                 mode = MODE_EDIT_FILTER;
+
+                // Let filter handle the select event
+                filters_handleUiEvent(currentFilter, currentFilterMenu, uiEvent);
             }
             else
             {

@@ -449,7 +449,7 @@ static void pedals_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t ui
              util_boundedAddInt8(PedalSetup[instance].Offset, -128, 127, delta);
         break;
     case 4:
-        PedalSetup[instance].Inverted = delta > 0 ? TRUE : FALSE;
+        PedalSetup[instance].Inverted = ui_eventToSetClearBit(ui_event, PedalSetup[instance].Inverted, 1);
         break;
     }
 }

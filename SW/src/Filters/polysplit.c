@@ -318,7 +318,7 @@ static void polysplit_WriteMenuText(uint8_t instance, uint8_t menu_item, void *d
         util_writeFormat_P(dest, MenuSetting6, Config.BroadCastMode & BROADCAST_P_WHEEL);
         break;
     case 6:
-        util_writeFormat_P(dest, MenuSetting7, Config.BroadCastMode & BROADCAST_PROGCHG);
+        util_writeFormat_P(dest, MenuSetting7, Config.BroadCastMode & BROADCAST_CHAN_AT);
         break;
     }
 }
@@ -343,20 +343,16 @@ static void polysplit_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t
         Config.OutChannels =  util_boundedAddUint8(Config.OutChannels, 1, CHANNEL_MAX, delta);
         break;
     case 3:
-        Config.BroadCastMode = (Config.BroadCastMode & ~BROADCAST_CC) |
-            (delta > 0 ? BROADCAST_CC : 0);
+        Config.BroadCastMode = ui_eventToSetClearBit(ui_event, Config.BroadCastMode, BROADCAST_CC);
         break;
     case 4:
-        Config.BroadCastMode = (Config.BroadCastMode & ~BROADCAST_PROGCHG) |
-            (delta > 0 ? BROADCAST_PROGCHG : 0);
+        Config.BroadCastMode = ui_eventToSetClearBit(ui_event, Config.BroadCastMode, BROADCAST_PROGCHG);
         break;
     case 5:
-        Config.BroadCastMode = (Config.BroadCastMode & ~BROADCAST_P_WHEEL) |
-            (delta > 0 ? BROADCAST_P_WHEEL : 0);
+        Config.BroadCastMode = ui_eventToSetClearBit(ui_event, Config.BroadCastMode, BROADCAST_P_WHEEL);
         break;
     case 6:
-        Config.BroadCastMode = (Config.BroadCastMode & ~BROADCAST_PROGCHG) |
-            (delta > 0 ? BROADCAST_PROGCHG : 0);
+        Config.BroadCastMode = ui_eventToSetClearBit(ui_event, Config.BroadCastMode, BROADCAST_CHAN_AT);
         break;
     }
 }

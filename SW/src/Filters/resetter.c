@@ -296,6 +296,12 @@ static void resetter_SetFilterStep(uint8_t instance, uint8_t filter_step)
 static void resetter_LoadConfig(uint8_t instance, void* data)
 {
     Config[instance] = *((config_t*)data);
+
+    // If configured to reset on load, start transmission already
+    if (Config[instance].Mode == MODE_ON_LOAD)
+    {
+        Instance[instance].TransmissionStatus = TRANSMISSION_START;
+    }
 }
 
 static void resetter_SaveConfig(uint8_t instance, void* data)
@@ -359,7 +365,7 @@ static void resetter_WriteMenuText(uint8_t instance, uint8_t menu_item, void *de
             util_copyString_P(dest, PSTR("On load"));
             break;
         case MODE_CC_TRIGGER:
-            util_copyString_P(dest, PSTR("CC Trigger"));
+            util_copyString_P(dest, PSTR("On trigger"));
             break;
         }
         break;

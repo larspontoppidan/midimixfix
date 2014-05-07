@@ -228,16 +228,7 @@ static void midiout_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t u
 
     if (menu_item == 1)
     {
-        // Handle up down moves on menu_item 1
-        switch (ui_event & (~UI_MOVE_FAST_MASK))
-        {
-        case UI_EVENT_MOVE_DOWN:
-            ConfigUseRunningStatus = FALSE;
-            break;
-        case UI_EVENT_MOVE_UP:
-            ConfigUseRunningStatus = TRUE;
-            break;
-        }
+        ConfigUseRunningStatus = ui_eventToSetClearBit(ui_event, ConfigUseRunningStatus, 1);
     }
 }
 
