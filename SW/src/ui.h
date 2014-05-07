@@ -45,6 +45,7 @@ void ui_menuBackOut(void);
 void ui_menuMoveCursor(uint8_t cursorItem, uint8_t cursorIndent);
 
 int8_t ui_eventToDelta(uint8_t ui_event, int8_t fast_speed);
+uint8_t ui_eventToSetClearBit(uint8_t ui_event, uint8_t x, uint8_t mask);
 
 const menuInterface_t * ui_getCurrentMenu(void);
 

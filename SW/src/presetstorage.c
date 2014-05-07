@@ -121,7 +121,7 @@ static const uint8_t EepromHeader[EEPROM_HEADER_SIZE] PROGMEM =
 
 
 // Saving and loading configuration requires a temporary buffer
-#define DATA_BUFFER_SIZE  10
+#define DATA_BUFFER_SIZE  30
 
 
 
@@ -391,10 +391,25 @@ uint8_t presets_load(uint8_t slot, bool_t test)
     return ret;
 }
 
-void presets_save(uint8_t slot)
+uint8_t presets_save(uint8_t slot)
 {
     uint8_t i;
     uint8_t fsteps;
+
+    fsteps = midiproc_getFilterSteps_SAFE();
+
+    // Start by checking if the save is too big
+    uint16_t size = 2;
+    for (i = 0; i < fsteps; i++)
+    {
+        filters_instance_t instance = midiproc_getFilterInstance_SAFE(i);
+        size += 7 + filters_getConfigSize(instance.FilterType);
+    }
+
+    if (size >= PRESET_SLOT_SIZE)
+    {
+        return PRESET_SAVE_TOO_BIG;
+    }
 
     // Calc address of the slot we are about to load/check
     Address = (uint16_t)EEPROM_ADDR_FIRST_SLOT +
@@ -403,7 +418,6 @@ void presets_save(uint8_t slot)
     ChkSum = EEPROM_CHKSUM_RESET;
 
     // Write number of filter steps
-    fsteps = midiproc_getFilterSteps_SAFE();
     writeByte(fsteps);
 
     for (i = 0; i < fsteps; i++)
@@ -439,7 +453,7 @@ void presets_save(uint8_t slot)
     // Finally write checksum
     writeByte(ChkSum);
 
-    // TODO This procedure needs to check if we are writing too much and crosses into next preset slot...
+    return PRESET_OK;
 }
 
 

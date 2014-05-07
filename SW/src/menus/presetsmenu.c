@@ -206,10 +206,19 @@ static void handleUiEvent(uint8_t uiEvent)
         if (saveNotLoad)
         {
             // Saving a preset
-            presets_save(cursorItem - 1);
+            uint8_t r = presets_save(cursorItem - 1);
 
             ui_menuBackOut();
-            msgscreen_Show_FormatP(PSTR("PRESET SAVED"), 0, 3);
+
+            if (r == PRESET_OK)
+            {
+                msgscreen_Show_P(PSTR("PRESET SAVED"), 3);
+            }
+            else
+            {
+                // NOTE assumes only one possible error: PRESET_SAVE_TOO_BIG
+                msgscreen_Show_P(PSTR("SAVE ERR: TOO BIG!"), 1);
+            }
         }
         else if (cursorItem == (PRESETS_SLOTS + 1))
         {
@@ -219,7 +228,7 @@ static void handleUiEvent(uint8_t uiEvent)
             midiproc_start_MAIN();
 
             ui_menuBackOut();
-            msgscreen_Show_FormatP(PSTR("DEFAULTS LOADED"), 0, 2);
+            msgscreen_Show_P(PSTR("DEFAULTS LOADED"), 2);
         }
         else
         {
@@ -237,7 +246,7 @@ static void handleUiEvent(uint8_t uiEvent)
 
                 if (r == PRESET_OK)
                 {
-                    msgscreen_Show_FormatP(PSTR("PRESET LOADED"), 0, 3);
+                    msgscreen_Show_P(PSTR("PRESET LOADED"), 3);
                 }
                 else
                 {

@@ -93,6 +93,14 @@ void msgscreen_Show_FormatP(const char *msg, uint8_t data, uint8_t write_offset)
     ui_menuEnter(&msgscreen_Menu);
 }
 
+void msgscreen_Show_P(const char *msg, uint8_t write_offset)
+{
+    Message = msg;
+    Data = 0;
+    WriteOffset = write_offset;
+    ui_menuEnter(&msgscreen_Menu);
+}
+
 
 // ---------------------------  MENU CALLBACKS ------------------------------
 

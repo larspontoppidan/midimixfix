@@ -271,6 +271,8 @@ static uint8_t genmsg_ProcessMidiMsg(uint8_t instance, midiMsg_t *msg)
     {
     case WHEN_TRANS_ALL_MSG:
         // All incoming messages gets translated into our message
+
+        // TODO implement CC trigger
         makeMsg(instance, msg, chan);
         ret = FILTER_PROCESS_DID;
         break;

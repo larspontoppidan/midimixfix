@@ -20,7 +20,7 @@ bool_t  presets_validateEeprom(void);
 void    presets_resetEeprom(void);
 
 uint8_t presets_load(uint8_t preset_slot, bool_t test);
-void    presets_save(uint8_t preset_slot);
+uint8_t presets_save(uint8_t preset_slot);
 
 
 #define PRESETS_SLOTS 10
@@ -35,6 +35,7 @@ void    presets_save(uint8_t preset_slot);
 #define PRESET_LOAD_ERROR     4
 #define PRESET_CHKSUM_ERROR   5
 
+#define PRESET_SAVE_TOO_BIG   1
 
 
 #endif /* PRESETSTORAGE_H_ */

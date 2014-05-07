@@ -15,6 +15,7 @@
 #include "Filters/generatemsg.h"
 #include "Filters/polysplit.h"
 #include "Filters/atsmoother.h"
+#include "Filters/resetter.h"
 
 // Filters can hook up direct function calls in the program flow.
 
@@ -45,6 +46,7 @@
     do {                          \
         pedals_handleTick_ISR();  \
         atsmoother_handleTick_ISR(); \
+        resetter_handleTick_ISR();  \
     } while (0)
 //    blockflt_handleTick_ISR();
 //    superdly_handleTick_ISR();

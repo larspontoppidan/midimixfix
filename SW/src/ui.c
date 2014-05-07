@@ -478,3 +478,27 @@ int8_t ui_eventToDelta(uint8_t ui_event, int8_t fast_speed)
     return delta;
 }
 
+uint8_t ui_eventToSetClearBit(uint8_t ui_event, uint8_t x, uint8_t mask)
+{
+    uint8_t ret;
+
+    switch (ui_event)
+    {
+    case UI_EVENT_MOVE_UP:
+    case UI_EVENT_MOVE_UP | UI_MOVE_FAST_MASK:
+        ret = x | mask;
+        break;
+
+    case UI_EVENT_MOVE_DOWN | UI_MOVE_FAST_MASK:
+    case UI_EVENT_MOVE_DOWN:
+        ret = x & ~mask;
+        break;
+
+    default:
+        ret = x;
+        break;
+    }
+
+    return ret;
+}
+

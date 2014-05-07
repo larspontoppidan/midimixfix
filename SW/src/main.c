@@ -159,7 +159,7 @@ static void loadOrInitEeprom(void)
             break;
         case PRESET_CHKSUM_ERROR:
             // This is critical, we must give up
-            msgscreen_Show_FormatP(PSTR("PRESET CORRUPT!"), 0, 2);
+            msgscreen_Show_P(PSTR("PRESET CORRUPT!"), 2);
             midiproc_loadDefaultFilters();
             break;
         default:
@@ -174,7 +174,7 @@ static void loadOrInitEeprom(void)
         // Eeprom is invalid, uninitialized or in wrong format, notify user that
         // we had to reset it
         presets_resetEeprom();
-        msgscreen_Show_FormatP(PSTR("PRESETS RESET"), 0, 3);
+        msgscreen_Show_P(PSTR("PRESETS RESET"), 3);
 
         // And load defaults
         midiproc_loadDefaultFilters();

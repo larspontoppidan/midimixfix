@@ -54,6 +54,7 @@
 #include "Filters/generatemsg.h"
 #include "Filters/polysplit.h"
 #include "Filters/atsmoother.h"
+#include "Filters/resetter.h"
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------

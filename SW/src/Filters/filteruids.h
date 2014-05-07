@@ -35,6 +35,7 @@
 #define FILTER_ID_ROUTEMSG_FILTER      27
 #define FILTER_ID_DUPMSG_FILTER        28
 #define FILTER_ID_ATSMOOTHER_FILTER    29
+#define FILTER_ID_RESETTER_FILTER      30
 #define FILTER_ID_MIDIOUT_FILTER       1
 
 #define FILTER_UID(id, version)  (((uint32_t)id) << 8 | (version))
