@@ -12,14 +12,6 @@
 
 #include <stdint.h>
 
-//typedef unsigned char uint8_t;
-//typedef signed char int8_t;
-
-//typedef unsigned short uint16_t;
-//typedef signed short int16_t;
-
-//typedef unsigned long uint32_t;
-//typedef signed long int32_t;
 
 
 typedef uint8_t bool_t;
@@ -34,11 +26,7 @@ typedef uint8_t bool_t;
 
 // BUILD CONFIGURATION
 
-#define BUILD_TX_RUNNING_STATUS  FALSE  // If TRUE, the transmitter will use running status
-
-//#define BUILD_VERSION_MAJOR  0
-//#define BUILD_VERSION_MINOR  2
-
+#define BUILD_VERSION_STRING   " MIDIMIXFIX v1.02  "
 
 // Generic function pointers
 

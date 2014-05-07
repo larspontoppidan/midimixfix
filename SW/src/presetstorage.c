@@ -101,7 +101,7 @@
 #define SIG_1   'M'
 #define SIG_2   'M'
 #define SIG_3   'F'
-#define SIG_4   2
+#define SIG_4   4
 
 #define PRESET_SLOT_SIZE   200   // 2048 bytes of EEPROM / 10 slots
 
