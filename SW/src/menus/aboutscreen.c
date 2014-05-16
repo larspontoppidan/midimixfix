@@ -48,6 +48,8 @@
 #include "../ui.h"
 #include "../util.h"
 #include "../menuinterface.h"
+#include "../presetstorage.h"
+#include "../midiprocessing.h"
 #include <avr/pgmspace.h>
 #include <string.h>
 
@@ -81,7 +83,9 @@ typedef struct
 } menuItem_t;
 
 
-#define ITEM_COUNT 9
+#define ITEM_COUNT 11
+#define ITEM_FILTER_COUNT 8
+#define ITEM_CONFIG_SIZE  9
 
 static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
 {
@@ -93,7 +97,9 @@ static const menuItem_t MainItem[ITEM_COUNT] PROGMEM =
     {""},
     {"  Copyright 2014"},
     {""},
-    {"Errors:"}                  // TODO this type of string storage could use some compression
+    {"Filter count: "},
+    {"Config size: "},
+    {"Errors:"}
 };
 
 
@@ -117,7 +123,7 @@ static uint8_t getItemCount(void)
 
     if (err_getCount() == 0)
     {
-        ret = ITEM_COUNT - 2;
+        ret = ITEM_COUNT - 1;
     }
     else
     {
@@ -131,7 +137,17 @@ static void writeItem(uint8_t item, void *dest)
 {
     if (item < ITEM_COUNT)
     {
-        util_copyString_P(dest, MainItem[item].Text);
+        dest = util_copyString_P(dest, MainItem[item].Text);
+
+        if (item == ITEM_FILTER_COUNT)
+        {
+            util_writeInt8LA(dest, midiproc_getFilterSteps_SAFE());
+        }
+        else if (item == ITEM_CONFIG_SIZE)
+        {
+            util_writeInt16LA(dest, presets_calcConfigSize());
+        }
+
     }
     else
     {

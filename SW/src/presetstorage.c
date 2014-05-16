@@ -391,25 +391,37 @@ uint8_t presets_load(uint8_t slot, bool_t test)
     return ret;
 }
 
+uint16_t presets_calcConfigSize(void)
+{
+    uint8_t i;
+    uint8_t fsteps;
+    uint16_t size;
+
+    fsteps = midiproc_getFilterSteps_SAFE();
+    size = 2; // Instance count byte and chksum byte
+
+    for (i = 0; i < fsteps; i++)
+    {
+        filters_instance_t instance = midiproc_getFilterInstance_SAFE(i);
+        size += 7; // Filter header
+        size += filters_getConfigSize(instance.FilterType);
+    }
+
+    return size;
+}
+
 uint8_t presets_save(uint8_t slot)
 {
     uint8_t i;
     uint8_t fsteps;
 
-    fsteps = midiproc_getFilterSteps_SAFE();
-
     // Start by checking if the save is too big
-    uint16_t size = 2;
-    for (i = 0; i < fsteps; i++)
-    {
-        filters_instance_t instance = midiproc_getFilterInstance_SAFE(i);
-        size += 7 + filters_getConfigSize(instance.FilterType);
-    }
-
-    if (size >= PRESET_SLOT_SIZE)
+    if (presets_calcConfigSize() >= PRESET_SLOT_SIZE)
     {
         return PRESET_SAVE_TOO_BIG;
     }
+
+    fsteps = midiproc_getFilterSteps_SAFE();
 
     // Calc address of the slot we are about to load/check
     Address = (uint16_t)EEPROM_ADDR_FIRST_SLOT +

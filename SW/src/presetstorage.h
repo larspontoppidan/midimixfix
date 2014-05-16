@@ -19,6 +19,8 @@
 bool_t  presets_validateEeprom(void);
 void    presets_resetEeprom(void);
 
+uint16_t presets_calcConfigSize(void);
+
 uint8_t presets_load(uint8_t preset_slot, bool_t test);
 uint8_t presets_save(uint8_t preset_slot);
 
