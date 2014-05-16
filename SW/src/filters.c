@@ -55,6 +55,7 @@
 #include "Filters/polysplit.h"
 #include "Filters/atsmoother.h"
 #include "Filters/resetter.h"
+#include "Filters/controlnoteon.h"
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------

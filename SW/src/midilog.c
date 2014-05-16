@@ -73,7 +73,7 @@
 
 // --------------------------  TYPES AND CONSTANTS  -----------------------------
 
-#define LOG_SIZE 32
+#define LOG_SIZE 64
 
 #define MIDILOG_SOURCE_OFF 0
 
