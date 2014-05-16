@@ -50,6 +50,7 @@ typedef struct
     &atsmoother_Filter,    \
     &ccnoteon_Filter,      \
     &keysplit_Filter,      \
+    &condroute_Filter,     \
     &midiout_Filter
 
 
@@ -75,6 +76,7 @@ enum
     FILTER_TYPE_ATSMOOTHER_FILTER,
     FILTER_TYPE_CCNOTEON_FILTER,
     FILTER_TYPE_KEYSPLIT_FILTER,
+    FILTER_TYPE_CONDROUTE_FILTER,
     FILTER_TYPE_MIDIOUT_FILTER,
     FILTERS_TYPE_COUNT
 };

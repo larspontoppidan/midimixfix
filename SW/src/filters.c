@@ -57,6 +57,7 @@
 #include "Filters/resetter.h"
 #include "Filters/controlnoteon.h"
 #include "Filters/keysplitroute.h"
+#include "Filters/conditionalroute.h"
 
 
 // ----------------------------  LOCAL VARIABLES  -------------------------------
