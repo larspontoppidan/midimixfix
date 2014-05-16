@@ -49,6 +49,7 @@ typedef struct
     &polysplit_Filter,     \
     &atsmoother_Filter,    \
     &ccnoteon_Filter,      \
+    &keysplit_Filter,      \
     &midiout_Filter
 
 
@@ -73,6 +74,7 @@ enum
     FILTER_TYPE_POLYSPLIT_FILTER,
     FILTER_TYPE_ATSMOOTHER_FILTER,
     FILTER_TYPE_CCNOTEON_FILTER,
+    FILTER_TYPE_KEYSPLIT_FILTER,
     FILTER_TYPE_MIDIOUT_FILTER,
     FILTERS_TYPE_COUNT
 };

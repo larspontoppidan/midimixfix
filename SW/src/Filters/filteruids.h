@@ -37,6 +37,8 @@
 #define FILTER_ID_ATSMOOTHER_FILTER    29
 #define FILTER_ID_RESETTER_FILTER      30
 #define FILTER_ID_CCNOTEON_FILTER      31
+#define FILTER_ID_KEYSPLITROUTE_FILTER 32
+#define FILTER_ID_CONDROUTE_FILTER     33
 #define FILTER_ID_MIDIOUT_FILTER       1
 
 #define FILTER_UID(id, version)  (((uint32_t)id) << 8 | (version))
