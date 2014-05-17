@@ -249,42 +249,41 @@ static void filterWriteMenuText(uint8_t instance, uint8_t menu_item, void *dest)
     }
     else if (menu_item == 1)
     {
+        dest = util_copyString_P(dest, PSTR("On   : "));
+        midi_writeUiccName(dest, Instances[instance].Cc);
+    }
+    else if (menu_item == 2)
+    {
         dest = util_copyString_P(dest, PSTR("Mode : "));
         switch (Instances[instance].Mode)
         {
         case MODE_MOMENTARILY:
-            util_copyString_P(dest, PSTR("When >64"));
+            util_copyString_P(dest, PSTR("When > 64"));
             break;
         case MODE_TOGGLE_ALL:
             util_copyString_P(dest, PSTR("Toggle"));
             break;
         case MODE_TOGGLE_HALF:
-            util_copyString_P(dest, PSTR("Toggle >64"));
+            util_copyString_P(dest, PSTR("Toggle > 64"));
             break;
         }
     }
-    else if (menu_item == 2)
-    {
-        dest = util_copyString_P(dest, PSTR("Use  : "));
-        midi_writeUiccName(dest, Instances[instance].Cc);
-    }
-}
 
+}
 
 static void filterHandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t ui_event)
 {
     if (menu_item == 1)
     {
-        // Handle up down moves on menu_item 1
-        Instances[instance].Mode =
-                util_boundedAddUint8(Instances[instance].Mode, 0, MODE_TOGGLE_HALF,
-                        ui_eventToDelta(ui_event, 10));
+        Instances[instance].Cc = util_boundedAddUint8(Instances[instance].Cc, 0,
+                MIDI_UICC_COUNT, ui_eventToDelta(ui_event, 10));
     }
     else if (menu_item == 2)
     {
-        Instances[instance].Cc =
-                util_boundedAddUint8(Instances[instance].Cc, 0, MIDI_UICC_COUNT,
-                        ui_eventToDelta(ui_event, 10));
+        // Handle up down moves on menu_item 1
+        Instances[instance].Mode = util_boundedAddUint8(
+                Instances[instance].Mode, 0, MODE_TOGGLE_HALF,
+                ui_eventToDelta(ui_event, 10));
     }
 
 }

@@ -34,23 +34,21 @@ typedef struct
     &midiin_In2,           \
     &midiin_In1Realtime,   \
     &midiin_In2Realtime,   \
-    &midiin_In1Sysex,      \
-    &midiin_In2Sysex,      \
     &pedals_In1,           \
     &pedals_In2,           \
     &resetter_Filter,      \
+    &genmsg_Filter,        \
     &routemsg_Filter,      \
     &dupmsg_Filter,        \
-    &setchan_Filter,       \
-    &modifycc_Filter,      \
-    &transfilter_Filter,   \
-    &curvefilter_Filter,   \
-    &genmsg_Filter,        \
-    &polysplit_Filter,     \
-    &atsmoother_Filter,    \
-    &ccnoteon_Filter,      \
     &keysplit_Filter,      \
     &condroute_Filter,     \
+    &setchan_Filter,       \
+    &modifycc_Filter,      \
+    &curvefilter_Filter,   \
+    &ccnoteon_Filter,      \
+    &transfilter_Filter,   \
+    &polysplit_Filter,     \
+    &atsmoother_Filter,    \
     &midiout_Filter
 
 
@@ -60,23 +58,23 @@ enum
     FILTER_TYPE_MIDIIN_IN2,
     FILTER_TYPE_MIDIIN_IN1REALTIME,
     FILTER_TYPE_MIDIIN_IN2REALTIME,
-    FILTER_TYPE_MIDIIN_IN1SYSEX,
-    FILTER_TYPE_MIDIIN_IN2SYSEX,
+//    FILTER_TYPE_MIDIIN_IN1SYSEX,
+//    FILTER_TYPE_MIDIIN_IN2SYSEX,
     FILTER_TYPE_PEDALS_IN1,
     FILTER_TYPE_PEDALS_IN2,
     FILTER_TYPE_RESETTER_FILTER,
+    FILTER_TYPE_GENMSG_FILTER,
     FILTER_TYPE_ROUTEMSG_FILTER,
     FILTER_TYPE_DUPLICATEMSG_FILTER,
-    FILTER_TYPE_SETCHAN_FILTER,
-    FILTER_TYPE_MODIFYCC_FILTER,
-    FILTER_TYPE_TRANSFILTER_FILTER,
-    FILTER_TYPE_CURVE_FILTER,
-    FILTER_TYPE_GENMSG_FILTER,
-    FILTER_TYPE_POLYSPLIT_FILTER,
-    FILTER_TYPE_ATSMOOTHER_FILTER,
-    FILTER_TYPE_CCNOTEON_FILTER,
     FILTER_TYPE_KEYSPLIT_FILTER,
     FILTER_TYPE_CONDROUTE_FILTER,
+    FILTER_TYPE_SETCHAN_FILTER,
+    FILTER_TYPE_MODIFYCC_FILTER,
+    FILTER_TYPE_CURVE_FILTER,
+    FILTER_TYPE_CCNOTEON_FILTER,
+    FILTER_TYPE_TRANSFILTER_FILTER,
+    FILTER_TYPE_POLYSPLIT_FILTER,
+    FILTER_TYPE_ATSMOOTHER_FILTER,
     FILTER_TYPE_MIDIOUT_FILTER,
     FILTERS_TYPE_COUNT
 };

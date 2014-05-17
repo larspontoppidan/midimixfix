@@ -96,7 +96,7 @@ static void processMsg(midiMsg_t *msg, instanceState_t *instance);
 // -------------------------------  VARIABLES  ----------------------------------
 
 
-static const char MenuTitle[]   PROGMEM = "Modify ctrl.";
+static const char MenuTitle[]   PROGMEM = "Modify CC type";
 static const char MenuSetFrom[] PROGMEM = "From : ";
 static const char MenuSetTo[]   PROGMEM = "To   : ";
 

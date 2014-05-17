@@ -163,11 +163,11 @@ typedef struct
 #define TRANSMISSION_IDLE       0xFF
 #define TRANSMISSION_START      0
 
-static char const MenuTitle[]    PROGMEM = "Resetter";
+static char const MenuTitle[]    PROGMEM = "Batch sender";
 
-static char const MenuSetting1[] PROGMEM = "Send: ";
+static char const MenuSetting1[] PROGMEM = "When: ";
 static char const MenuSetting2[] PROGMEM = "Slot: %i ";
-static char const MenuSetting3[] PROGMEM = "Val.: ";
+static char const MenuSetting3[] PROGMEM = "Mode: ";
 
 
 // ------------------------------  PROTOTYPES  ----------------------------------
@@ -413,7 +413,7 @@ static void resetter_WriteMenuText(uint8_t instance, uint8_t menu_item, void *de
                 x++;
             }
 
-            util_writeUint8(dest, x);
+            util_writeFormat_P(dest, PSTR("Send %u"), x);
         }
         break;
     }

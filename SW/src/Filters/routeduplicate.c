@@ -120,8 +120,8 @@ static void    filterHandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_t 
 // -------------------------------  VARIABLES  ----------------------------------
 
 
-static const char MenuTitleDuplicate[] PROGMEM = "Duplicate msg.";
-static const char MenuTitleRoute[]     PROGMEM = "Route msg.";
+static const char MenuTitleDuplicate[] PROGMEM = "Duplicate";
+static const char MenuTitleRoute[]     PROGMEM = "Filtered route";
 static const char MenuSetting[]        PROGMEM = "Type : ";
 
 const filterInterface_t dupmsg_Filter PROGMEM =

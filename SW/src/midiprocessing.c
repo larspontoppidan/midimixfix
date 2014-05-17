@@ -202,7 +202,7 @@ void midiproc_loadDefaultFilters(void)
     midiproc_removeAllFilters_MAIN();
 
     midiproc_addFilter_MAIN(FILTER_TYPE_MIDIIN_IN1);
-    midiproc_addFilter_MAIN(FILTER_TYPE_MIDIIN_IN2);
+    //midiproc_addFilter_MAIN(FILTER_TYPE_MIDIIN_IN2);
     midiproc_addFilter_MAIN(FILTER_TYPE_MIDIOUT_FILTER);
 }
 

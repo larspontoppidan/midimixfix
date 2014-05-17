@@ -423,6 +423,7 @@ void util_writeNumberParentheses(char *dest, uint8_t value)
 // in a certain way:
 //
 //   %U    Write data as uint8
+//   %u    Write data as uint8 left adjusted
 //   %I    Write data as int8
 //   %i    Write data as int8 left adjusted
 //   %x    Write data as hex
@@ -456,6 +457,9 @@ char *util_writeFormat_P(char *dest, PGM_P src, uint8_t data)
             {
             case 'U':
                 dest = util_writeUint8(dest, data);
+                break;
+            case 'u':
+                dest = util_writeInt16LA(dest, (int16_t)data);
                 break;
             case 'I':
                 dest = util_writeInt8(dest, data);

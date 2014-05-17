@@ -85,7 +85,7 @@ static void    ccnoteon_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8
 
 // -------------------------------  VARIABLES  ----------------------------------
 
-static const char MenuTitle[]   PROGMEM = "Set NoteOn vel.";
+static const char MenuTitle[]   PROGMEM = "CC to velocity";
 static const char MenuSetting[] PROGMEM = "Use : ";
 
 

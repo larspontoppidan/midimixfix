@@ -78,7 +78,7 @@ static void    setchan_HandleUiEvent(uint8_t instance, uint8_t menu_item, uint8_
 // -------------------------------  VARIABLES  ----------------------------------
 
 
-static const char MenuTitle[]   PROGMEM = "Set channel";
+static const char MenuTitle[]   PROGMEM = "Modify chan";
 static const char MenuSetting[] PROGMEM = "Chan. : %i";
 
 const filterInterface_t setchan_Filter PROGMEM =

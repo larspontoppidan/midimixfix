@@ -103,7 +103,7 @@ typedef struct
 
 
 
-static char const MenuTitle[]    PROGMEM = "AT.smoother";
+static char const MenuTitle[]    PROGMEM = "AT. smoothing";
 
 static char const MenuSetting1[] PROGMEM = "Start  : ";
 static char const MenuSetting2[] PROGMEM = "FadeIn : %i";
