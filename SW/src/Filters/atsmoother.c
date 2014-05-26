@@ -85,13 +85,13 @@ typedef struct
 
 typedef struct
 {
-    uint8_t NoteOnCount;
+    uint8_t NoteOnCount;   // TODO react to the reset messages!!
     uint16_t FilterState;     // Smooth filter for Key AfterTouch state
     uint8_t FilterTarget;     // Target value
     uint8_t LatestKeyAt;
 } channel_state_t;
 
-#define CHANNEL_MAX 9
+#define CHANNEL_MAX 16
 
 typedef struct
 {
