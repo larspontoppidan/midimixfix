@@ -20,6 +20,8 @@ Midimixfix is a standalone MIDI processing unit with custom designed electronics
 
 ![Picture](https://larsee.com/blog/2013/05/mounting-midimixfix-in-a-box/Midimixfix_into_box_033.JPG)
 
+![Back of midimixfix](https://larsee.com/blog/2013/05/mounting-midimixfix-in-a-box/Midimixfix_into_box_036.JPG)
+
 ## Links
 
 Read more here: https://larsee.com/blog/tag/midimixfix.html
