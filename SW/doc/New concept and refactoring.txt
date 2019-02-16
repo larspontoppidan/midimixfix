@@ -1,0 +1,200 @@
+2013/09/09
+
+Before refactoring:
+
+Program:   23658 bytes (36.1% Full)
+(.text + .data + .bootloader)
+
+Data:       1366 bytes (33.3% Full)
+(.data + .bss + .noinit)
+
+
+
+So, the current state of midimixfix is not really scaleable. If individual filters should handle messages from other filters / and or channels, is not controllable and behaviour may not be as desired.
+
+The solution is let the processing have a chain of stuff to happen:
+
+- MIDIMIXFIX -
+Midi In1          >1  
+Midi In2          >2
+Generate msg.     >3
+  Ch     : 1
+  Type   : Patch Chg
+  Value  : 3
+Gen. msg          >3
+  Ch     : 1
+  Type   : Patch Chg
+  Value  : 3
+Pedal1            >1
+  Ch     : 1
+  Gain   : 125
+  Offs   : 144
+  Invert : False
+
+Remap            1>1
+  Map    : Chan 1
+  To     : Discard
+
+MidiOut          A>
+  Runn. status : Off
+
+
+
+
+How to implement the dynamic menu?
+
+The current implementation works as follows:
+
+main.c 
+Catches UI events and passes them to:
+
+menu.c 
+The UI events updates menu selection state. Based on interaction with menuentities,
+the LCD updates are sent to
+
+lcd.c
+which further on calls
+
+hal.c
+to actually send data to the display.
+
+
+Now we want a menu metaphor with more than one mode.
+
+1. There can be the top menu where all plugin configuration is visible
+2. Then you can access management interface where plugins can be loaded / removed / reordered, and presets can be saved / loaded.
+
+
+- MIDIMIXFIX -
+Midi In1          >1  
+Midi In2          >2
+Generate msg.     >3
+  Ch     : 1
+  Type   : Patch Chg
+  Value  : 3
+Gen. msg          >3
+  Ch     : 1
+  Type   : Patch Chg
+  Value  : 3
+Pedal1            >1
+  Ch     : 1
+  Gain   : 125
+  Offs   : 144
+  Invert : False
+Remap            1>1
+  Map    : Chan 1
+  To     : Discard
+MidiOut          A>
+  Runn. status : Off
+
+
++--------------------+
+| Midi In2         >2|
+|>Generate msg.    >3|
+|- Ch     : 1        |
+|  Type   : Patch Chg|
++--------------------+
+
+
++--------------------+
+| Midi In2         >2|
+|>Generate msg.    >3|
+|  Ch     : 1        |
+|** ADD:Midi In2   **|
++--------------------+
+
++--------------------+
+| Midi In2         >2|
+|>Generate msg.    >3|
+|  Ch     : 1        |
+|** LOAD PRESET:1  **|
++--------------------+
+
++--------------------+
+| Midi In2         >2|
+|>Generate msg.    >3|
+|  Ch     : 1        |
+|** REMOVE:Confirm **|
++--------------------+
+
++--------------------+
+| Midi In2         >2|
+|>Generate msg.    >3|
+|  Ch     : 1        |
+|** ERRORS:        **|
++--------------------+
+
+
+Okay, so we need a secondary menu as an overlay taking up the bottom row of the display:
+
+main.c 
+Still gets the overall user events. They are passed to:
+
+ui.c 
+Handles the state of the entire user interface. 
+The module may ask filtermenu.c to draw menu entries relating to the filters
+The module may ask altmenu.c to draw the bottom line
+But the module itself performs the menu actions
+
+
+
+----- 2013-10-12
+
+Now there is a completely new filter concept implemented. It is possible to route stuff in streams and order filters as desired.
+
+The old strategy for filters, namely the block and map filter, now doesn't make as much sense anymore. Previously it was desireable to pack as much funcitonality into a single filter as possible to reduce the length of the static menu. Now it is better to have a larger number of simple filters to select from:
+
+
+Previous "Block and map" is capable of:
+
+Picking a channel / controller and changing into another channel, changing the controller type or discarding.
+
+some channel    -> some channel / discard
+some controller -> some controller / discard
+
+Proposed bisection of the "block and map" filter":
+
+-  " Route MIDI Chan 4>X"
+   "  Chan. : 1         "
+
+-  " Modify MIDI Chan  5"
+   "  Set chan. : 4     "
+
+-  " Route MIDI msg. 3>4"
+   "  Type : NoteOn/Off "  NoteOn/Off, PWheel, KeyAfterT. Ch.AfterT., Patch, CC:Volume, CC:0x33
+
+-  " Modify MIDI msg.  4"
+   "  From : CC:Volume  "  
+   "  To   : Ch.AfterT. "
+
+-  " Value transform   5"
+   "  Affect: N.On Black"    NoteOn, N.On White, N.On Black, NoteOff, 
+   "  Start : 0         "
+   "  Shape : S-shape   "    Linear, Gamma 0.8, S-shape, N-shape
+   "  End   : 127       "
+
+-  " Route all       4>X"
+
+
+-  " Pedal IN1 (127)  >4"
+   "  Ctrl. : CC:Sustain "
+   "  Mode  : Dig. Inv.  " "An. Inv."
+   "  Offset: 0          "
+   "  Gain  : 40         "
+
+-  " Generate MIDI   3>4"
+   "  Trig.: None       "
+   "  Msg. : Patch Chg. "
+   "  Value: 44         "
+
+
+
+-  " Polyphonic Split  4"
+   "  Use chan. : 2     "
+   "   to chan. : 8     "
+   "  Msg. : Patch Chg. "
+   "  Value: 44         "
+
+
+
+

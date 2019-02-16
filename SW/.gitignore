@@ -1,0 +1,15 @@
+# Eclipse noise
+.metadata/*
+RemoteSystemsTempFiles/*
+
+# make and build files
+*.lst
+*.o
+*.eep
+*.lss
+*.map
+*.sym
+*.d
+src/Release/*
+src/Debug/*
+
