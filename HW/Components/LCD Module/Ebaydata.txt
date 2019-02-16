@@ -1,0 +1,25 @@
+
+EBAY LINK: http://cgi.ebay.com/ws/eBayISAPI.dll?ViewItem&item=350560713502
+EBAY TITLE: New 2004 204 20X4 Character LCD Module Display For Arduino
+SELLER: hittime_hk
+PRICE: US $6.87
+
+
+Module parameters:
+
+    Brand new and high quality.
+    The module is a low-power consumption character LCD Module with a built-in controller.
+    The module can be easily interfaced with a MCU.
+    Display Format: 20 Characters x 4 lines.
+    It is fantastic for Arduino based project.
+    Supply voltage: 5V.
+    Fully assembled and tested Serial LCD 20x4 Module.
+    White Text, Blue backlight.
+    Analog Interface.
+    Size:9.8cm x 6cm x 1.2cm - 3.86inch x 2.36inch x 0.47inch. 
+
+Package Included:
+
+    1 x LCD display module 
+
+NO Retail Box. Packed Safely in Bubble Bag.

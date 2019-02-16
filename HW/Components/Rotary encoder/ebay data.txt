@@ -1,0 +1,39 @@
+ 
+ EBAY link: http://www.ebay.com/itm/290598955713?ssPageName=STRK:MEWNX:IT&_trksid=p3984.m1439.l2649
+ EBAY TITLE: 10pcs New 12mm Rotary Encoder Switch With Keyswitch US
+ EBAY Seller: bosity
+ Price: US $8.60
+ 
+ Description:
+
+    These are continuous rotary encoder switch
+    With built in push button switch (push to operate)
+    Can be used for data entry as with modern in car CD players, for volume & on/off control or data selection via LED or LCD display
+    Perfect for use with PIC or ATMEL microcontrollers
+
+Specifications:
+
+    Rotary Shaft Length: Approx. 12mm
+    Shaft Full Length: Approx. 20mm
+    Shaft Diameter: Approx. 6mm
+    Size (L x W): Approx. 15 x 11mm
+    Position: 20
+    Pulse: 20
+    Output: 2-bit gray code
+    Closed Circuit Resistance: 3 ohms maximums
+    Max. Rating: 10 mA at 5 VDC
+    Operating Temperature Range: -30 to 70 degrees celsius
+    Storage Temperature Range: -40 to 85 degrees celsius
+    Rotational Life: 30000 cycles minimum
+    Switch Life: 20000 cycles minimum
+
+
+I am sure it the right thing you need now.
+Don't hesitate, bid now and never miss it. You will receive a parcel contains as below.
+
+    10 x encoder switch
+    10 x nut
+    10 x gasket
+
+Keywords: Encoder, rotary encoders, encoder switch
+With any more questions about compatibility or any other information, Please contact us first.
