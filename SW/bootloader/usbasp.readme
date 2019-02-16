@@ -1,0 +1,9 @@
+To fix usbasp permission problem:
+
+Copy .rules into  /etc/udev/rules.d 
+
+Make sure it is root/root
+
+restart udev
+
+
