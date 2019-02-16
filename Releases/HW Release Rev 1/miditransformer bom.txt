@@ -1,0 +1,75 @@
+Partlist
+
+Exported from miditransformer.sch at 11/18/12 11:46 AM
+
+EAGLE Version 5.11.0 Copyright (c) 1988-2010 CadSoft
+
+Part     Value          Device            Package          Library    Sheet
+
+C1       10uF           C-EU_1210R        C1210            cap        1
+C2       100nF          C-EU_0805R        C0805            cap        1
+C3       100nF          C-EU_0805R        C0805            cap        1
+C4       22pF           C-EU_0805R        C0805            cap        1
+C5       22pF           C-EU_0805R        C0805            cap        1
+C6       100nF          C-EU_0805R        C0805            cap        1
+C7       100nF          C-EU_0805R        C0805            cap        1
+C8       22nF           C-EU_0805R        C0805            cap        1
+C9       22nF           C-EU_0805R        C0805            cap        1
+C10      100nF          C-EU_0805R        C0805            cap        1
+C11      100nF          C-EU_0805R        C0805            cap        1
+D1       3.6V           ZENER-DIODEDO34-7 DO34Z7           _newbylars 1
+D2       3.6V           ZENER-DIODEDO34-7 DO34Z7           _newbylars 1
+D3       1N4148         1N4148MINIMELF    MINIMELF         _newbylars 1
+D4       1N4148         1N4148MINIMELF    MINIMELF         _newbylars 1
+D5                      SUPPRESSOR-SMB    SMB              _newbylars 1
+D6                      SUPPRESSOR-SMB    SMB              _newbylars 1
+D7                      SUPPRESSOR-SMB    SMB              _newbylars 1
+D8       POWER          LTL-1CHG          LED3MM           leds       1
+D9       STATUS         LTL-1CHG          LED3MM           leds       1
+HOLE1    HOLE_PAD       HOLE_PAD          HOLE_PAD_3.2     _newbylars 1
+HOLE2    HOLE_PAD       HOLE_PAD          HOLE_PAD_3.2     _newbylars 1
+HOLE3    HOLE_PAD       HOLE_PAD          HOLE_PAD_3.2     _newbylars 1
+HOLE4    HOLE_PAD       HOLE_PAD          HOLE_PAD_3.2     _newbylars 1
+J1       USB            PN61729-S         PN61729-S        _newbylars 1
+J2       MIDI OUT       DIN5_FEMALE_PCB   DIN5_FEM_UNIV    _newbylars 1
+J3       MIDI IN 2      DIN5_FEMALE_PCB   DIN5_FEM_UNIV    _newbylars 1
+J4       MIDI IN 1      DIN5_FEMALE_PCB   DIN5_FEM_UNIV    _newbylars 1
+J5       LCD            HEADER2X8LS       HDR_S_2X8        con-head   1
+J6       BUTTONS        HEADER2X3S        HDR_S_2X3        con-head   1
+J7       PEDAL2         HEADER1X2KK       MOLEX_KK_HDR2_FL con-head   1
+J8       PEDAL1         HEADER1X2KK       MOLEX_KK_HDR2_FL con-head   1
+J9       ISP            HEADER2X3         HDR_2X3          _newbylars 1
+OK1      6N139          6N138DIL08        DIL08            _newbylars 1
+OK2      6N139          6N138DIL08        DIL08            _newbylars 1
+Q1       2N7002         2N7002            SOT23            fet        1
+R1       82R            R-EU0805          R0805            _newbylars 1
+R2       82R            R-EU0805          R0805            _newbylars 1
+R3       2k2            R-EU0805          R0805            _newbylars 1
+R4       4k7            R-EU0805          R0805            _newbylars 1
+R5                      R-TRIMM           RTRIM3339P       _newbylars 1
+R6       1K8            R-EU0805          R0805            _newbylars 1
+R7       1K8            R-EU0805          R0805            _newbylars 1
+R8       220R           R-EU0805          R0805            _newbylars 1
+R9       220R           R-EU0805          R0805            _newbylars 1
+R10      1K8            R-EU0805          R0805            _newbylars 1
+R11      1K8            R-EU0805          R0805            _newbylars 1
+R12      220R           R-EU0805          R0805            _newbylars 1
+R13      220R           R-EU0805          R0805            _newbylars 1
+R14      100            R-EULEADED-7.5    0207/7           _newbylars 1
+R15      N/M            R-EU0805          R0805            _newbylars 1
+R16      10k            R-EU0805          R0805            _newbylars 1
+R17      0R             R-EU0805          R0805            _newbylars 1
+R18      N/M            R-EU0805          R0805            _newbylars 1
+R19      10k            R-EU0805          R0805            _newbylars 1
+R20      0R             R-EU0805          R0805            _newbylars 1
+R21      0R             R-EU0805          R0805            _newbylars 1
+R22      220R           R-EU0805          R0805            _newbylars 1
+R23      220R           R-EU0805          R0805            _newbylars 1
+TP1      TPTH-15-06     TPTH-15-06        TP-TH-15-06      _newbylars 1
+TP2      TPTH-15-06     TPTH-15-06        TP-TH-15-06      _newbylars 1
+TP3      TPTH-15-06     TPTH-15-06        TP-TH-15-06      _newbylars 1
+TP4      TPTH-15-06     TPTH-15-06        TP-TH-15-06      _newbylars 1
+TP5      TPTH-15-06     TPTH-15-06        TP-TH-15-06      _newbylars 1
+TP6      TPTH-15-06     TPTH-15-06        TP-TH-15-06      _newbylars 1
+U1       ATMEGA644P     ATMEGA644P        TQFP44           avr-mcu    1
+XT1      20 MHz         XTAL_HC49         HC49             crystal    1
