@@ -1,0 +1,436 @@
+
+
+ 12345678901234567890
+----------------------
+-                    -
+-                    -
+-                    -
+-                    -
+----------------------
+
+
+----------------------
+-In Flt Flt Flt Flt O-
+- 1                 1-
+- 2                 2-
+-                    -
+----------------------
+
+
+Functions
+
+In1
+In2
+
+All to chan 1
+OY1
+
+
+
+VelocityTransform1
+VelocityTransform2
+VelocityTransform3
+VelocityTransform4
+Arpeggiate
+Poly To Channels
+ Aftertouch
+AfterTouch To Volume
+Att Vel To Volume
+Rel Vel To Volume
+
+
+
+
+
+
+
+Kindof a simpler approach:
+
+Use cases:
+- Poly fan out
+
+----------------------
+- Preset  : 1        -
+- V.Curve : Neutral  -
+- Pedal   : Eff OnOff-
+- Patch   : 3,127,128-
+- Eff.mod : Poly2Chan-
+- Eff.ctl : Volume   -
+- Save to preset 1   -
+----------------------
+
+
+Preset:  1..16
+
+Filter:  AllPass, NoCrap, OnlyNotes, OnlyChn1, OnlyChn2
+
+
+V.Curve: Neutral, HardStart, SoftStart, HardEnd, 
+
+Pedal:   Eff OnOff
+         Volume
+         Pan
+         MidiCtl ..
+         
+PatchChg: Off
+          3,127,128
+         
+Eff.Mode: Off
+          PolyChan     Poly aftertouch to channels
+          EPolyChan    Emulated poly aftertouch to channels
+          EPitchBnd    Emulated pitch bend
+
+
+For PolyChan:
+          
+Eff.Ctl : Volume       Poly aftertouch controls volume
+          Pan          Poly aftertouch controls pan
+          MidiCtl ..   Poly aftert. controls midictrl something
+          
+
+For EPolyChan:
+          
+Eff.Ctl : Volume       Poly aftertouch controls volume
+          Pan          Poly aftertouch controls pan
+          MidiCtl ..   Poly aftert. controls midictrl something
+
+         
+
+
+----------------------
+- V.Curve : Neutral  -
+- Pedal   : Eff OnOff-
+- Eff.mode: Poly2Chan-
+- Eff.ctrl: Volume   -
+----------------------
+
+
+
+GPIO BUDGET
+-----------
+
+Function        IO   Special
+MIDI IO         2    UART
+Sec. MIDI IO    4    UART
+Display data    8    Same port
+Display ctl     3
+Pedal 1/2       2    ADC
+Indicator led   1    Evt. pwm
+V-USP           3    1x Ex. int.
+Rotary enc      2    2x Ex. int.
+Push buttons    2    
+
+Total          25
+
+
+
+
+---------------
+
+Architecture
+
+hal module sets up midi IO uarts and sends interrupts for the uart activities
+
+midimessage module parses incoming midi data:
+
+hal:ISR
+ ->  midimessage:Parser 
+     -> midiio:MsgAllocate   (reserve mmsg)
+     -> midiio:MsgHandOver   (indicate mmsg is complete)
+        -> midilogger
+        -> midiprocess
+        -> start transmission   
+
+
+
+
+
+
+What if the parser works like this
+
+hal     midiparser           midiio
+        w. statemachine      w. buffer
+ 
+ISR ->  Parser         ->    msg_index = StartNewMsg(source, midi_status)
+                             AddMsgData(msg_index, midi_data)
+                             FinishMsg(msg_index, message_status)
+
+
+
+
+So, the software architecture should be modular.
+
+In general the modules can do the following:
+
+1. Monitor messages
+2. Filter messages 
+3. Change messages
+4. Generate new messages
+5. Have configuration options, a presentation in the menu
+6. Have an entire LCD screen mode (curve edit, midi logger)
+
+
+Is it feasible and desireable to have a module interface that can accomplish all this?
+
+The modules must be able to:
+
+A. Hook new message ISR
+B. Hook tick ISR
+C. Hook main thread idle loop
+D. Call message generation API
+
+The A, B, C, D possibilities are rather straightforward and will enable modules to solve 1, 2, 3, 4.
+
+What is not solved at this point is 5, 6. 
+
+What is required for a presentation in the menu? How should the menu look like?
+
+Boot screen:
+
+----------------------
+|** Midimixfix 0.1 **|
+|>Preset: <no preset>|
+| In1 setup: Through |   | In1 setup: Process | | In1 setup: Through |
+|  Send realtime msg.|
+| In2 setup: Process |
+|  Stop realtime msg.|   |  Send realtime msg.|
+| Show...            |   | Show > status view | quick help, input log, output log
+| Pass filter: ON    |
+|  In1 only Ch1      |
+|  In2 only Notes    |
+|  In2 only Ch2      |
+|  In2 only Notes,AT.|
+|  Manage...         |   |  Manage > Add      |   / Remove / Reset
+| Stop filter: ON    |
+|  Stop C.Variation  |
+|  Stop ProgChg      |
+|  Stop ATouch       |
+|  Manage...         |   |  Manage... Add     |   / Remove / Reset
+| Map channel: ON    |
+|  Map In1 Ch3       |
+|  To  Ch7           |
+|  Map In2 Ch*       |
+|  To  Ch6           |
+|  Manage...         |   |  Manage... Add     |   / Remove / Reset
+| Map controller: ON |
+|  Map C.Modulation  |
+|  To  C.Expression  |
+| Pedal 1: ON        |
+|  Calib. 000 127    |
+|  To  C.Expression  |
+| Pedal 2: ON        |
+|  Calib. 000 127    |
+|  To  Chan.A.Touch  |
+| Curve: ON          |
+|  On N.On vel.      |
+|  0,32,64,96,127    |
+|  On A.Touch        |
+|  0,32,64,96,127    |
+|  On C.Modulation   |
+|  0,32,64,96,127    |  On select the curve window is displayed
+|  Manage            |  |  Manage: Add / Remove |
+----------------------
+
+
+
+Okay, so what general structure is needed in the menu system:
+
+A menu item can be:
+ - Titlemenu   
+ - SubMenu    (indented by one)
+ 
+A menu entity contains:
+ - One TitleMenu (may change text)  EntityItem 0
+ - Zero or more SubMenu items       EntityItem 1, 2, 3...
+
+Both TitleMenu and SubMenu can react to user input:
+ - User select: Example: edit mode 0 -> 1 -> 2 -> 0
+ - User turn: If edit mode is 0 menu will scroll on to next menu item
+ - User turn: If edit mode > 0, menu will send turn events to EntityItem
+   Now EntityItem may change it's representation and cursor position
+
+
+Generally, Menu module will request MenuEntities for their representation
+when necessary:
+
+  uint8_t  SomeFilterGetSubMenus(void)
+  void     SomeFilterGetMenuText(char *dest, uint8_t item)   
+              // 0 is TitleMenu, 1, 2... SubMenus
+
+When user does something to a menu item, Menu module will call:
+
+  uint8_t SomeFilterMenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+
+The user_event can be:  
+  0:   Exit
+  1:   Select
+  2:   Knob turned (no push)
+  3:   Knob turned (push)
+ 
+The knob_delta is a signed 8-bit indicating how much the know was turned
+
+The function must return:
+  Value: 0     Edit mode not available
+  Value: 1-18  Set cursor here
+  Flag:  0x20  Update this line in menu
+  Flag:  0x40  Update entire menu
+  Flag:  0x80  I want to control the entire LCD
+  
+If 0x80 is returned, the menu module will stop doing anything to the display and just keep on sending the user events to the module. When the menu module receives an Exit event, it will be sent to the module, and then the menu will take over the display again.
+
+
+------ Phew. That should solve the requirements 5, 6.
+
+To summarize, modules that integrates in the Midimixfix platform must implement seven functions:
+
+ void Initialize(void)
+ 
+ void MessageIsrHook(mmsg_t *msg)
+ void TickIsrHook(void)
+ void MainLoopHook(void)
+ 
+ uint8_t GetSubMenuCount(void)
+ void    GetMenuText(char *dest, uint8_t item)
+ uint8_t MenuEvent(uint8_t item, uint8_t edit_mode, uint8_t user_event, int8_t knob_delta)
+
+
+... Now. How to implement this interface. It has to be handled by a ModuleFactory module.
+
+
+
+------- What filters makes sense to have:
+
+
+Both pass filters  / stop filters and mapping seems to solve
+related tasks. Does it make sense to have indivitual pass / stop / map
+filters? Or should they be combined into one multipurpose filter?
+
+Two filters:
+
+---- Block filter ----
+
+Allows a number of rules with the following structure:
+
+Input:   In1 In2 In*
+Mode:    Only allow / Stop
+Subject: Chan1 - Chan16, 
+         Notes, Key AT, Ctl.chg, Prog.chg, Chan.AT. P.Wheel, System
+
+"In* only Chan1    "
+"In2 stop Chan3    "
+
+"In1 only prog.chg."
+
+
+---- Map filter: ----
+
+Allows rerouting of channels and controllers.
+
+The rules have the following structure:
+
+Input:   In1 In2 In*
+Map:     Chan1 - Chan16, P.Wheel, Chan.AT, Ctl:0 to Ctl:64
+To:      Chan1 - Chan16, P.Wheel, Chan.AT, Ctl:0 to Ctl:64, or NULL
+
+Map and Block (OFF)
+"In1 Chan2"
+  To block"
+"In:1 Ctl:4"
+  To Ctl:6"
+"In:1 Chan:1"
+  To Chan:2
+
+
+---- Curve filter: ----
+   
+Allows shaping 7-bit values according to curve settings
+
+The curve rules have the following structure:
+
+Input:    In1 In2 In*
+Param.:   Note-On All, Note-On White, Note-On Black, Note-Off
+          Key AT, Chan AT, 
+Shape:    Low point, Curve type, High point
+
+Neutral:              0   1  127
+To lift up minimum:   30  1  127
+To advance minimum:   -30 1  127
+
+To use a non-linear curve:  0   0.8  127  (resembling gamma 0.8)
+To use a non-linear curve:  0   1.3  127
+To use a non-linear curve:  0   S    127  (having a more steep center)
+To use a non-linear curve:  0   N    127  (having a more flat center)
+
+The available non-linear curves could be:
+
+"0.5", "0.8", "1.3", "2  ", "S", "N"
+
+The filter algorithm to be used live would be like:
+
+1. Look up value in non-linear curve table, or use directly
+2. Multiply gain  (fixed point)
+3. Add offset
+4. Bounded conversion to non-fixed point, 0..127
+
+
+Nice values: 32 0.8 137
+             25 0.8 134
+
+--------------------
+
+What about presets???
+
+The system should have a number presets, numbered 1, 2, 3...
+
+The user can save / load to preset from a menu:
+
+Example:
+
+"Preset 10 mod. (+)"
+
+Clicking the menu exposes two options:
+
+"Preset 13 mod. (+)" 
+"  Store"   ->   "  Store preset 12"
+"  Load"    ->   "  Load preset 2"
+
+Should components actively tell the preset module about their config
+or should the preset module poll them somehow? The answer is what is 
+the least burdensome for the components.
+
+Preset polling: Solution A
+
+uint8_t comp_SerializeGetSize();
+void comp_SerializeSave(uint8_t *dest);
+void comp_SerializeLoad(uint8_t *dest);
+
+
+
+----------------
+
+Send msg.   (0)
+ 
+
+-------------------
+
+2013-09-05
+
+Den nuværende arkitektur begynder at vise sine mangler. Det største problem er at med en længere række moduler, der også genererer midi messages, kommer behovet for at kunne forbinde filtermoduler osv på genererede messages. Et andet problem er at mængden af moduler bliver overvældende og når man kun har brug for få moduler, er det uoverskueligt at skulle se på hele listen.
+
+Det ville være genialt at kunne forbinde moduler med hinanden i en kæde. Men hvornår skal input a/input b og eller genererede messages behandles?
+
+----------------------
+- - MIDIMIXFIX -     -
+- Super delay    DUP -
+-                    -
+- Add filter         -
+- Midilog...         -
+-                    -
+----------------------
+
+
+
+
+
+
+
