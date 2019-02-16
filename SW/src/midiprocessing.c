@@ -241,6 +241,8 @@ void midiproc_addMessage_ISR(midiMsg_t *msg, uint8_t filter_step)
         MsgBufferFilterStep[msg_index] = filter_step;
         MsgBuffer[msg_index] = *msg;
 
+        midimsg_convertSpecialNoteOff(&(MsgBuffer[msg_index]));
+
         // If ProcessingNow flag is true, this function call is a consequence
         // of some message processing initiated by processMessages. In that case
         // the processMessages function loop will move on to the message by
@@ -293,6 +295,8 @@ void midiproc_addMessage_MAIN(midiMsg_t *msg, uint8_t filter_step)
                 // We got a slot in the buffer, setup new message
                 MsgBufferFilterStep[msg_index] = filter_step;
                 MsgBuffer[msg_index] = *msg;
+
+                midimsg_convertSpecialNoteOff(&(MsgBuffer[msg_index]));
 
                 // We are done. Message will be processed at next tick
                 hal_interruptsEnable();

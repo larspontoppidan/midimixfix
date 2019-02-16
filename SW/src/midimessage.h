@@ -47,6 +47,8 @@ char *midimsg_writeRaw(char *dest, midiMsg_t *msg);
 char *midimsg_writeParsed(char *dest, midiMsg_t *msg);
 
 
+void midimsg_convertSpecialNoteOff(midiMsg_t *msg);
+
 // TODO consider this nicely encapsulated interface to the midi message:
 //
 //// Accessing features of a message

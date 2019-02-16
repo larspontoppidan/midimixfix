@@ -165,6 +165,24 @@ char *midimsg_writeParsed(char *dest, midiMsg_t *msg)
     return dest;
 }
 
+
+// This function converts NoteOn vel. 0 messages to regular NoteOff.
+// It's allowed to use NoteOn vel. 0 as a NoteOff and some instruments
+// indeed do (Yamaha pianos). However, we don't want to handle
+// this inconsistency in all filters, so fix it once and for all
+//
+void midimsg_convertSpecialNoteOff(midiMsg_t *msg)
+{
+    if ((msg->Data[MIDIMSG_STATUS] & MIDI_STATUS_MASK) == MIDI_STATUS_NOTE_ON)
+    {
+        if (msg->Data[MIDIMSG_DATA2] == 0)
+        {
+            // We got a NoteOn vel. 0 here, transform to NoteOff (keep vel. 0)
+            msg->Data[MIDIMSG_STATUS] = (msg->Data[MIDIMSG_STATUS] & MIDI_CHANNEL_MASK) | MIDI_STATUS_NOTE_OFF;
+        }
+    }
+}
+
 void midimsg_setChan(midiMsg_t *msg, uint8_t chan)
 {
     uint8_t ms = msg->Data[MIDIMSG_STATUS];

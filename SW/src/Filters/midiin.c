@@ -59,8 +59,6 @@ static void    midiin_ConfigNull(uint8_t instance, void* data);
 static uint8_t midiin_ProcessMidiMsgNull(uint8_t instance, midiMsg_t *msg);
 static void    midiin_HandleUiEventNull(uint8_t instance, uint8_t menu_item, uint8_t ui_event);
 
-static void    convertSpecialNoteOff(midiMsg_t *msg);
-
 // Functions for the six filters:
 static uint8_t midiin_In1Create(uint8_t filter_step);
 static uint8_t midiin_In2Create(uint8_t filter_step);
@@ -409,22 +407,6 @@ static void midiin_In2SxWriteMenuText(uint8_t instance, uint8_t menu_item, void 
     util_copyString_P(dest, MenuTitleIn2Sx);
 }
 
-// This function converts NoteOn vel. 0 messages to regular NoteOff.
-// It is apparently allowed to use NoteOn vel. 0 for NoteOff and some
-// instruments indeed do (Yamaha pianos). However, we don't want to handle
-// this inconsistency in all filters, so fix it once and for all
-//
-static void convertSpecialNoteOff(midiMsg_t *msg)
-{
-    if ((msg->Data[MIDIMSG_STATUS] & MIDI_STATUS_MASK) == MIDI_STATUS_NOTE_ON)
-    {
-        if (msg->Data[MIDIMSG_DATA2] == 0)
-        {
-            // We got a NoteOn vel. 0 here, transform to NoteOff (keep vel. 0)
-            msg->Data[MIDIMSG_STATUS] = (msg->Data[MIDIMSG_STATUS] & MIDI_CHANNEL_MASK) | MIDI_STATUS_NOTE_OFF;
-        }
-    }
-}
 // ---------------------------  PUBLIC FUNCTIONS  -------------------------------
 
 
@@ -548,7 +530,6 @@ void midiin_handleInput1_ISR(uint8_t x)
 
                     if (Input1State.NormalMsgStep != FILTER_STEP_NA)
                     {
-                        convertSpecialNoteOff(&(Input1State.Msg));
                         midiproc_addMessage_ISR(&(Input1State.Msg), Input1State.NormalMsgStep);
                     }
 
@@ -576,7 +557,6 @@ void midiin_handleInput1_ISR(uint8_t x)
 
                         if (Input1State.NormalMsgStep != FILTER_STEP_NA)
                         {
-                            convertSpecialNoteOff(&(Input1State.Msg));
                             midiproc_addMessage_ISR(&(Input1State.Msg), Input1State.NormalMsgStep);
                         }
 
@@ -714,7 +694,6 @@ void midiin_handleInput2_ISR(uint8_t x)
 
                     if (Input2State.NormalMsgStep != FILTER_STEP_NA)
                     {
-                        convertSpecialNoteOff(&(Input1State.Msg));
                         midiproc_addMessage_ISR(&(Input2State.Msg), Input2State.NormalMsgStep);
                     }
 
@@ -742,7 +721,6 @@ void midiin_handleInput2_ISR(uint8_t x)
 
                         if (Input2State.NormalMsgStep != FILTER_STEP_NA)
                         {
-                            convertSpecialNoteOff(&(Input1State.Msg));
                             midiproc_addMessage_ISR(&(Input2State.Msg), Input2State.NormalMsgStep);
                         }
 
